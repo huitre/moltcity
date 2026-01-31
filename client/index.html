@@ -1,0 +1,2510 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoltCity - The City Where AI Agents Live</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #1a1a2e;
+        overflow: hidden;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      #game-container {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #ui-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      #ui-overlay > * {
+        pointer-events: auto;
+      }
+
+      .panel {
+        background: rgba(26, 26, 46, 0.9);
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+        padding: 12px;
+        color: #e0e0e0;
+        backdrop-filter: blur(10px);
+      }
+
+      .panel h3 {
+        margin-bottom: 8px;
+        color: #7c7cff;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        margin: 4px 0;
+        font-size: 13px;
+      }
+
+      .stat-label {
+        color: #888;
+      }
+
+      .stat-value {
+        color: #4ecdc4;
+        font-weight: bold;
+      }
+
+      #controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        max-width: 400px;
+      }
+
+      button {
+        background: #4a4a6a;
+        border: none;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: #5a5a8a;
+      }
+
+      button.active {
+        background: #7c7cff;
+      }
+
+      button.success {
+        background: #4ecdc4;
+        color: #1a1a2e;
+      }
+
+      button.wallet {
+        background: #f7931a;
+        color: #fff;
+      }
+
+      button.wallet.connected {
+        background: #4ecdc4;
+      }
+
+      #tooltip {
+        position: fixed;
+        background: rgba(26, 26, 46, 0.95);
+        border: 1px solid #7c7cff;
+        border-radius: 4px;
+        padding: 8px 12px;
+        color: #e0e0e0;
+        font-size: 12px;
+        pointer-events: none;
+        display: none;
+        z-index: 200;
+        max-width: 250px;
+      }
+
+      #build-menu {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        background: rgba(26, 26, 46, 0.9);
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+        padding: 8px;
+      }
+
+      .build-option {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #2a2a4e;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .build-option:hover {
+        border-color: #7c7cff;
+      }
+
+      .build-option.selected {
+        border-color: #4ecdc4;
+        background: #3a3a5e;
+      }
+
+      .build-option span {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+
+      .build-option small {
+        font-size: 9px;
+        color: #888;
+      }
+
+      /* Floor selector panel */
+      #floor-selector {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: none;
+        background: rgba(26, 26, 46, 0.95);
+        border: 1px solid #7c7cff;
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: #e0e0e0;
+        z-index: 150;
+      }
+
+      #floor-selector.visible {
+        display: block;
+      }
+
+      #floor-selector h4 {
+        margin: 0 0 8px 0;
+        color: #7c7cff;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .floor-buttons {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .floor-btn {
+        width: 36px;
+        height: 36px;
+        background: #2a2a4e;
+        border: 2px solid #4a4a6a;
+        border-radius: 4px;
+        color: #e0e0e0;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .floor-btn:hover {
+        border-color: #7c7cff;
+        background: #3a3a5e;
+      }
+
+      .floor-btn.selected {
+        border-color: #4ecdc4;
+        background: #4ecdc4;
+        color: #1a1a2e;
+      }
+
+      #floor-cost {
+        font-size: 11px;
+        color: #4ecdc4;
+        text-align: center;
+      }
+
+      #floor-cost.premium {
+        color: #f7931a;
+      }
+
+      #connection-status {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+
+      #connection-status.connected {
+        background: #4ecdc4;
+        color: #1a1a2e;
+      }
+
+      #connection-status.disconnected {
+        background: #ff6b6b;
+        color: #fff;
+      }
+
+      /* Purchase Modal */
+      #purchase-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(26, 26, 46, 0.98);
+        border: 2px solid #7c7cff;
+        border-radius: 12px;
+        padding: 24px;
+        z-index: 300;
+        min-width: 320px;
+      }
+
+      #purchase-modal h2 {
+        color: #7c7cff;
+        margin-bottom: 16px;
+      }
+
+      #purchase-modal .price-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #4a4a6a;
+      }
+
+      #purchase-modal .price-label {
+        color: #888;
+      }
+
+      #purchase-modal .price-value {
+        color: #4ecdc4;
+        font-weight: bold;
+      }
+
+      #purchase-modal .premium-badge {
+        background: #f7931a;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-left: 8px;
+      }
+
+      #purchase-modal .buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      #purchase-modal button {
+        flex: 1;
+      }
+
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 250;
+      }
+
+      /* Wallet Panel */
+      #wallet-panel {
+        position: fixed;
+        top: 60px;
+        right: 10px;
+      }
+
+      #wallet-panel .address {
+        font-family: monospace;
+        font-size: 12px;
+        color: #4ecdc4;
+      }
+
+      #wallet-panel .balance {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+      }
+
+      /* Infrastructure Mode */
+      .infra-option {
+        background: #2a2a4e;
+        border: 2px solid #f7931a;
+      }
+
+      .infra-option.selected {
+        border-color: #ff6b6b;
+        background: #4a2a2e;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container"></div>
+
+    <div id="ui-overlay">
+      <div class="panel" id="city-info">
+        <h3>MoltCity</h3>
+        <div class="stat">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="time-display">08:00</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Day</span>
+          <span class="stat-value" id="day-display">1</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Population</span>
+          <span class="stat-value" id="population-display">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Buildings</span>
+          <span class="stat-value" id="buildings-display">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Power</span>
+          <span class="stat-value" id="power-display">0 / 0 kW</span>
+        </div>
+      </div>
+
+      <div id="controls">
+        <button id="btn-wallet" class="wallet">Connect Wallet</button>
+        <button id="btn-start" class="success">Start Sim</button>
+        <button id="btn-stop">Stop Sim</button>
+        <button id="btn-init">Init City</button>
+      </div>
+    </div>
+
+    <div class="panel" id="wallet-panel" style="display: none">
+      <h3>Wallet</h3>
+      <div class="address" id="wallet-address">0x...</div>
+      <div class="balance"><span id="wallet-balance">0.00</span> ETH</div>
+    </div>
+
+    <div id="build-menu">
+      <!-- Buildings -->
+      <div class="build-option" data-type="road">
+        <span>🛣️</span>
+        <small>Road</small>
+      </div>
+      <div class="build-option" data-type="house">
+        <span>🏠</span>
+        <small>House</small>
+      </div>
+      <div class="build-option" data-type="shop">
+        <span>🏪</span>
+        <small>Shop</small>
+      </div>
+      <div class="build-option" data-type="office">
+        <span>🏢</span>
+        <small>Office</small>
+      </div>
+      <div class="build-option" data-type="factory">
+        <span>🏭</span>
+        <small>Factory</small>
+      </div>
+      <div class="build-option" data-type="power_plant">
+        <span>⚡</span>
+        <small>Power</small>
+      </div>
+      <div class="build-option" data-type="water_tower">
+        <span>💧</span>
+        <small>Water</small>
+      </div>
+      <div class="build-option" data-type="park">
+        <span>🌳</span>
+        <small>Park</small>
+      </div>
+      <!-- Infrastructure -->
+      <div class="build-option infra-option" data-type="power_line">
+        <span>⚡</span>
+        <small>P.Line</small>
+      </div>
+      <div class="build-option infra-option" data-type="water_pipe">
+        <span>💧</span>
+        <small>Pipe</small>
+      </div>
+    </div>
+
+    <div id="floor-selector">
+      <h4>Floors</h4>
+      <div class="floor-buttons" id="floor-buttons">
+        <!-- Buttons generated by JS based on building type -->
+      </div>
+      <div id="floor-cost">Free</div>
+    </div>
+
+    <div id="tooltip"></div>
+    <div id="connection-status" class="disconnected">Disconnected</div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div id="purchase-modal">
+      <h2>Purchase Parcel</h2>
+      <div id="purchase-location"></div>
+      <div class="price-row">
+        <span class="price-label">Price (ETH)</span>
+        <span class="price-value" id="price-eth">0.001</span>
+      </div>
+      <div class="price-row">
+        <span class="price-label">Price (MOLT)</span>
+        <span class="price-value" id="price-molt">1.00</span>
+      </div>
+      <div id="premium-info" style="display: none">
+        <span class="premium-badge">PREMIUM</span>
+        <span id="premium-reason"></span>
+      </div>
+      <div class="buttons">
+        <button id="btn-pay-eth" class="success">Pay with ETH</button>
+        <button id="btn-cancel-purchase">Cancel</button>
+      </div>
+    </div>
+
+    <script>
+      // ============================================
+      // MOLTCITY - Isometric Client with Crypto
+      // ============================================
+
+      // Auto-detect environment
+      const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      const API_URL = isLocal ? "http://localhost:3000" : "https://api.moltcity.site";
+      const WS_URL = isLocal ? "ws://localhost:3000" : "wss://api.moltcity.site";
+
+      // Isometric tile dimensions
+      const TILE_WIDTH = 64;
+      const TILE_HEIGHT = 32;
+      const GRID_SIZE = 50;
+
+      // Colors
+      const COLORS = {
+        grass: 0x4a7c59,
+        grassDark: 0x3d6b4a,
+        road: 0x555555,
+        roadLine: 0xffff00,
+        water: 0x4a90a4,
+        powerLine: 0xffcc00,
+        waterPipe: 0x4a90a4,
+        building: {
+          house: 0xe8d4a4,
+          shop: 0xa4c8e8,
+          office: 0x8888cc,
+          factory: 0x888888,
+          power_plant: 0xffcc00,
+          water_tower: 0x4a90a4,
+          park: 0x66aa66,
+          city_hall: 0xcc8888,
+        },
+        agent: 0xff6b6b,
+        vehicle: 0x4ecdc4,
+        highlight: 0x7c7cff,
+        highlightBuy: 0x4ecdc4,
+        night: 0x1a1a3a,
+      };
+
+      // State
+      let app = null;
+      let worldContainer = null;
+      let ws = null;
+      let cityData = null;
+      let parcels = [];
+      let buildings = [];
+      let roads = [];
+      let agents = [];
+      let vehicles = [];
+      let powerLines = [];
+      let waterPipes = [];
+      let selectedBuildType = null;
+      let isDragging = false;
+      let lastMousePos = { x: 0, y: 0 };
+      let isDaylight = true;
+
+      // Wallet state
+      let provider = null;
+      let signer = null;
+      let walletAddress = null;
+      let walletBalance = "0";
+      let chainConfig = null;
+
+      // Purchase state
+      let pendingPurchase = null;
+
+      // Floor selection state
+      let selectedFloors = 1;
+      const MAX_FLOORS = { house: 3, office: 5 };
+
+      // Custom sprites cache
+      const spriteCache = new Map();
+      const defaultSprites = new Map();
+      const roadSprites = new Map();
+      const houseBricks = [];
+      const houseRoofs = [];
+      const officeFloors = [];
+      const officeRoofs = [];
+      let spritesConfig = null;
+
+      // Load default building sprites from Kenney pack
+      async function loadSprites() {
+        try {
+          const res = await fetch("/sprites/sprites.json");
+          spritesConfig = await res.json();
+
+          const loadPromises = [];
+
+          // Load building sprites
+          for (const [type, config] of Object.entries(
+            spritesConfig.buildings,
+          )) {
+            const promise = PIXI.Assets.load(`/sprites/${config.file}`)
+              .then((texture) => {
+                defaultSprites.set(type, { texture, config });
+                console.log(`[Sprites] Loaded building: ${type}`);
+              })
+              .catch((err) => {
+                console.warn(`[Sprites] Failed to load ${type}:`, err);
+              });
+            loadPromises.push(promise);
+          }
+
+          // Load road sprites
+          if (spritesConfig.roads) {
+            for (const [type, config] of Object.entries(spritesConfig.roads)) {
+              const promise = PIXI.Assets.load(`/sprites/${config.file}`)
+                .then((texture) => {
+                  roadSprites.set(type, { texture, config });
+                  console.log(`[Sprites] Loaded road: ${type}`);
+                })
+                .catch((err) => {
+                  console.warn(`[Sprites] Failed to load road ${type}:`, err);
+                });
+              loadPromises.push(promise);
+            }
+          }
+
+          // Load house parts (bricks and roofs)
+          if (spritesConfig.houseParts) {
+            // Load brick sprites
+            for (const brick of spritesConfig.houseParts.bricks || []) {
+              const promise = PIXI.Assets.load(`/sprites/${brick.file}`)
+                .then((texture) => {
+                  houseBricks.push({ texture, ...brick });
+                  console.log(`[Sprites] Loaded brick: ${brick.id}`);
+                })
+                .catch((err) => {
+                  console.warn(`[Sprites] Failed to load brick ${brick.id}:`, err);
+                });
+              loadPromises.push(promise);
+            }
+
+            // Load roof sprites
+            for (const roof of spritesConfig.houseParts.roofs || []) {
+              const promise = PIXI.Assets.load(`/sprites/${roof.file}`)
+                .then((texture) => {
+                  houseRoofs.push({ texture, ...roof });
+                  console.log(`[Sprites] Loaded roof: ${roof.id}`);
+                })
+                .catch((err) => {
+                  console.warn(`[Sprites] Failed to load roof ${roof.id}:`, err);
+                });
+              loadPromises.push(promise);
+            }
+          }
+
+          // Load office parts (floors and roofs)
+          if (spritesConfig.officeParts) {
+            // Load office floor sprites
+            for (const floor of spritesConfig.officeParts.floors || []) {
+              const promise = PIXI.Assets.load(`/sprites/${floor.file}`)
+                .then((texture) => {
+                  officeFloors.push({ texture, ...floor });
+                  console.log(`[Sprites] Loaded office floor: ${floor.id}`);
+                })
+                .catch((err) => {
+                  console.warn(`[Sprites] Failed to load office floor ${floor.id}:`, err);
+                });
+              loadPromises.push(promise);
+            }
+
+            // Load office roof sprites
+            for (const roof of spritesConfig.officeParts.roofs || []) {
+              const promise = PIXI.Assets.load(`/sprites/${roof.file}`)
+                .then((texture) => {
+                  officeRoofs.push({ texture, ...roof });
+                  console.log(`[Sprites] Loaded office roof: ${roof.id}`);
+                })
+                .catch((err) => {
+                  console.warn(`[Sprites] Failed to load office roof ${roof.id}:`, err);
+                });
+              loadPromises.push(promise);
+            }
+          }
+
+          await Promise.all(loadPromises);
+          console.log(
+            `[Sprites] Loaded ${defaultSprites.size} buildings, ${roadSprites.size} roads, ${houseBricks.length} house bricks, ${officeFloors.length} office floors`,
+          );
+        } catch (err) {
+          console.warn(
+            "[Sprites] Could not load sprite config, using procedural:",
+            err,
+          );
+        }
+      }
+
+      // Generate a random house by stacking bricks and adding a roof
+      function generateStackedHouse(x, y, seed) {
+        // Use seed to create consistent random choices for this location
+        const rng = mulberry32(seed || (x * 1000 + y));
+
+        // Random number of floors (1-3)
+        const floors = Math.floor(rng() * 3) + 1;
+
+        // Pick random brick and roof
+        const brickIndex = Math.floor(rng() * houseBricks.length);
+        const roofIndex = Math.floor(rng() * houseRoofs.length);
+
+        return { floors, brickIndex, roofIndex };
+      }
+
+      // Generate office style (floors can be specified or random)
+      function generateStackedOffice(x, y, seed, specifiedFloors = null) {
+        const rng = mulberry32(seed || (x * 1000 + y + 5000));
+
+        // Use specified floors or random (1-5 for offices)
+        const floors = specifiedFloors || (Math.floor(rng() * 5) + 1);
+
+        // Pick random floor and roof style
+        const floorIndex = Math.floor(rng() * officeFloors.length);
+        const roofIndex = Math.floor(rng() * officeRoofs.length);
+
+        return { floors, floorIndex, roofIndex };
+      }
+
+      // Simple seeded random number generator
+      function mulberry32(seed) {
+        return function() {
+          let t = seed += 0x6D2B79F5;
+          t = Math.imul(t ^ t >>> 15, t | 1);
+          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      // ============================================
+      // Coordinate Conversion
+      // ============================================
+
+      function cartToIso(x, y) {
+        return {
+          x: (x - y) * (TILE_WIDTH / 2),
+          y: (x + y) * (TILE_HEIGHT / 2),
+        };
+      }
+
+      function isoToCart(isoX, isoY) {
+        const x = (isoX / (TILE_WIDTH / 2) + isoY / (TILE_HEIGHT / 2)) / 2;
+        const y = (isoY / (TILE_HEIGHT / 2) - isoX / (TILE_WIDTH / 2)) / 2;
+        return { x: Math.floor(x), y: Math.floor(y) };
+      }
+
+      // ============================================
+      // Wallet Functions
+      // ============================================
+
+      async function connectWallet() {
+        if (typeof ethers === "undefined") {
+          alert("Wallet library failed to load. Please refresh the page.");
+          return;
+        }
+
+        if (!window.ethereum) {
+          alert("Please install MetaMask or another Web3 wallet");
+          return;
+        }
+
+        try {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          walletAddress = await signer.getAddress();
+
+          const balance = await provider.getBalance(walletAddress);
+          walletBalance = ethers.utils.formatEther(balance);
+
+          // Update UI
+          document.getElementById("btn-wallet").textContent =
+            walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+          document.getElementById("btn-wallet").classList.add("connected");
+          document.getElementById("wallet-panel").style.display = "block";
+          document.getElementById("wallet-address").textContent =
+            walletAddress.slice(0, 10) + "..." + walletAddress.slice(-8);
+          document.getElementById("wallet-balance").textContent =
+            parseFloat(walletBalance).toFixed(4);
+
+          // Load chain config
+          const configRes = await fetch(`${API_URL}/api/payments/config`);
+          chainConfig = (await configRes.json()).config;
+
+          console.log("Wallet connected:", walletAddress);
+        } catch (error) {
+          console.error("Failed to connect wallet:", error);
+          alert("Failed to connect wallet: " + error.message);
+        }
+      }
+
+      async function getParcelQuote(x, y) {
+        try {
+          const res = await fetch(
+            `${API_URL}/api/payments/quote?x=${x}&y=${y}`,
+          );
+          const data = await res.json();
+          return data.quote;
+        } catch (error) {
+          console.error("Failed to get quote:", error);
+          return null;
+        }
+      }
+
+      async function purchaseWithEth() {
+        if (!pendingPurchase || !signer) return;
+
+        const { x, y, quote } = pendingPurchase;
+
+        try {
+          // Send transaction to treasury
+          const tx = await signer.sendTransaction({
+            to: chainConfig.treasuryAddress,
+            value: ethers.utils.parseEther(quote.priceEth),
+          });
+
+          console.log("Transaction sent:", tx.hash);
+
+          // Wait for confirmation
+          const receipt = await tx.wait(1);
+          console.log("Transaction confirmed:", receipt);
+
+          // Register purchase with backend
+          const res = await fetch(`${API_URL}/api/payments/purchase`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              agentId: walletAddress, // Use wallet as agent ID
+              walletAddress,
+              x,
+              y,
+              currency: "ETH",
+              txHash: tx.hash,
+            }),
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            alert("Purchase successful!");
+            closePurchaseModal();
+            await loadCityData();
+            render();
+          } else {
+            alert("Purchase failed: " + result.error);
+          }
+        } catch (error) {
+          console.error("Purchase failed:", error);
+          alert("Purchase failed: " + error.message);
+        }
+      }
+
+      function showPurchaseModal(x, y, quote) {
+        pendingPurchase = { x, y, quote };
+
+        document.getElementById("purchase-location").textContent =
+          `Parcel (${x}, ${y})`;
+        document.getElementById("price-eth").textContent = quote.priceEth;
+        document.getElementById("price-molt").textContent = quote.priceMolt;
+
+        if (quote.isPremium) {
+          document.getElementById("premium-info").style.display = "block";
+          document.getElementById("premium-reason").textContent = quote.reason;
+        } else {
+          document.getElementById("premium-info").style.display = "none";
+        }
+
+        document.getElementById("modal-overlay").style.display = "block";
+        document.getElementById("purchase-modal").style.display = "block";
+      }
+
+      function closePurchaseModal() {
+        pendingPurchase = null;
+        document.getElementById("modal-overlay").style.display = "none";
+        document.getElementById("purchase-modal").style.display = "none";
+      }
+
+      // ============================================
+      // PixiJS Initialization
+      // ============================================
+
+      async function initPixi() {
+        app = new PIXI.Application({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: COLORS.night,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+
+        document.getElementById("game-container").appendChild(app.view);
+
+        worldContainer = new PIXI.Container();
+        worldContainer.sortableChildren = true;
+        app.stage.addChild(worldContainer);
+
+        worldContainer.x = app.screen.width / 2;
+        worldContainer.y = 100;
+
+        setupInteractions();
+
+        window.addEventListener("resize", () => {
+          app.renderer.resize(window.innerWidth, window.innerHeight);
+        });
+      }
+
+      // ============================================
+      // Drawing Functions
+      // ============================================
+
+      function drawTile(x, y, color, height = 0) {
+        const iso = cartToIso(x, y);
+        const graphics = new PIXI.Graphics();
+
+        // Top face
+        graphics.beginFill(color);
+        graphics.moveTo(iso.x, iso.y - height);
+        graphics.lineTo(
+          iso.x + TILE_WIDTH / 2,
+          iso.y + TILE_HEIGHT / 2 - height,
+        );
+        graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - height);
+        graphics.lineTo(
+          iso.x - TILE_WIDTH / 2,
+          iso.y + TILE_HEIGHT / 2 - height,
+        );
+        graphics.closePath();
+        graphics.endFill();
+
+        if (height > 0) {
+          // Left face
+          graphics.beginFill(darkenColor(color, 0.7));
+          graphics.moveTo(
+            iso.x - TILE_WIDTH / 2,
+            iso.y + TILE_HEIGHT / 2 - height,
+          );
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - height);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+          graphics.closePath();
+          graphics.endFill();
+
+          // Right face
+          graphics.beginFill(darkenColor(color, 0.5));
+          graphics.moveTo(
+            iso.x + TILE_WIDTH / 2,
+            iso.y + TILE_HEIGHT / 2 - height,
+          );
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - height);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+          graphics.closePath();
+          graphics.endFill();
+        }
+
+        graphics.zIndex = x + y;
+        return graphics;
+      }
+
+      // Check if there's a road at given coordinates
+      function hasRoadAt(x, y) {
+        return roads.some((r) => r.parcelId === `parcel_${x}_${y}`);
+      }
+
+      // Get road connections in grid coordinates
+      // In isometric: grid north (y-1) = screen up-right, grid east (x+1) = screen down-right
+      function getRoadConnections(x, y) {
+        return {
+          nw: hasRoadAt(x - 1, y), // West in grid = NW edge (up-left on screen)
+          ne: hasRoadAt(x, y - 1), // North in grid = NE edge (up-right on screen)
+          se: hasRoadAt(x + 1, y), // East in grid = SE edge (down-right on screen)
+          sw: hasRoadAt(x, y + 1), // South in grid = SW edge (down-left on screen)
+        };
+      }
+
+      function drawRoad(x, y) {
+        const iso = cartToIso(x, y);
+        const conn = getRoadConnections(x, y);
+
+        // Try to use road sprites
+        if (roadSprites.size > 0) {
+          // Map connection pattern to road tile type
+          // conn: { nw, ne, se, sw } - which directions have adjacent roads
+          const connCount = [conn.nw, conn.ne, conn.se, conn.sw].filter(
+            Boolean,
+          ).length;
+
+          let roadType = null;
+
+          if (connCount === 4) {
+            // 4-way intersection with sidewalks
+            roadType = "road_089";
+          } else if (connCount === 3) {
+            // T-intersection - based on which direction is missing
+            if (!conn.sw)
+              roadType = "road_103"; // missing SW
+            else if (!conn.nw)
+              roadType = "road_095"; // missing NW
+            else if (!conn.ne)
+              roadType = "road_096"; // missing NE
+            else if (!conn.se) roadType = "road_088"; // missing SE
+          } else if (connCount === 2) {
+            if (conn.ne && conn.sw) {
+              // Straight NE-SW
+              roadType = "road_081";
+            } else if (conn.nw && conn.se) {
+              // Straight NW-SE
+              roadType = "road_073";
+            } else if (conn.nw && conn.ne) {
+              // Corner top (NW + NE)
+              roadType = "road_125";
+            } else if (conn.ne && conn.se) {
+              // Corner right (NE + SE)
+              roadType = "road_126";
+            } else if (conn.se && conn.sw) {
+              // Corner bottom (SE + SW)
+              roadType = "road_124";
+            } else if (conn.sw && conn.nw) {
+              // Corner left (SW + NW)
+              roadType = "road_125";
+            }
+          } else if (connCount === 1) {
+            // Dead end - use correct sprite based on which direction has the connection
+            if (conn.sw)
+              roadType = "road_110"; // NE dead-end (road goes to SW)
+            else if (conn.ne)
+              roadType = "road_116"; // SW dead-end (road goes to NE)
+            else if (conn.nw)
+              roadType = "road_111"; // SE dead-end (road goes to NW)
+            else if (conn.se) roadType = "road_104"; // NW dead-end (road goes to SE)
+          } else {
+            // Isolated road tile
+            roadType = "road_080";
+          }
+
+          if (roadType && roadSprites.has(roadType)) {
+            const { texture, config } = roadSprites.get(roadType);
+            const sprite = new PIXI.Sprite(texture);
+            const scale = TILE_WIDTH / config.width;
+            sprite.scale.set(scale);
+            sprite.anchor.set(config.anchor.x, config.anchor.y);
+            sprite.x = iso.x;
+            sprite.y = iso.y + TILE_HEIGHT;
+            sprite.zIndex = x + y;
+            return sprite;
+          }
+        }
+
+        // Fallback to procedural drawing
+        const graphics = new PIXI.Graphics();
+
+        const hw = TILE_WIDTH / 2; // 32
+        const hh = TILE_HEIGHT / 2; // 16
+
+        // Road colors
+        const roadColor = 0x454545;
+        const sidewalkColor = 0x606060;
+        const lineColor = 0xcccc33;
+        const whiteLineColor = 0xffffff;
+
+        // Tile vertices
+        const top = { x: iso.x, y: iso.y };
+        const right = { x: iso.x + hw, y: iso.y + hh };
+        const bottom = { x: iso.x, y: iso.y + TILE_HEIGHT };
+        const left = { x: iso.x - hw, y: iso.y + hh };
+
+        // Edge midpoints (where roads connect to neighbors)
+        const midNE = { x: (top.x + right.x) / 2, y: (top.y + right.y) / 2 };
+        const midSE = {
+          x: (right.x + bottom.x) / 2,
+          y: (right.y + bottom.y) / 2,
+        };
+        const midSW = {
+          x: (bottom.x + left.x) / 2,
+          y: (bottom.y + left.y) / 2,
+        };
+        const midNW = { x: (left.x + top.x) / 2, y: (left.y + top.y) / 2 };
+
+        // Center of tile
+        const cx = iso.x;
+        const cy = iso.y + hh;
+
+        // Draw sidewalk border
+        graphics.beginFill(sidewalkColor);
+        graphics.moveTo(top.x, top.y - 1);
+        graphics.lineTo(right.x + 1, right.y);
+        graphics.lineTo(bottom.x, bottom.y + 1);
+        graphics.lineTo(left.x - 1, left.y);
+        graphics.closePath();
+        graphics.endFill();
+
+        // Draw main road surface
+        graphics.beginFill(roadColor);
+        graphics.moveTo(top.x, top.y);
+        graphics.lineTo(right.x, right.y);
+        graphics.lineTo(bottom.x, bottom.y);
+        graphics.lineTo(left.x, left.y);
+        graphics.closePath();
+        graphics.endFill();
+
+        // Count connections
+        const connCount = [conn.nw, conn.ne, conn.se, conn.sw].filter(
+          Boolean,
+        ).length;
+
+        // Draw road markings - yellow dashed center lines
+        graphics.lineStyle(2, lineColor, 0.85);
+
+        // Draw line from center to each connected edge midpoint
+        if (conn.ne) {
+          // Dashed line to NE
+          drawDashedLine(graphics, cx, cy, midNE.x, midNE.y, 4, 4);
+        }
+        if (conn.se) {
+          // Dashed line to SE
+          drawDashedLine(graphics, cx, cy, midSE.x, midSE.y, 4, 4);
+        }
+        if (conn.sw) {
+          // Dashed line to SW
+          drawDashedLine(graphics, cx, cy, midSW.x, midSW.y, 4, 4);
+        }
+        if (conn.nw) {
+          // Dashed line to NW
+          drawDashedLine(graphics, cx, cy, midNW.x, midNW.y, 4, 4);
+        }
+
+        // Dead end - draw a circle
+        if (connCount === 0) {
+          graphics.lineStyle(0);
+          graphics.beginFill(lineColor, 0.6);
+          graphics.drawCircle(cx, cy, 4);
+          graphics.endFill();
+        }
+
+        // For straight roads (2 opposite connections), draw continuous line
+        if (connCount === 2) {
+          if (conn.ne && conn.sw) {
+            // NE-SW diagonal road
+            graphics.lineStyle(2, lineColor, 0.85);
+            graphics.moveTo(midNE.x, midNE.y);
+            graphics.lineTo(midSW.x, midSW.y);
+          } else if (conn.nw && conn.se) {
+            // NW-SE diagonal road
+            graphics.lineStyle(2, lineColor, 0.85);
+            graphics.moveTo(midNW.x, midNW.y);
+            graphics.lineTo(midSE.x, midSE.y);
+          }
+        }
+
+        // White edge lines on road border
+        graphics.lineStyle(1, whiteLineColor, 0.2);
+        graphics.moveTo(top.x, top.y);
+        graphics.lineTo(right.x, right.y);
+        graphics.lineTo(bottom.x, bottom.y);
+        graphics.lineTo(left.x, left.y);
+        graphics.closePath();
+
+        graphics.zIndex = x + y;
+        return graphics;
+      }
+
+      // Helper to draw dashed lines
+      function drawDashedLine(graphics, x1, y1, x2, y2, dashLen, gapLen) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dashCount = Math.floor(dist / (dashLen + gapLen));
+        const ux = dx / dist;
+        const uy = dy / dist;
+
+        for (let i = 0; i < dashCount; i++) {
+          const startX = x1 + ux * i * (dashLen + gapLen);
+          const startY = y1 + uy * i * (dashLen + gapLen);
+          const endX = startX + ux * dashLen;
+          const endY = startY + uy * dashLen;
+          graphics.moveTo(startX, startY);
+          graphics.lineTo(endX, endY);
+        }
+      }
+
+      function drawPowerLine(from, to) {
+        const isoFrom = cartToIso(from.x, from.y);
+        const isoTo = cartToIso(to.x, to.y);
+        const graphics = new PIXI.Graphics();
+
+        // Pole at each end
+        graphics.beginFill(0x8b4513);
+        graphics.drawRect(isoFrom.x - 2, isoFrom.y - 20, 4, 20);
+        graphics.drawRect(isoTo.x - 2, isoTo.y - 20, 4, 20);
+        graphics.endFill();
+
+        // Wire
+        graphics.lineStyle(2, COLORS.powerLine, 0.9);
+        graphics.moveTo(isoFrom.x, isoFrom.y - 18);
+        // Catenary curve
+        const midX = (isoFrom.x + isoTo.x) / 2;
+        const midY = (isoFrom.y + isoTo.y) / 2 - 10;
+        graphics.quadraticCurveTo(midX, midY, isoTo.x, isoTo.y - 18);
+
+        graphics.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.3;
+        return graphics;
+      }
+
+      function drawWaterPipe(from, to) {
+        const isoFrom = cartToIso(from.x, from.y);
+        const isoTo = cartToIso(to.x, to.y);
+        const graphics = new PIXI.Graphics();
+
+        graphics.lineStyle(6, COLORS.waterPipe, 0.7);
+        graphics.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2);
+        graphics.lineTo(isoTo.x, isoTo.y + TILE_HEIGHT / 2);
+
+        // Pipe joints
+        graphics.beginFill(0x336699);
+        graphics.drawCircle(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2, 5);
+        graphics.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 5);
+        graphics.endFill();
+
+        graphics.zIndex = 0.1; // Under everything
+        return graphics;
+      }
+
+      function drawBuilding(x, y, type, powered = true, customSprite = null, buildingFloors = 1) {
+        const iso = cartToIso(x, y);
+
+        // Try to use custom uploaded sprite first
+        if (customSprite && spriteCache.has(customSprite)) {
+          const sprite = new PIXI.Sprite(spriteCache.get(customSprite));
+          sprite.anchor.set(0.5, 1);
+          sprite.x = iso.x;
+          sprite.y = iso.y + TILE_HEIGHT;
+          sprite.zIndex = x + y;
+          if (!powered && !isDaylight) sprite.alpha = 0.5;
+          return sprite;
+        }
+
+        // For houses, use stacked brick layers with roof
+        if (type === "house" && houseBricks.length > 0 && houseRoofs.length > 0) {
+          const container = new PIXI.Container();
+          container.sortableChildren = true;
+
+          // Generate consistent house style based on position, use stored floors
+          const houseStyle = generateStackedHouse(x, y, x * 1000 + y);
+          const floors = buildingFloors || houseStyle.floors;
+          const { brickIndex, roofIndex } = houseStyle;
+
+          const brick = houseBricks[brickIndex % houseBricks.length];
+          const roof = houseRoofs[roofIndex % houseRoofs.length];
+
+          // Scale to fit tile
+          const scale = TILE_WIDTH / brick.width;
+          const stackHeight = brick.stackHeight * scale;
+
+          // Draw brick layers from bottom to top
+          for (let i = 0; i < floors; i++) {
+            const brickSprite = new PIXI.Sprite(brick.texture);
+            brickSprite.scale.set(scale);
+            brickSprite.anchor.set(0.5, 1);
+            brickSprite.x = iso.x;
+            brickSprite.y = iso.y + TILE_HEIGHT - (i * stackHeight);
+            brickSprite.zIndex = i;
+            container.addChild(brickSprite);
+          }
+
+          // Add roof on top
+          const roofSprite = new PIXI.Sprite(roof.texture);
+          roofSprite.scale.set(scale);
+          roofSprite.anchor.set(0.5, 1);
+          roofSprite.x = iso.x;
+          roofSprite.y = iso.y + TILE_HEIGHT - (floors * stackHeight);
+          roofSprite.zIndex = floors;
+          container.addChild(roofSprite);
+
+          container.zIndex = x + y;
+          if (!powered && !isDaylight) container.alpha = 0.5;
+          return container;
+        }
+
+        // For offices, use stacked floor layers with roof (floors affect price)
+        if (type === "office" && officeFloors.length > 0 && officeRoofs.length > 0) {
+          const container = new PIXI.Container();
+          container.sortableChildren = true;
+
+          // Generate consistent office style based on position, use stored floors
+          const officeStyle = generateStackedOffice(x, y, x * 1000 + y + 5000);
+          const floors = buildingFloors || officeStyle.floors;
+          const { floorIndex, roofIndex } = officeStyle;
+
+          const floor = officeFloors[floorIndex % officeFloors.length];
+          const roof = officeRoofs[roofIndex % officeRoofs.length];
+
+          // Scale to fit tile
+          const scale = TILE_WIDTH / floor.width;
+          const stackHeight = floor.stackHeight * scale;
+
+          // Draw floor layers from bottom to top
+          for (let i = 0; i < floors; i++) {
+            const floorSprite = new PIXI.Sprite(floor.texture);
+            floorSprite.scale.set(scale);
+            floorSprite.anchor.set(0.5, 1);
+            floorSprite.x = iso.x;
+            floorSprite.y = iso.y + TILE_HEIGHT - (i * stackHeight);
+            floorSprite.zIndex = i;
+            container.addChild(floorSprite);
+          }
+
+          // Add roof on top
+          const roofSprite = new PIXI.Sprite(roof.texture);
+          roofSprite.scale.set(scale);
+          roofSprite.anchor.set(0.5, 1);
+          roofSprite.x = iso.x;
+          roofSprite.y = iso.y + TILE_HEIGHT - (floors * stackHeight);
+          roofSprite.zIndex = floors;
+          container.addChild(roofSprite);
+
+          container.zIndex = x + y;
+          if (!powered && !isDaylight) container.alpha = 0.5;
+          return container;
+        }
+
+        // Try to use default Kenney sprites for other building types
+        if (defaultSprites.has(type)) {
+          const { texture, config } = defaultSprites.get(type);
+          const sprite = new PIXI.Sprite(texture);
+
+          // Scale sprite to fit our tile size
+          // Kenney sprites have base width matching their full width, scale to fit TILE_WIDTH
+          const scale = TILE_WIDTH / config.width;
+          sprite.scale.set(scale);
+
+          // Position at tile center, anchored at bottom-center of sprite
+          sprite.anchor.set(config.anchor.x, config.anchor.y);
+          sprite.x = iso.x;
+          sprite.y = iso.y + TILE_HEIGHT;
+          sprite.zIndex = x + y;
+
+          if (!powered && !isDaylight) sprite.alpha = 0.5;
+          return sprite;
+        }
+
+        // Fallback to procedural drawing
+        const graphics = new PIXI.Graphics();
+
+        switch (type) {
+          case "house":
+            drawHouse(graphics, iso.x, iso.y, powered);
+            break;
+          case "shop":
+            drawShop(graphics, iso.x, iso.y, powered);
+            break;
+          case "office":
+            drawOffice(graphics, iso.x, iso.y, powered);
+            break;
+          case "factory":
+            drawFactory(graphics, iso.x, iso.y, powered);
+            break;
+          case "power_plant":
+            drawPowerPlant(graphics, iso.x, iso.y, powered);
+            break;
+          case "water_tower":
+            drawWaterTower(graphics, iso.x, iso.y);
+            break;
+          case "park":
+            drawPark(graphics, iso.x, iso.y);
+            break;
+          case "city_hall":
+            drawCityHall(graphics, iso.x, iso.y, powered);
+            break;
+          default:
+            const color = COLORS.building[type] || 0xcccccc;
+            drawIsoBox(graphics, iso.x, iso.y, 25, color);
+        }
+
+        if (
+          !powered &&
+          !isDaylight &&
+          type !== "park" &&
+          type !== "water_tower"
+        ) {
+          graphics.alpha = 0.5;
+        }
+
+        graphics.zIndex = x + y;
+        return graphics;
+      }
+
+      // Helper: Draw isometric box matching drawTile coordinate system
+      // cx = center X, isoY = iso.y from cartToIso, height = building height in pixels
+      function drawIsoBox(g, cx, isoY, height, color) {
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Top face (diamond)
+        g.beginFill(color);
+        g.moveTo(cx, isoY - height);
+        g.lineTo(cx + hw, isoY + hh - height);
+        g.lineTo(cx, isoY + TILE_HEIGHT - height);
+        g.lineTo(cx - hw, isoY + hh - height);
+        g.closePath();
+        g.endFill();
+
+        // Left face
+        g.beginFill(darkenColor(color, 0.7));
+        g.moveTo(cx - hw, isoY + hh - height);
+        g.lineTo(cx, isoY + TILE_HEIGHT - height);
+        g.lineTo(cx, isoY + TILE_HEIGHT);
+        g.lineTo(cx - hw, isoY + hh);
+        g.closePath();
+        g.endFill();
+
+        // Right face
+        g.beginFill(darkenColor(color, 0.5));
+        g.moveTo(cx + hw, isoY + hh - height);
+        g.lineTo(cx, isoY + TILE_HEIGHT - height);
+        g.lineTo(cx, isoY + TILE_HEIGHT);
+        g.lineTo(cx + hw, isoY + hh);
+        g.closePath();
+        g.endFill();
+      }
+
+      // House with pitched roof, chimney, door, windows
+      function drawHouse(g, cx, isoY, powered) {
+        const wallColor = 0xe8d4a4;
+        const roofColor = 0xc45c3b;
+        const doorColor = 0x8b4513;
+        const windowColor = powered && !isDaylight ? 0xffffaa : 0x87ceeb;
+
+        const wallHeight = 20;
+        const roofHeight = 14;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Wall box
+        drawIsoBox(g, cx, isoY, wallHeight, wallColor);
+
+        // Pitched roof - left slope (facing camera)
+        g.beginFill(roofColor);
+        g.moveTo(cx - hw - 2, isoY + hh - wallHeight); // left corner
+        g.lineTo(cx, isoY - wallHeight - roofHeight); // peak
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight); // bottom center
+        g.closePath();
+        g.endFill();
+
+        // Pitched roof - right slope
+        g.beginFill(darkenColor(roofColor, 0.7));
+        g.moveTo(cx + hw + 2, isoY + hh - wallHeight); // right corner
+        g.lineTo(cx, isoY - wallHeight - roofHeight); // peak
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight); // bottom center
+        g.closePath();
+        g.endFill();
+
+        // Door on left face
+        g.beginFill(doorColor);
+        const doorBottom = isoY + TILE_HEIGHT;
+        const doorTop = doorBottom - 10;
+        g.moveTo(cx - hw + 6, isoY + hh - 3);
+        g.lineTo(cx - 6, doorTop + hh);
+        g.lineTo(cx - 6, doorBottom + hh - 6);
+        g.lineTo(cx - hw + 6, doorBottom - 6);
+        g.closePath();
+        g.endFill();
+
+        // Window on right face
+        g.beginFill(windowColor, powered && !isDaylight ? 0.9 : 0.7);
+        const winY = isoY + hh - wallHeight + 6;
+        g.moveTo(cx + 6, winY + hh);
+        g.lineTo(cx + hw - 6, winY);
+        g.lineTo(cx + hw - 6, winY + 8);
+        g.lineTo(cx + 6, winY + 8 + hh);
+        g.closePath();
+        g.endFill();
+
+        // Chimney
+        g.beginFill(0x8b4513);
+        g.drawRect(cx + 6, isoY - wallHeight - roofHeight + 2, 5, 10);
+        g.endFill();
+        g.beginFill(0x666666);
+        g.drawRect(cx + 5, isoY - wallHeight - roofHeight, 7, 3);
+        g.endFill();
+      }
+
+      // Shop with awning, display window, sign
+      function drawShop(g, cx, isoY, powered) {
+        const wallColor = 0xa4c8e8;
+        const awningColor = 0xff6b6b;
+        const windowColor = powered && !isDaylight ? 0xffffcc : 0x88ddff;
+
+        const wallHeight = 24;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Wall box
+        drawIsoBox(g, cx, isoY, wallHeight, wallColor);
+
+        // Large display window on right face
+        g.beginFill(windowColor, 0.85);
+        g.moveTo(cx + 4, isoY + hh + 2);
+        g.lineTo(cx + hw - 4, isoY + hh - 6);
+        g.lineTo(cx + hw - 4, isoY + hh - wallHeight + 8);
+        g.lineTo(cx + 4, isoY + hh - wallHeight + 16);
+        g.closePath();
+        g.endFill();
+
+        // Window frame
+        g.lineStyle(1, 0x333333);
+        g.moveTo(cx + 4, isoY + hh + 2);
+        g.lineTo(cx + hw - 4, isoY + hh - 6);
+        g.lineTo(cx + hw - 4, isoY + hh - wallHeight + 8);
+        g.lineTo(cx + 4, isoY + hh - wallHeight + 16);
+        g.closePath();
+        g.lineStyle(0);
+
+        // Awning stripes - left side (front facing)
+        const awningDrop = 8;
+        g.beginFill(awningColor);
+        g.moveTo(cx - hw - 3, isoY + hh - wallHeight);
+        g.lineTo(cx - hw - 3, isoY + hh - wallHeight + awningDrop);
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight + awningDrop + 2);
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight);
+        g.closePath();
+        g.endFill();
+
+        // Awning - right side
+        g.beginFill(darkenColor(awningColor, 0.7));
+        g.moveTo(cx + hw + 3, isoY + hh - wallHeight);
+        g.lineTo(cx + hw + 3, isoY + hh - wallHeight + awningDrop);
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight + awningDrop + 2);
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight);
+        g.closePath();
+        g.endFill();
+
+        // Door on left face
+        g.beginFill(0x8b4513);
+        g.moveTo(cx - hw + 4, isoY + hh + 4);
+        g.lineTo(cx - 8, isoY + TILE_HEIGHT - 4);
+        g.lineTo(cx - 8, isoY + TILE_HEIGHT - 14);
+        g.lineTo(cx - hw + 4, isoY + hh - 6);
+        g.closePath();
+        g.endFill();
+
+        // Sign board above awning
+        g.beginFill(0xffffff);
+        g.drawRect(cx - 12, isoY - wallHeight - 8, 24, 10);
+        g.endFill();
+        g.beginFill(0x333399);
+        g.drawRect(cx - 10, isoY - wallHeight - 6, 20, 6);
+        g.endFill();
+      }
+
+      // Office building with multiple floors, glass facade
+      function drawOffice(g, cx, isoY, powered) {
+        const wallColor = 0x7777bb;
+        const windowColor = powered && !isDaylight ? 0xffffaa : 0xaaddff;
+
+        const wallHeight = 55;
+        const floors = 4;
+        const floorHeight = (wallHeight - 5) / floors;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Main building
+        drawIsoBox(g, cx, isoY, wallHeight, wallColor);
+
+        // Windows on right face - grid pattern
+        for (let f = 0; f < floors; f++) {
+          const floorBase = isoY + hh - wallHeight + 5 + f * floorHeight;
+
+          g.beginFill(windowColor, powered && !isDaylight ? 0.9 : 0.6);
+          // Window
+          g.moveTo(cx + 5, floorBase + hh + 3);
+          g.lineTo(cx + hw - 5, floorBase + 3);
+          g.lineTo(cx + hw - 5, floorBase + floorHeight - 3);
+          g.lineTo(cx + 5, floorBase + floorHeight + hh - 3);
+          g.closePath();
+          g.endFill();
+
+          // Window divider
+          g.lineStyle(1, darkenColor(wallColor, 0.6));
+          g.moveTo(cx + hw / 2, floorBase + hh / 2 + 3);
+          g.lineTo(cx + hw / 2, floorBase + floorHeight + hh / 2 - 3);
+          g.lineStyle(0);
+        }
+
+        // Windows on left face
+        for (let f = 0; f < floors; f++) {
+          const floorBase = isoY + hh - wallHeight + 5 + f * floorHeight;
+
+          g.beginFill(windowColor, powered && !isDaylight ? 0.9 : 0.6);
+          g.moveTo(cx - 5, floorBase + hh + TILE_HEIGHT / 2 + 3);
+          g.lineTo(cx - hw + 5, floorBase + hh + 3);
+          g.lineTo(cx - hw + 5, floorBase + hh + floorHeight - 3);
+          g.lineTo(cx - 5, floorBase + hh + TILE_HEIGHT / 2 + floorHeight - 3);
+          g.closePath();
+          g.endFill();
+        }
+
+        // Rooftop AC unit
+        g.beginFill(0x666666);
+        g.drawRect(cx - 6, isoY - wallHeight - 6, 12, 6);
+        g.endFill();
+        g.beginFill(0x555555);
+        g.drawRect(cx - 4, isoY - wallHeight - 4, 8, 4);
+        g.endFill();
+      }
+
+      // Factory with smokestacks
+      function drawFactory(g, cx, isoY, powered) {
+        const wallColor = 0x777777;
+        const roofColor = 0x555555;
+
+        const wallHeight = 32;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Main building
+        drawIsoBox(g, cx, isoY, wallHeight, wallColor);
+
+        // Sawtooth roof sections
+        for (let i = 0; i < 2; i++) {
+          const offset = (i - 0.5) * 14;
+          g.beginFill(roofColor);
+          g.moveTo(cx + offset - 7, isoY - wallHeight);
+          g.lineTo(cx + offset, isoY - wallHeight - 10);
+          g.lineTo(cx + offset + 7, isoY - wallHeight);
+          g.closePath();
+          g.endFill();
+        }
+
+        // Smokestacks
+        for (let i = 0; i < 2; i++) {
+          const sx = cx - 10 + i * 20;
+          // Stack body
+          g.beginFill(0x8b4513);
+          g.drawRect(sx - 4, isoY - wallHeight - 22, 8, 22);
+          g.endFill();
+          // Stack rim
+          g.beginFill(0x666666);
+          g.drawRect(sx - 5, isoY - wallHeight - 24, 10, 3);
+          g.endFill();
+
+          // Smoke puffs
+          if (powered) {
+            g.beginFill(0xcccccc, 0.6);
+            g.drawCircle(sx, isoY - wallHeight - 30, 6);
+            g.drawCircle(sx + 3, isoY - wallHeight - 38, 5);
+            g.drawCircle(sx - 2, isoY - wallHeight - 45, 4);
+            g.endFill();
+          }
+        }
+
+        // Large industrial door on front
+        g.beginFill(0x444444);
+        g.moveTo(cx - hw + 8, isoY + hh);
+        g.lineTo(cx - 2, isoY + TILE_HEIGHT - 2);
+        g.lineTo(cx - 2, isoY + TILE_HEIGHT - 14);
+        g.lineTo(cx - hw + 8, isoY + hh - 12);
+        g.closePath();
+        g.endFill();
+      }
+
+      // Power plant with cooling tower
+      function drawPowerPlant(g, cx, isoY, powered) {
+        const buildingColor = 0xddaa00;
+        const towerColor = 0xcccccc;
+
+        const wallHeight = 28;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Main building (offset to make room for tower)
+        drawIsoBox(g, cx + 10, isoY + 5, wallHeight - 5, buildingColor);
+
+        // Cooling tower (hyperbolic shape)
+        const towerX = cx - 8;
+        const towerBase = isoY + TILE_HEIGHT;
+        const towerHeight = 50;
+
+        // Tower body
+        g.beginFill(towerColor);
+        g.moveTo(towerX - 10, towerBase);
+        g.quadraticCurveTo(
+          towerX - 6,
+          towerBase - towerHeight / 2,
+          towerX - 12,
+          towerBase - towerHeight,
+        );
+        g.lineTo(towerX + 12, towerBase - towerHeight);
+        g.quadraticCurveTo(
+          towerX + 6,
+          towerBase - towerHeight / 2,
+          towerX + 10,
+          towerBase,
+        );
+        g.closePath();
+        g.endFill();
+
+        // Tower shading (right half darker)
+        g.beginFill(darkenColor(towerColor, 0.8));
+        g.moveTo(towerX, towerBase);
+        g.quadraticCurveTo(
+          towerX + 2,
+          towerBase - towerHeight / 2,
+          towerX,
+          towerBase - towerHeight,
+        );
+        g.lineTo(towerX + 12, towerBase - towerHeight);
+        g.quadraticCurveTo(
+          towerX + 6,
+          towerBase - towerHeight / 2,
+          towerX + 10,
+          towerBase,
+        );
+        g.closePath();
+        g.endFill();
+
+        // Steam from tower
+        if (powered) {
+          g.beginFill(0xffffff, 0.7);
+          g.drawCircle(towerX, towerBase - towerHeight - 8, 7);
+          g.drawCircle(towerX + 4, towerBase - towerHeight - 18, 6);
+          g.drawCircle(towerX - 2, towerBase - towerHeight - 26, 5);
+          g.endFill();
+        }
+
+        // Lightning bolt symbol on building
+        g.beginFill(0x222222);
+        const bx = cx + 12;
+        const by = isoY - wallHeight + 20;
+        g.moveTo(bx, by);
+        g.lineTo(bx + 5, by + 6);
+        g.lineTo(bx + 2, by + 6);
+        g.lineTo(bx + 6, by + 14);
+        g.lineTo(bx + 1, by + 8);
+        g.lineTo(bx + 4, by + 8);
+        g.closePath();
+        g.endFill();
+      }
+
+      // Water tower
+      function drawWaterTower(g, cx, isoY) {
+        const tankColor = 0x4a90a4;
+        const legColor = 0x555555;
+
+        const legHeight = 35;
+        const tankHeight = 18;
+        const tankBase = isoY + TILE_HEIGHT - legHeight;
+
+        // Four legs
+        g.beginFill(legColor);
+        const legOffsets = [
+          { x: -10, y: 3 },
+          { x: 10, y: 3 },
+          { x: -6, y: 8 },
+          { x: 6, y: 8 },
+        ];
+        for (const off of legOffsets) {
+          g.drawRect(cx + off.x - 2, tankBase + off.y, 4, legHeight - off.y);
+        }
+        g.endFill();
+
+        // Cross braces
+        g.lineStyle(2, legColor);
+        g.moveTo(cx - 10, tankBase + legHeight / 2);
+        g.lineTo(cx + 10, tankBase + legHeight / 2 + 5);
+        g.moveTo(cx - 10, tankBase + legHeight / 2 + 5);
+        g.lineTo(cx + 10, tankBase + legHeight / 2);
+        g.lineStyle(0);
+
+        // Platform
+        g.beginFill(0x666666);
+        g.drawEllipse(cx, tankBase + 5, 14, 7);
+        g.endFill();
+
+        // Tank body (cylinder)
+        g.beginFill(tankColor);
+        g.drawEllipse(cx, tankBase - tankHeight / 2, 13, 8);
+        g.endFill();
+
+        // Tank side shading
+        g.beginFill(darkenColor(tankColor, 0.7));
+        g.moveTo(cx, tankBase - tankHeight);
+        g.lineTo(cx + 13, tankBase - tankHeight / 2);
+        g.lineTo(cx + 13, tankBase);
+        g.lineTo(cx, tankBase + 5);
+        g.closePath();
+        g.endFill();
+
+        // Tank front
+        g.beginFill(tankColor);
+        g.moveTo(cx, tankBase - tankHeight);
+        g.lineTo(cx - 13, tankBase - tankHeight / 2);
+        g.lineTo(cx - 13, tankBase);
+        g.lineTo(cx, tankBase + 5);
+        g.closePath();
+        g.endFill();
+
+        // Tank top
+        g.beginFill(darkenColor(tankColor, 1.1));
+        g.drawEllipse(cx, tankBase - tankHeight, 13, 6);
+        g.endFill();
+
+        // Conical roof
+        g.beginFill(0x777777);
+        g.moveTo(cx - 12, tankBase - tankHeight);
+        g.lineTo(cx, tankBase - tankHeight - 10);
+        g.lineTo(cx + 12, tankBase - tankHeight);
+        g.closePath();
+        g.endFill();
+      }
+
+      // Park with trees and bench
+      function drawPark(g, cx, isoY) {
+        const grassColor = 0x66aa66;
+        const treeColor = 0x228b22;
+        const trunkColor = 0x8b4513;
+
+        // Grass base (very low)
+        drawIsoBox(g, cx, isoY, 3, grassColor);
+
+        // Trees at various positions
+        const baseY = isoY + TILE_HEIGHT;
+        const treePositions = [
+          { x: cx - 12, y: baseY - 10 },
+          { x: cx + 10, y: baseY - 8 },
+          { x: cx - 3, y: baseY - 18 },
+        ];
+
+        for (const pos of treePositions) {
+          // Tree trunk
+          g.beginFill(trunkColor);
+          g.drawRect(pos.x - 2, pos.y - 12, 4, 14);
+          g.endFill();
+
+          // Foliage layers (darker at bottom)
+          g.beginFill(darkenColor(treeColor, 0.8));
+          g.drawCircle(pos.x, pos.y - 16, 9);
+          g.endFill();
+          g.beginFill(treeColor);
+          g.drawCircle(pos.x - 2, pos.y - 20, 7);
+          g.drawCircle(pos.x + 3, pos.y - 18, 6);
+          g.endFill();
+          g.beginFill(darkenColor(treeColor, 1.2));
+          g.drawCircle(pos.x, pos.y - 23, 5);
+          g.endFill();
+        }
+
+        // Park bench
+        g.beginFill(0x8b4513);
+        // Seat
+        g.drawRect(cx - 10, baseY - 6, 20, 3);
+        // Back
+        g.drawRect(cx - 10, baseY - 12, 20, 2);
+        // Legs
+        g.drawRect(cx - 9, baseY - 6, 2, 8);
+        g.drawRect(cx + 7, baseY - 6, 2, 8);
+        g.endFill();
+
+        // Flower patches
+        const flowerColors = [0xff6b6b, 0xffeb3b, 0xff69b4];
+        for (let i = 0; i < 5; i++) {
+          const fx = cx - 15 + Math.random() * 30;
+          const fy = baseY - 2 - Math.random() * 8;
+          g.beginFill(flowerColors[i % 3]);
+          g.drawCircle(fx, fy, 2);
+          g.endFill();
+        }
+      }
+
+      // City Hall with columns and dome
+      function drawCityHall(g, cx, isoY, powered) {
+        const wallColor = 0xf5f5dc;
+        const roofColor = 0xaa6666;
+        const windowColor = powered && !isDaylight ? 0xffffaa : 0x87ceeb;
+
+        const wallHeight = 40;
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Main building
+        drawIsoBox(g, cx, isoY, wallHeight, wallColor);
+
+        // Columns on left face
+        for (let i = 0; i < 3; i++) {
+          const colOffset = (i - 1) * 10;
+          const colX = cx - hw + 8 + colOffset * 0.3;
+          const colY = isoY + hh + colOffset * 0.5;
+
+          g.beginFill(0xeeeeee);
+          g.drawRect(colX - 2, colY - wallHeight + 8, 4, wallHeight - 8);
+          g.endFill();
+          // Capital
+          g.beginFill(0xdddddd);
+          g.drawRect(colX - 3, colY - wallHeight + 5, 6, 4);
+          g.endFill();
+        }
+
+        // Triangular pediment on left face
+        g.beginFill(roofColor);
+        g.moveTo(cx - hw - 3, isoY + hh - wallHeight);
+        g.lineTo(cx - hw / 2, isoY - wallHeight - 12);
+        g.lineTo(cx, isoY + TILE_HEIGHT - wallHeight);
+        g.closePath();
+        g.endFill();
+
+        // Dome base
+        g.beginFill(0x999999);
+        g.drawEllipse(cx, isoY - wallHeight - 8, 12, 6);
+        g.endFill();
+
+        // Dome
+        g.beginFill(0x888888);
+        g.moveTo(cx - 10, isoY - wallHeight - 8);
+        g.quadraticCurveTo(
+          cx,
+          isoY - wallHeight - 28,
+          cx + 10,
+          isoY - wallHeight - 8,
+        );
+        g.closePath();
+        g.endFill();
+
+        // Dome highlight
+        g.beginFill(0x999999);
+        g.moveTo(cx - 8, isoY - wallHeight - 10);
+        g.quadraticCurveTo(
+          cx - 2,
+          isoY - wallHeight - 24,
+          cx + 2,
+          isoY - wallHeight - 10,
+        );
+        g.closePath();
+        g.endFill();
+
+        // Flag pole and flag
+        g.beginFill(0x444444);
+        g.drawRect(cx - 1, isoY - wallHeight - 42, 2, 18);
+        g.endFill();
+        g.beginFill(0xcc0000);
+        g.moveTo(cx + 1, isoY - wallHeight - 42);
+        g.lineTo(cx + 12, isoY - wallHeight - 38);
+        g.lineTo(cx + 1, isoY - wallHeight - 34);
+        g.closePath();
+        g.endFill();
+
+        // Windows on right face
+        for (let row = 0; row < 2; row++) {
+          const winY = isoY + hh - wallHeight + 10 + row * 14;
+          g.beginFill(windowColor, powered && !isDaylight ? 0.9 : 0.7);
+          g.moveTo(cx + 6, winY + hh);
+          g.lineTo(cx + hw - 6, winY);
+          g.lineTo(cx + hw - 6, winY + 10);
+          g.lineTo(cx + 6, winY + 10 + hh);
+          g.closePath();
+          g.endFill();
+        }
+
+        // Grand entrance door
+        g.beginFill(0x654321);
+        g.moveTo(cx - hw + 6, isoY + hh + 4);
+        g.lineTo(cx - 4, isoY + TILE_HEIGHT - 2);
+        g.lineTo(cx - 4, isoY + TILE_HEIGHT - 18);
+        g.lineTo(cx - hw + 6, isoY + hh - 10);
+        g.closePath();
+        g.endFill();
+      }
+
+      function drawAgent(x, y) {
+        const iso = cartToIso(x, y);
+        const graphics = new PIXI.Graphics();
+
+        graphics.beginFill(COLORS.agent);
+        graphics.drawCircle(iso.x, iso.y - 10, 6);
+        graphics.endFill();
+
+        graphics.beginFill(0x000000, 0.3);
+        graphics.drawEllipse(iso.x, iso.y + TILE_HEIGHT / 2, 6, 3);
+        graphics.endFill();
+
+        graphics.zIndex = x + y + 0.5;
+        return graphics;
+      }
+
+      function drawVehicle(x, y) {
+        const iso = cartToIso(x, y);
+        const graphics = new PIXI.Graphics();
+
+        graphics.beginFill(COLORS.vehicle);
+        graphics.drawRoundedRect(iso.x - 8, iso.y - 8, 16, 12, 2);
+        graphics.endFill();
+
+        graphics.beginFill(0x000000, 0.3);
+        graphics.drawEllipse(iso.x, iso.y + TILE_HEIGHT / 2, 8, 4);
+        graphics.endFill();
+
+        graphics.zIndex = x + y + 0.6;
+        return graphics;
+      }
+
+      function drawHighlight(x, y, color = COLORS.highlight) {
+        const iso = cartToIso(x, y);
+        const graphics = new PIXI.Graphics();
+
+        graphics.lineStyle(2, color, 0.8);
+        graphics.moveTo(iso.x, iso.y);
+        graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+        graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+        graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+        graphics.closePath();
+
+        graphics.zIndex = 9999;
+        return graphics;
+      }
+
+      function darkenColor(color, factor) {
+        const r = ((color >> 16) & 0xff) * factor;
+        const g = ((color >> 8) & 0xff) * factor;
+        const b = (color & 0xff) * factor;
+        return (Math.floor(r) << 16) + (Math.floor(g) << 8) + Math.floor(b);
+      }
+
+      // ============================================
+      // Rendering
+      // ============================================
+
+      function render() {
+        worldContainer.removeChildren();
+
+        // Ground tiles
+        for (let y = 0; y < GRID_SIZE; y++) {
+          for (let x = 0; x < GRID_SIZE; x++) {
+            const color = (x + y) % 2 === 0 ? COLORS.grass : COLORS.grassDark;
+            const tile = drawTile(x, y, color);
+            tile.eventMode = "static";
+            tile.cursor = "pointer";
+            tile.on("pointerover", () => onTileHover(x, y));
+            tile.on("pointerdown", () => onTileClick(x, y));
+            worldContainer.addChild(tile);
+          }
+        }
+
+        // Water pipes (under everything)
+        for (const pipe of waterPipes) {
+          const pipeGfx = drawWaterPipe(pipe.from, pipe.to);
+          worldContainer.addChild(pipeGfx);
+        }
+
+        // Roads
+        for (const road of roads) {
+          const match = road.parcelId.match(/parcel_(\d+)_(\d+)/);
+          if (match) {
+            const x = parseInt(match[1]);
+            const y = parseInt(match[2]);
+            worldContainer.addChild(drawRoad(x, y));
+          }
+        }
+
+        // Power lines
+        for (const line of powerLines) {
+          const lineGfx = drawPowerLine(line.from, line.to);
+          worldContainer.addChild(lineGfx);
+        }
+
+        // Buildings
+        for (const building of buildings) {
+          const parcel = parcels.find((p) => p.id === building.parcelId);
+          if (parcel) {
+            const buildingGfx = drawBuilding(
+              parcel.x,
+              parcel.y,
+              building.type,
+              building.powered,
+              building.sprite,
+              building.floors || 1,
+            );
+            worldContainer.addChild(buildingGfx);
+          }
+        }
+
+        // Agents
+        for (const agent of agents) {
+          worldContainer.addChild(
+            drawAgent(agent.currentLocation.x, agent.currentLocation.y),
+          );
+        }
+
+        // Vehicles
+        for (const vehicle of vehicles) {
+          worldContainer.addChild(
+            drawVehicle(vehicle.position.x, vehicle.position.y),
+          );
+        }
+
+        // Day/night
+        app.renderer.background.color = isDaylight ? 0x87ceeb : COLORS.night;
+      }
+
+      // ============================================
+      // Interactions
+      // ============================================
+
+      function setupInteractions() {
+        const container = document.getElementById("game-container");
+
+        container.addEventListener("mousedown", (e) => {
+          if (e.button === 0 && !selectedBuildType) {
+            isDragging = true;
+            lastMousePos = { x: e.clientX, y: e.clientY };
+          }
+        });
+
+        container.addEventListener("mousemove", (e) => {
+          if (isDragging) {
+            worldContainer.x += e.clientX - lastMousePos.x;
+            worldContainer.y += e.clientY - lastMousePos.y;
+            lastMousePos = { x: e.clientX, y: e.clientY };
+          }
+        });
+
+        container.addEventListener("mouseup", () => {
+          isDragging = false;
+        });
+
+        container.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
+          worldContainer.scale.x = Math.max(
+            0.2,
+            Math.min(3, worldContainer.scale.x * scaleFactor),
+          );
+          worldContainer.scale.y = Math.max(
+            0.2,
+            Math.min(3, worldContainer.scale.y * scaleFactor),
+          );
+        });
+
+        // Build menu
+        document.querySelectorAll(".build-option").forEach((el) => {
+          el.addEventListener("click", () => {
+            document
+              .querySelectorAll(".build-option")
+              .forEach((b) => b.classList.remove("selected"));
+            if (selectedBuildType === el.dataset.type) {
+              selectedBuildType = null;
+              hideFloorSelector();
+            } else {
+              selectedBuildType = el.dataset.type;
+              el.classList.add("selected");
+
+              // Show floor selector for house and office
+              if (selectedBuildType === "house" || selectedBuildType === "office") {
+                showFloorSelector(selectedBuildType);
+              } else {
+                hideFloorSelector();
+              }
+            }
+          });
+        });
+
+        // Controls
+        document
+          .getElementById("btn-wallet")
+          .addEventListener("click", connectWallet);
+        document
+          .getElementById("btn-start")
+          .addEventListener("click", startSimulation);
+        document
+          .getElementById("btn-stop")
+          .addEventListener("click", stopSimulation);
+        document.getElementById("btn-init").addEventListener("click", initCity);
+
+        // Purchase modal
+        document
+          .getElementById("btn-pay-eth")
+          .addEventListener("click", purchaseWithEth);
+        document
+          .getElementById("btn-cancel-purchase")
+          .addEventListener("click", closePurchaseModal);
+        document
+          .getElementById("modal-overlay")
+          .addEventListener("click", closePurchaseModal);
+      }
+
+      let highlightGraphics = null;
+      let infraStartPoint = null;
+
+      // Floor selector functions
+      function showFloorSelector(buildingType) {
+        const maxFloors = MAX_FLOORS[buildingType] || 1;
+        const floorButtonsContainer = document.getElementById("floor-buttons");
+
+        // Generate floor buttons
+        floorButtonsContainer.innerHTML = "";
+        for (let i = 1; i <= maxFloors; i++) {
+          const btn = document.createElement("button");
+          btn.className = "floor-btn" + (i === selectedFloors ? " selected" : "");
+          btn.dataset.floors = i;
+          btn.textContent = i;
+          btn.addEventListener("click", () => selectFloors(i, buildingType));
+          floorButtonsContainer.appendChild(btn);
+        }
+
+        // Reset to 1 floor and update cost display
+        selectedFloors = 1;
+        updateFloorCost(buildingType);
+
+        document.getElementById("floor-selector").classList.add("visible");
+      }
+
+      function hideFloorSelector() {
+        document.getElementById("floor-selector").classList.remove("visible");
+        selectedFloors = 1;
+      }
+
+      function selectFloors(floors, buildingType) {
+        selectedFloors = floors;
+
+        // Update button selection
+        document.querySelectorAll(".floor-btn").forEach((btn) => {
+          btn.classList.toggle("selected", parseInt(btn.dataset.floors) === floors);
+        });
+
+        updateFloorCost(buildingType);
+      }
+
+      function updateFloorCost(buildingType) {
+        const costEl = document.getElementById("floor-cost");
+
+        if (buildingType === "house") {
+          // Houses are always free regardless of floors
+          costEl.textContent = "Free";
+          costEl.classList.remove("premium");
+        } else if (buildingType === "office") {
+          // Offices: 1 floor free, additional floors cost 0.0001 ETH each
+          if (selectedFloors === 1) {
+            costEl.textContent = "Free";
+            costEl.classList.remove("premium");
+          } else {
+            const extraFloors = selectedFloors - 1;
+            const cost = (extraFloors * 0.0001).toFixed(4);
+            costEl.textContent = `${cost} ETH`;
+            costEl.classList.add("premium");
+          }
+        }
+      }
+
+      function onTileHover(x, y) {
+        const tooltip = document.getElementById("tooltip");
+        const parcel = parcels.find((p) => p.x === x && p.y === y);
+        const road = roads.find((r) => r.parcelId === `parcel_${x}_${y}`);
+        const building = buildings.find((b) => {
+          const bp = parcels.find((p) => p.id === b.parcelId);
+          return bp && bp.x === x && bp.y === y;
+        });
+
+        let content = `<b>Parcel (${x}, ${y})</b><br>`;
+        if (parcel?.ownerId) {
+          const addr = parcel.ownerId;
+          content += `Owner: ${addr.slice(0, 8)}...<br>`;
+        } else {
+          content += `<span style="color:#4ecdc4">Available for purchase</span><br>`;
+        }
+        if (road) content += `Road (${road.lanes} lanes)<br>`;
+        if (building) {
+          content += `${building.type}: ${building.name}<br>`;
+          content += building.powered ? "⚡ Powered" : "⚠️ No Power";
+        }
+
+        tooltip.innerHTML = content;
+        tooltip.style.display = "block";
+
+        document.addEventListener("mousemove", (e) => {
+          tooltip.style.left = e.clientX + 15 + "px";
+          tooltip.style.top = e.clientY + 15 + "px";
+        });
+
+        if (highlightGraphics) worldContainer.removeChild(highlightGraphics);
+        const highlightColor = parcel?.ownerId
+          ? COLORS.highlight
+          : COLORS.highlightBuy;
+        highlightGraphics = drawHighlight(x, y, highlightColor);
+        worldContainer.addChild(highlightGraphics);
+      }
+
+      async function onTileClick(x, y) {
+        // Infrastructure mode (power lines, water pipes)
+        if (
+          selectedBuildType === "power_line" ||
+          selectedBuildType === "water_pipe"
+        ) {
+          if (!infraStartPoint) {
+            infraStartPoint = { x, y };
+            console.log("Infrastructure start point set:", infraStartPoint);
+          } else {
+            // Create the infrastructure
+            const newInfra = { from: infraStartPoint, to: { x, y } };
+            if (selectedBuildType === "power_line") {
+              powerLines.push(newInfra);
+            } else {
+              waterPipes.push(newInfra);
+            }
+            infraStartPoint = null;
+            render();
+          }
+          return;
+        }
+
+        if (!selectedBuildType) {
+          // Show purchase modal if parcel is not owned
+          const parcel = parcels.find((p) => p.x === x && p.y === y);
+          if (parcel && !parcel.ownerId && walletAddress) {
+            const quote = await getParcelQuote(x, y);
+            if (quote) {
+              showPurchaseModal(x, y, quote);
+            }
+          }
+          return;
+        }
+
+        try {
+          if (selectedBuildType === "road") {
+            await fetch(`${API_URL}/api/roads`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                agentId: "system",
+                x,
+                y,
+                direction: "horizontal",
+                lanes: 2,
+              }),
+            });
+          } else {
+            const parcel = parcels.find((p) => p.x === x && p.y === y);
+            if (parcel && !parcel.ownerId) {
+              await fetch(`${API_URL}/api/parcels/purchase`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  agentId: walletAddress || "system",
+                  x,
+                  y,
+                  price: 100,
+                }),
+              });
+            }
+
+            // Prepare building request with optional floors
+            const buildRequest = {
+              agentId: walletAddress || "system",
+              x,
+              y,
+              type: selectedBuildType,
+              name: `${selectedBuildType} at ${x},${y}`,
+            };
+
+            // Add floors for houses and offices
+            if (selectedBuildType === "house" || selectedBuildType === "office") {
+              buildRequest.floors = selectedFloors;
+            }
+
+            const buildRes = await fetch(`${API_URL}/api/buildings`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(buildRequest),
+            });
+
+            const buildResult = await buildRes.json();
+            if (buildResult.error) {
+              alert("Build failed: " + buildResult.error);
+              return;
+            }
+
+            // Show cost info for premium buildings
+            if (buildResult.isPremium && buildResult.cost > 0) {
+              console.log(`Premium building: ${buildResult.cost} ETH`);
+            }
+
+            // Reset floor selection after building
+            if (selectedBuildType === "house" || selectedBuildType === "office") {
+              selectedFloors = 1;
+              document.querySelectorAll(".floor-btn").forEach((btn) => {
+                btn.classList.toggle("selected", parseInt(btn.dataset.floors) === 1);
+              });
+              updateFloorCost(selectedBuildType);
+            }
+          }
+
+          await loadCityData();
+          render();
+        } catch (error) {
+          console.error("Build error:", error);
+        }
+      }
+
+      // ============================================
+      // API & WebSocket
+      // ============================================
+
+      async function loadCityData() {
+        try {
+          const [
+            cityRes,
+            parcelsRes,
+            buildingsRes,
+            roadsRes,
+            agentsRes,
+            vehiclesRes,
+          ] = await Promise.all([
+            fetch(`${API_URL}/api/city`),
+            fetch(`${API_URL}/api/parcels`),
+            fetch(`${API_URL}/api/buildings`),
+            fetch(`${API_URL}/api/roads`),
+            fetch(`${API_URL}/api/agents`),
+            fetch(`${API_URL}/api/vehicles`),
+          ]);
+
+          cityData = (await cityRes.json()).city;
+          parcels = (await parcelsRes.json()).parcels || [];
+          buildings = (await buildingsRes.json()).buildings || [];
+          roads = (await roadsRes.json()).roads || [];
+          agents = (await agentsRes.json()).agents || [];
+          vehicles = (await vehiclesRes.json()).vehicles || [];
+
+          updateUI();
+        } catch (error) {
+          console.error("Failed to load city data:", error);
+        }
+      }
+
+      function connectWebSocket() {
+        ws = new WebSocket(WS_URL);
+
+        ws.onopen = () => {
+          document.getElementById("connection-status").className = "connected";
+          document.getElementById("connection-status").textContent =
+            "Connected";
+        };
+
+        ws.onclose = () => {
+          document.getElementById("connection-status").className =
+            "disconnected";
+          document.getElementById("connection-status").textContent =
+            "Disconnected";
+          setTimeout(connectWebSocket, 3000);
+        };
+
+        ws.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+
+          if (msg.type === "tick") {
+            const { time, events } = msg.data;
+            isDaylight = time.isDaylight;
+            updateTimeDisplay(time);
+
+            for (const evt of events) {
+              if (evt.type === "agent_moved") {
+                const agent = agents.find((a) => a.id === evt.data.agentId);
+                if (agent) agent.currentLocation = evt.data.to;
+              }
+            }
+
+            render();
+          }
+
+          if (msg.type === "day_started") isDaylight = true;
+          if (msg.type === "night_started") isDaylight = false;
+        };
+      }
+
+      async function startSimulation() {
+        await fetch(`${API_URL}/api/simulation/start`, { method: "POST" });
+      }
+
+      async function stopSimulation() {
+        await fetch(`${API_URL}/api/simulation/stop`, { method: "POST" });
+      }
+
+      async function initCity() {
+        await fetch(`${API_URL}/api/city/init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "MoltCity" }),
+        });
+        await loadCityData();
+        render();
+      }
+
+      function updateUI() {
+        if (cityData) {
+          document.getElementById("day-display").textContent =
+            cityData.time?.day || 1;
+          // Hide init button once city exists
+          document.getElementById("btn-init").style.display = "none";
+        } else {
+          document.getElementById("btn-init").style.display = "";
+        }
+        document.getElementById("population-display").textContent =
+          agents.length;
+        document.getElementById("buildings-display").textContent =
+          buildings.length;
+
+        // Power stats
+        const powerPlants = buildings.filter((b) => b.type === "power_plant");
+        const totalCapacity = powerPlants.length * 10; // 10kW per plant
+        const totalDemand =
+          buildings.reduce((sum, b) => sum + (b.powerRequired || 0), 0) / 1000;
+        document.getElementById("power-display").textContent =
+          `${totalDemand.toFixed(1)} / ${totalCapacity} kW`;
+      }
+
+      function updateTimeDisplay(time) {
+        document.getElementById("time-display").textContent =
+          `${String(time.hour).padStart(2, "0")}:00`;
+        document.getElementById("day-display").textContent = time.day;
+      }
+
+      // ============================================
+      // Main
+      // ============================================
+
+      async function main() {
+        await initPixi();
+        await loadSprites();
+        await loadCityData();
+        render();
+        connectWebSocket();
+      }
+
+      main();
+    </script>
+  </body>
+</html>

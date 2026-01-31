@@ -1,0 +1,377 @@
+{
+  "buildings": {
+    "house": {
+      "file": "buildings/house.png",
+      "width": 133,
+      "height": 127,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "shop": {
+      "file": "buildings/shop.png",
+      "width": 133,
+      "height": 127,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "office": {
+      "file": "buildings/office.png",
+      "width": 133,
+      "height": 127,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "factory": {
+      "file": "buildings/factory.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "park": {
+      "file": "city-pack/PNG/cityTiles_067.png",
+      "width": 132,
+      "height": 113,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "city_hall": {
+      "file": "buildings/city_hall.png",
+      "width": 133,
+      "height": 127,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "water_tower": {
+      "file": "buildings/water_tower.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "power_plant": {
+      "file": "buildings/power_plant.png",
+      "width": 133,
+      "height": 127,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  },
+  "roads": {
+    "road_055": {
+      "file": "city-pack/PNG/cityTiles_055.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_073": {
+      "file": "city-pack/PNG/cityTiles_073.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_080": {
+      "file": "city-pack/PNG/cityTiles_080.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_081": {
+      "file": "city-pack/PNG/cityTiles_081.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_088": {
+      "file": "city-pack/PNG/cityTiles_088.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_089": {
+      "file": "city-pack/PNG/cityTiles_089.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_095": {
+      "file": "city-pack/PNG/cityTiles_095.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_096": {
+      "file": "city-pack/PNG/cityTiles_096.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_103": {
+      "file": "city-pack/PNG/cityTiles_103.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_104": {
+      "file": "city-pack/PNG/cityTiles_104.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_122": {
+      "file": "city-pack/PNG/cityTiles_122.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_124": {
+      "file": "city-pack/PNG/cityTiles_124.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_125": {
+      "file": "city-pack/PNG/cityTiles_125.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_126": {
+      "file": "city-pack/PNG/cityTiles_126.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_110": {
+      "file": "city-pack/PNG/cityTiles_110.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_111": {
+      "file": "city-pack/PNG/cityTiles_111.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_116": {
+      "file": "city-pack/PNG/cityTiles_116.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  },
+  "houseParts": {
+    "bricks": [
+      {
+        "id": "brick_000",
+        "file": "buildings-pack/PNG/buildingTiles_000.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_015",
+        "file": "buildings-pack/PNG/buildingTiles_015.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_016",
+        "file": "buildings-pack/PNG/buildingTiles_016.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_048",
+        "file": "buildings-pack/PNG/buildingTiles_048.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      }
+    ],
+    "roofs": [
+      {
+        "id": "roof_005",
+        "file": "buildings-pack/PNG/buildingTiles_005.png",
+        "width": 99,
+        "height": 54
+      },
+      {
+        "id": "roof_006",
+        "file": "buildings-pack/PNG/buildingTiles_006.png",
+        "width": 99,
+        "height": 54
+      },
+      {
+        "id": "roof_013",
+        "file": "buildings-pack/PNG/buildingTiles_013.png",
+        "width": 99,
+        "height": 54
+      },
+      {
+        "id": "roof_057",
+        "file": "buildings-pack/PNG/buildingTiles_057.png",
+        "width": 99,
+        "height": 60
+      },
+      {
+        "id": "roof_061",
+        "file": "buildings-pack/PNG/buildingTiles_061.png",
+        "width": 99,
+        "height": 60
+      },
+      {
+        "id": "roof_066",
+        "file": "buildings-pack/PNG/buildingTiles_066.png",
+        "width": 99,
+        "height": 60
+      },
+      {
+        "id": "roof_075",
+        "file": "buildings-pack/PNG/buildingTiles_075.png",
+        "width": 99,
+        "height": 60
+      }
+    ]
+  },
+  "officeParts": {
+    "floors": [
+      {
+        "id": "office_000",
+        "file": "buildings-pack/PNG/buildingTiles_000.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_007",
+        "file": "buildings-pack/PNG/buildingTiles_007.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_008",
+        "file": "buildings-pack/PNG/buildingTiles_008.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_015",
+        "file": "buildings-pack/PNG/buildingTiles_015.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_023",
+        "file": "buildings-pack/PNG/buildingTiles_023.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_031",
+        "file": "buildings-pack/PNG/buildingTiles_031.png",
+        "width": 99,
+        "height": 85,
+        "stackHeight": 36
+      }
+    ],
+    "roofs": [
+      {
+        "id": "office_roof_057",
+        "file": "buildings-pack/PNG/buildingTiles_057.png",
+        "width": 99,
+        "height": 60
+      },
+      {
+        "id": "office_roof_066",
+        "file": "buildings-pack/PNG/buildingTiles_066.png",
+        "width": 99,
+        "height": 60
+      },
+      {
+        "id": "office_roof_068",
+        "file": "buildings-pack/PNG/buildingTiles_068.png",
+        "width": 99,
+        "height": 60
+      }
+    ]
+  },
+  "meta": {
+    "attribution": "Sprites by Kenney.nl (CC0 Public Domain)",
+    "source": "https://opengameart.org/content/isometric-buildings-1"
+  }
+}

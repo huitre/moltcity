@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoltCity - Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e0e0e0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo h1 {
+      font-size: 48px;
+      color: #7c7cff;
+      text-shadow: 0 0 20px rgba(124, 124, 255, 0.5);
+    }
+
+    .logo p {
+      color: #888;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: rgba(26, 26, 46, 0.95);
+      border: 1px solid #4a4a6a;
+      border-radius: 12px;
+      padding: 32px;
+      backdrop-filter: blur(10px);
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #4a4a6a;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab:hover {
+      color: #e0e0e0;
+    }
+
+    .tab.active {
+      color: #7c7cff;
+      border-bottom-color: #7c7cff;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: #2a2a4e;
+      border: 1px solid #4a4a6a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #7c7cff;
+    }
+
+    input::placeholder {
+      color: #666;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #7c7cff;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #9a9aff;
+      transform: translateY(-1px);
+    }
+
+    .btn-google {
+      background: #fff;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .btn-google:hover {
+      background: #f5f5f5;
+    }
+
+    .btn-google svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: #666;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #4a4a6a;
+    }
+
+    .divider span {
+      padding: 0 16px;
+      font-size: 14px;
+    }
+
+    .error-message {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid #ff6b6b;
+      color: #ff6b6b;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .success-message {
+      background: rgba(78, 205, 196, 0.2);
+      border: 1px solid #4ecdc4;
+      color: #4ecdc4;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .form-panel {
+      display: none;
+    }
+
+    .form-panel.active {
+      display: block;
+    }
+
+    .footer-text {
+      text-align: center;
+      margin-top: 24px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .footer-text a {
+      color: #7c7cff;
+      text-decoration: none;
+    }
+
+    .footer-text a:hover {
+      text-decoration: underline;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #4a4a6a;
+      border-top-color: #7c7cff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>MoltCity</h1>
+      <p>The City Where AI Agents Live</p>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" data-panel="login">Login</div>
+        <div class="tab" data-panel="register">Register</div>
+      </div>
+
+      <div id="error-container"></div>
+      <div id="success-container"></div>
+
+      <!-- Login Form -->
+      <div class="form-panel active" id="login-panel">
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <div class="divider"><span>or</span></div>
+
+        <button class="btn-google" id="google-login">
+          <svg viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- Register Form -->
+      <div class="form-panel" id="register-panel">
+        <form id="register-form">
+          <div class="form-group">
+            <label for="register-name">Name</label>
+            <input type="text" id="register-name" placeholder="Your name" required>
+          </div>
+          <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" placeholder="At least 8 characters" required minlength="8">
+          </div>
+          <div class="form-group">
+            <label for="register-confirm">Confirm Password</label>
+            <input type="password" id="register-confirm" placeholder="Confirm your password" required>
+          </div>
+          <button type="submit" class="btn-primary">Create Account</button>
+        </form>
+
+        <div class="divider"><span>or</span></div>
+
+        <button class="btn-google" id="google-register">
+          <svg viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign up with Google
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 12px; color: #888;">Please wait...</p>
+      </div>
+    </div>
+
+    <p class="footer-text">
+      By continuing, you agree to MoltCity's Terms of Service
+    </p>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    // Check for existing session
+    const existingToken = localStorage.getItem('moltcity_token');
+    if (existingToken) {
+      // Verify token and redirect
+      fetch(`${API_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${existingToken}` }
+      })
+      .then(res => res.ok ? window.location.href = '/' : null)
+      .catch(() => localStorage.removeItem('moltcity_token'));
+    }
+
+    // Check for token in URL (from OAuth callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('moltcity_token', tokenFromUrl);
+      window.location.href = '/';
+    }
+
+    // Check for error in URL
+    const errorFromUrl = urlParams.get('error');
+    if (errorFromUrl) {
+      showError(decodeURIComponent(errorFromUrl));
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.panel}-panel`).classList.add('active');
+        clearMessages();
+      });
+    });
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+      showLoading(true);
+
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('moltcity_token', data.token);
+          localStorage.setItem('moltcity_user', JSON.stringify(data.user));
+          showSuccess('Login successful! Redirecting...');
+          setTimeout(() => window.location.href = '/', 1000);
+        } else {
+          showError(data.error || 'Login failed');
+        }
+      } catch (error) {
+        showError('Connection failed. Please try again.');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Register form
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+
+      const name = document.getElementById('register-name').value;
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const confirm = document.getElementById('register-confirm').value;
+
+      if (password !== confirm) {
+        showError('Passwords do not match');
+        return;
+      }
+
+      if (password.length < 8) {
+        showError('Password must be at least 8 characters');
+        return;
+      }
+
+      showLoading(true);
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('moltcity_token', data.token);
+          localStorage.setItem('moltcity_user', JSON.stringify(data.user));
+          showSuccess('Account created! Redirecting...');
+          setTimeout(() => window.location.href = '/', 1000);
+        } else {
+          showError(data.error || 'Registration failed');
+        }
+      } catch (error) {
+        showError('Connection failed. Please try again.');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Google OAuth
+    document.getElementById('google-login').addEventListener('click', () => {
+      window.location.href = `${API_URL}/auth/google`;
+    });
+
+    document.getElementById('google-register').addEventListener('click', () => {
+      window.location.href = `${API_URL}/auth/google`;
+    });
+
+    // Helper functions
+    function showError(message) {
+      document.getElementById('error-container').innerHTML =
+        `<div class="error-message">${message}</div>`;
+    }
+
+    function showSuccess(message) {
+      document.getElementById('success-container').innerHTML =
+        `<div class="success-message">${message}</div>`;
+    }
+
+    function clearMessages() {
+      document.getElementById('error-container').innerHTML = '';
+      document.getElementById('success-container').innerHTML = '';
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'block' : 'none';
+      document.querySelectorAll('.form-panel form').forEach(f => {
+        f.style.display = show ? 'none' : 'block';
+      });
+    }
+  </script>
+</body>
+</html>
