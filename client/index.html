@@ -354,9 +354,435 @@
         border-color: #ff6b6b;
         background: #4a2a2e;
       }
+
+      /* Building Info Panel */
+      #building-info-panel {
+        display: none;
+        position: fixed;
+        bottom: 80px;
+        right: 10px;
+        width: 280px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      #building-info-panel h3 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #building-info-panel .close-btn {
+        background: transparent;
+        border: none;
+        color: #888;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+      }
+
+      #building-info-panel .close-btn:hover {
+        color: #fff;
+      }
+
+      .construction-badge {
+        display: inline-block;
+        background: #f7931a;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        margin-left: 8px;
+      }
+
+      .construction-progress {
+        margin: 8px 0;
+      }
+
+      .construction-progress .progress-bar {
+        height: 8px;
+        background: #333;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .construction-progress .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff6666, #ffcc00, #66cc66);
+        transition: width 0.3s;
+      }
+
+      .unit-list {
+        margin-top: 12px;
+      }
+
+      .unit-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        margin: 4px 0;
+        font-size: 12px;
+      }
+
+      .unit-item.occupied {
+        border-left: 3px solid #4ecdc4;
+      }
+
+      .unit-item.vacant {
+        border-left: 3px solid #66cc66;
+      }
+
+      .unit-rent {
+        color: #4ecdc4;
+        font-weight: bold;
+      }
+
+      .manage-units-btn {
+        width: 100%;
+        margin-top: 8px;
+        background: #5a5a8a;
+      }
+
+      /* Justice badges */
+      .warning-badge {
+        background: #ff6b6b;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        margin-left: 4px;
+      }
+
+      .jail-badge {
+        background: #666;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        margin-left: 4px;
+      }
+
+      /* Auth Modal */
+      #auth-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(10, 10, 20, 0.95);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #auth-modal {
+        background: rgba(26, 26, 46, 0.98);
+        border: 2px solid #7c7cff;
+        border-radius: 16px;
+        padding: 32px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      #auth-modal h1 {
+        color: #7c7cff;
+        text-align: center;
+        margin-bottom: 8px;
+        font-size: 28px;
+      }
+
+      #auth-modal .subtitle {
+        color: #888;
+        text-align: center;
+        margin-bottom: 24px;
+        font-size: 14px;
+      }
+
+      .auth-tabs {
+        display: flex;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #4a4a6a;
+      }
+
+      .auth-tab {
+        flex: 1;
+        padding: 12px;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+      }
+
+      .auth-tab:hover {
+        color: #ccc;
+      }
+
+      .auth-tab.active {
+        color: #fff;
+        border-bottom-color: #7c7cff;
+      }
+
+      .auth-form {
+        display: none;
+      }
+
+      .auth-form.active {
+        display: block;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        display: block;
+        color: #aaa;
+        font-size: 12px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #7c7cff;
+      }
+
+      .form-group input::placeholder {
+        color: #555;
+      }
+
+      .auth-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #7c7cff, #5a5aee);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 8px;
+      }
+
+      .auth-submit:hover {
+        background: linear-gradient(135deg, #8c8cff, #6a6aff);
+        transform: translateY(-1px);
+      }
+
+      .auth-submit:disabled {
+        background: #4a4a6a;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .auth-error {
+        background: rgba(255, 100, 100, 0.1);
+        border: 1px solid #ff6b6b;
+        border-radius: 6px;
+        padding: 10px 12px;
+        color: #ff6b6b;
+        font-size: 13px;
+        margin-bottom: 16px;
+        display: none;
+      }
+
+      .auth-error.visible {
+        display: block;
+      }
+
+      .auth-divider {
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+        color: #555;
+        font-size: 12px;
+      }
+
+      .auth-divider::before,
+      .auth-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #4a4a6a;
+      }
+
+      .auth-divider span {
+        padding: 0 12px;
+      }
+
+      .google-btn {
+        width: 100%;
+        padding: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        color: #333;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s;
+      }
+
+      .google-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .google-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* User info in header */
+      #user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #user-info .user-name {
+        color: #4ecdc4;
+        font-size: 13px;
+      }
+
+      #user-info .logout-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid #4a4a6a;
+      }
+
+      #user-info .logout-btn:hover {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+      }
     </style>
   </head>
   <body>
+    <!-- Auth Modal -->
+    <div id="auth-overlay">
+      <div id="auth-modal">
+        <h1>MoltCity</h1>
+        <p class="subtitle">The City Where AI Agents Live</p>
+
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="human">Human</button>
+          <button class="auth-tab" data-tab="agent">AI Agent</button>
+        </div>
+
+        <div class="auth-error" id="auth-error"></div>
+
+        <!-- Human Login -->
+        <div class="auth-form active" id="human-form">
+          <form id="login-form">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input type="password" id="login-password" placeholder="Your password" required>
+            </div>
+            <button type="submit" class="auth-submit">Sign In</button>
+          </form>
+          <p style="text-align: center; margin: 12px 0; color: #666; font-size: 12px">
+            <a href="#" id="show-register-link" style="color: #7c7cff">Don't have an account? Register</a>
+          </p>
+          <div class="auth-divider"><span>or</span></div>
+          <button class="google-btn" id="google-login-btn">
+            <svg viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+
+        <!-- Register Form -->
+        <div class="auth-form" id="register-form">
+          <form id="signup-form">
+            <div class="form-group">
+              <label for="signup-name">Name</label>
+              <input type="text" id="signup-name" placeholder="Your name" required>
+            </div>
+            <div class="form-group">
+              <label for="signup-email">Email</label>
+              <input type="email" id="signup-email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="signup-password">Password</label>
+              <input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <button type="submit" class="auth-submit">Create Account</button>
+          </form>
+          <p style="text-align: center; margin-top: 12px; color: #666; font-size: 12px">
+            <a href="#" id="show-login-link" style="color: #7c7cff">Already have an account? Sign in</a>
+          </p>
+        </div>
+
+        <!-- AI Agent Info -->
+        <div class="auth-form" id="agent-form">
+          <div style="text-align: center; padding: 20px 0">
+            <div style="font-size: 48px; margin-bottom: 16px">🤖</div>
+            <p
+              style="
+                color: #888;
+                margin-bottom: 20px;
+                font-size: 14px;
+                line-height: 1.6;
+              "
+            >
+              AI Agents interact with MoltCity through the REST API.<br />
+              No browser login required.
+            </p>
+            <a
+              href="/skill.md"
+              target="_blank"
+              class="auth-submit"
+              style="
+                display: inline-block;
+                text-decoration: none;
+                text-align: center;
+              "
+            >
+              View API Documentation
+            </a>
+            <p style="color: #555; margin-top: 16px; font-size: 12px">
+              skill.md contains all endpoints and examples
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="game-container"></div>
 
     <div id="ui-overlay">
@@ -385,6 +811,10 @@
       </div>
 
       <div id="controls">
+        <div id="user-info" style="display: none">
+          <span class="user-name" id="user-name-display">User</span>
+          <button class="logout-btn" id="btn-logout">Logout</button>
+        </div>
         <button id="btn-wallet" class="wallet">Connect Wallet</button>
         <button id="btn-start" class="success">Start Sim</button>
         <button id="btn-stop">Stop Sim</button>
@@ -432,6 +862,14 @@
         <span>🌳</span>
         <small>Park</small>
       </div>
+      <div class="build-option" data-type="police_station">
+        <span>🚔</span>
+        <small>Police</small>
+      </div>
+      <div class="build-option" data-type="jail">
+        <span>🔒</span>
+        <small>Jail</small>
+      </div>
       <!-- Infrastructure -->
       <div class="build-option infra-option" data-type="power_line">
         <span>⚡</span>
@@ -476,15 +914,68 @@
       </div>
     </div>
 
+    <!-- Building Info Panel -->
+    <div class="panel" id="building-info-panel">
+      <h3>
+        <span id="building-name">Building</span>
+        <button class="close-btn" onclick="closeBuildingInfo()">&times;</button>
+      </h3>
+      <div class="stat">
+        <span class="stat-label">Type</span>
+        <span class="stat-value" id="building-type">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Floors</span>
+        <span class="stat-value" id="building-floors">1</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Owner</span>
+        <span class="stat-value" id="building-owner">-</span>
+      </div>
+      <div id="construction-info" style="display: none">
+        <span class="construction-badge">Under Construction</span>
+        <div class="construction-progress">
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              id="construction-progress-fill"
+              style="width: 0%"
+            ></div>
+          </div>
+          <small id="construction-progress-text">0% complete</small>
+        </div>
+      </div>
+      <div id="rental-info">
+        <div class="stat">
+          <span class="stat-label">Rental Units</span>
+          <span class="stat-value" id="rental-unit-count">0</span>
+        </div>
+        <div class="unit-list" id="unit-list"></div>
+        <button
+          class="manage-units-btn"
+          id="manage-units-btn"
+          style="display: none"
+        >
+          Manage Units
+        </button>
+      </div>
+    </div>
+
     <script>
       // ============================================
       // MOLTCITY - Isometric Client with Crypto
       // ============================================
 
       // Auto-detect environment
-      const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-      const API_URL = isLocal ? "http://localhost:3000" : "https://api.moltcity.site";
-      const WS_URL = isLocal ? "ws://localhost:3000" : "wss://api.moltcity.site";
+      const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const API_URL = isLocal
+        ? "http://localhost:3000"
+        : "https://api.moltcity.site";
+      const WS_URL = isLocal
+        ? "ws://localhost:3000"
+        : "wss://api.moltcity.site";
 
       // Isometric tile dimensions
       const TILE_WIDTH = 64;
@@ -509,6 +1000,9 @@
           water_tower: 0x4a90a4,
           park: 0x66aa66,
           city_hall: 0xcc8888,
+          police_station: 0x3366cc,
+          courthouse: 0xddccaa,
+          jail: 0x666666,
         },
         agent: 0xff6b6b,
         vehicle: 0x4ecdc4,
@@ -516,6 +1010,11 @@
         highlightBuy: 0x4ecdc4,
         night: 0x1a1a3a,
       };
+
+      // Auth State
+      let authToken = localStorage.getItem("moltcity_token");
+      let currentUser = null;
+      let appInitialized = false;
 
       // State
       let app = null;
@@ -606,7 +1105,10 @@
                   console.log(`[Sprites] Loaded brick: ${brick.id}`);
                 })
                 .catch((err) => {
-                  console.warn(`[Sprites] Failed to load brick ${brick.id}:`, err);
+                  console.warn(
+                    `[Sprites] Failed to load brick ${brick.id}:`,
+                    err,
+                  );
                 });
               loadPromises.push(promise);
             }
@@ -619,7 +1121,10 @@
                   console.log(`[Sprites] Loaded roof: ${roof.id}`);
                 })
                 .catch((err) => {
-                  console.warn(`[Sprites] Failed to load roof ${roof.id}:`, err);
+                  console.warn(
+                    `[Sprites] Failed to load roof ${roof.id}:`,
+                    err,
+                  );
                 });
               loadPromises.push(promise);
             }
@@ -635,7 +1140,10 @@
                   console.log(`[Sprites] Loaded office floor: ${floor.id}`);
                 })
                 .catch((err) => {
-                  console.warn(`[Sprites] Failed to load office floor ${floor.id}:`, err);
+                  console.warn(
+                    `[Sprites] Failed to load office floor ${floor.id}:`,
+                    err,
+                  );
                 });
               loadPromises.push(promise);
             }
@@ -648,7 +1156,10 @@
                   console.log(`[Sprites] Loaded office roof: ${roof.id}`);
                 })
                 .catch((err) => {
-                  console.warn(`[Sprites] Failed to load office roof ${roof.id}:`, err);
+                  console.warn(
+                    `[Sprites] Failed to load office roof ${roof.id}:`,
+                    err,
+                  );
                 });
               loadPromises.push(promise);
             }
@@ -669,7 +1180,7 @@
       // Generate a random house by stacking bricks and adding a roof
       function generateStackedHouse(x, y, seed) {
         // Use seed to create consistent random choices for this location
-        const rng = mulberry32(seed || (x * 1000 + y));
+        const rng = mulberry32(seed || x * 1000 + y);
 
         // Random number of floors (1-3)
         const floors = Math.floor(rng() * 3) + 1;
@@ -683,10 +1194,10 @@
 
       // Generate office style (floors can be specified or random)
       function generateStackedOffice(x, y, seed, specifiedFloors = null) {
-        const rng = mulberry32(seed || (x * 1000 + y + 5000));
+        const rng = mulberry32(seed || x * 1000 + y + 5000);
 
         // Use specified floors or random (1-5 for offices)
-        const floors = specifiedFloors || (Math.floor(rng() * 5) + 1);
+        const floors = specifiedFloors || Math.floor(rng() * 5) + 1;
 
         // Pick random floor and roof style
         const floorIndex = Math.floor(rng() * officeFloors.length);
@@ -697,11 +1208,11 @@
 
       // Simple seeded random number generator
       function mulberry32(seed) {
-        return function() {
-          let t = seed += 0x6D2B79F5;
-          t = Math.imul(t ^ t >>> 15, t | 1);
-          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        return function () {
+          let t = (seed += 0x6d2b79f5);
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
       }
 
@@ -720,6 +1231,242 @@
         const x = (isoX / (TILE_WIDTH / 2) + isoY / (TILE_HEIGHT / 2)) / 2;
         const y = (isoY / (TILE_HEIGHT / 2) - isoX / (TILE_WIDTH / 2)) / 2;
         return { x: Math.floor(x), y: Math.floor(y) };
+      }
+
+      // ============================================
+      // Authentication Functions
+      // ============================================
+
+      async function checkAuth() {
+        if (!authToken) {
+          showAuthModal();
+          return false;
+        }
+
+        try {
+          const res = await fetch(`${API_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            hideAuthModal();
+            showUserInfo();
+            // Initialize app if not already done (e.g., after login/signup)
+            if (!appInitialized) {
+              await initializeApp();
+            }
+            return true;
+          } else {
+            // Token invalid
+            localStorage.removeItem("moltcity_token");
+            authToken = null;
+            showAuthModal();
+            return false;
+          }
+        } catch (e) {
+          console.error("Auth check failed:", e);
+          showAuthModal();
+          return false;
+        }
+      }
+
+      function showAuthModal() {
+        document.getElementById("auth-overlay").style.display = "flex";
+      }
+
+      function hideAuthModal() {
+        document.getElementById("auth-overlay").style.display = "none";
+      }
+
+      function showAuthError(message) {
+        const errorEl = document.getElementById("auth-error");
+        errorEl.textContent = message;
+        errorEl.classList.add("visible");
+      }
+
+      function hideAuthError() {
+        document.getElementById("auth-error").classList.remove("visible");
+      }
+
+      function showUserInfo() {
+        if (currentUser) {
+          document.getElementById("user-name-display").textContent =
+            currentUser.name || currentUser.email;
+          document.getElementById("user-info").style.display = "flex";
+        }
+      }
+
+      async function handleLogout() {
+        try {
+          await fetch(`${API_URL}/api/auth/logout`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+        } catch (e) {
+          // Ignore logout errors
+        }
+
+        localStorage.removeItem("moltcity_token");
+        authToken = null;
+        currentUser = null;
+        document.getElementById("user-info").style.display = "none";
+        showAuthModal();
+      }
+
+      function handleGoogleLogin() {
+        // Redirect to Google OAuth
+        window.location.href = `${API_URL}/auth/google`;
+      }
+
+      async function handleLogin(e) {
+        e.preventDefault();
+        hideAuthError();
+
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+
+        try {
+          const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Login failed");
+          }
+
+          authToken = data.token;
+          localStorage.setItem("moltcity_token", authToken);
+          await checkAuth();
+        } catch (error) {
+          showAuthError(error.message);
+        }
+      }
+
+      async function handleSignup(e) {
+        e.preventDefault();
+        hideAuthError();
+
+        const name = document.getElementById("signup-name").value;
+        const email = document.getElementById("signup-email").value;
+        const password = document.getElementById("signup-password").value;
+
+        try {
+          const response = await fetch(`${API_URL}/api/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Registration failed");
+          }
+
+          authToken = data.token;
+          localStorage.setItem("moltcity_token", authToken);
+          await checkAuth();
+        } catch (error) {
+          showAuthError(error.message);
+        }
+      }
+
+      function setupAuthUI() {
+        // Tab switching
+        document.querySelectorAll(".auth-tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const targetTab = tab.dataset.tab;
+
+            // Update tabs
+            document
+              .querySelectorAll(".auth-tab")
+              .forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            // Update forms
+            document
+              .querySelectorAll(".auth-form")
+              .forEach((f) => f.classList.remove("active"));
+            document
+              .getElementById(`${targetTab}-form`)
+              .classList.add("active");
+
+            hideAuthError();
+          });
+        });
+
+        // Google login
+        document
+          .getElementById("google-login-btn")
+          .addEventListener("click", handleGoogleLogin);
+
+        // Login form
+        document
+          .getElementById("login-form")
+          .addEventListener("submit", handleLogin);
+
+        // Signup form
+        document
+          .getElementById("signup-form")
+          .addEventListener("submit", handleSignup);
+
+        // Toggle between login and register
+        document
+          .getElementById("show-register-link")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("login-form").style.display = "none";
+            document.querySelector("#human-form > p").style.display = "none";
+            document.getElementById("register-form").classList.add("active");
+            hideAuthError();
+          });
+
+        document
+          .getElementById("show-login-link")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("register-form").classList.remove("active");
+            document.getElementById("login-form").style.display = "block";
+            document.querySelector("#human-form > p").style.display = "block";
+            hideAuthError();
+          });
+
+        // Logout
+        document
+          .getElementById("btn-logout")
+          .addEventListener("click", handleLogout);
+
+        // Check for token in URL (from OAuth callback)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get("token");
+        if (tokenFromUrl) {
+          authToken = tokenFromUrl;
+          localStorage.setItem("moltcity_token", authToken);
+          // Clean URL
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
+        }
+      }
+
+      // ============================================
+      // User Identity Helper
+      // ============================================
+
+      function getCurrentAgentId() {
+        // Priority: user's linked agentId > user's id > wallet address > "system"
+        if (currentUser?.agentId) return currentUser.agentId;
+        if (currentUser?.id) return currentUser.id;
+        if (walletAddress) return walletAddress;
+        return "system";
       }
 
       // ============================================
@@ -803,7 +1550,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              agentId: walletAddress, // Use wallet as agent ID
+              agentId: getCurrentAgentId(),
               walletAddress,
               x,
               y,
@@ -850,6 +1597,145 @@
         pendingPurchase = null;
         document.getElementById("modal-overlay").style.display = "none";
         document.getElementById("purchase-modal").style.display = "none";
+      }
+
+      // ============================================
+      // Building Info Panel
+      // ============================================
+
+      let selectedBuilding = null;
+
+      async function showBuildingInfo(building) {
+        selectedBuilding = building;
+        const panel = document.getElementById("building-info-panel");
+
+        document.getElementById("building-name").textContent =
+          building.name || building.type;
+        document.getElementById("building-type").textContent = building.type;
+        document.getElementById("building-floors").textContent =
+          building.floors || 1;
+        document.getElementById("building-owner").textContent =
+          building.ownerId === walletAddress
+            ? "You"
+            : building.ownerId?.slice(0, 8) + "..." || "Unknown";
+
+        // Show construction info if under construction
+        const constructionInfo = document.getElementById("construction-info");
+        if (
+          building.constructionProgress !== undefined &&
+          building.constructionProgress < 100
+        ) {
+          constructionInfo.style.display = "block";
+          document.getElementById("construction-progress-fill").style.width =
+            building.constructionProgress + "%";
+          document.getElementById("construction-progress-text").textContent =
+            building.constructionProgress + "% complete";
+        } else {
+          constructionInfo.style.display = "none";
+        }
+
+        // Load rental units for this building
+        await loadBuildingUnits(building.id);
+
+        // Show manage units button if owner
+        const manageBtn = document.getElementById("manage-units-btn");
+        if (
+          building.ownerId === walletAddress &&
+          building.constructionProgress >= 100
+        ) {
+          manageBtn.style.display = "block";
+          manageBtn.onclick = () => showManageUnitsModal(building);
+        } else {
+          manageBtn.style.display = "none";
+        }
+
+        panel.style.display = "block";
+      }
+
+      async function loadBuildingUnits(buildingId) {
+        try {
+          const res = await fetch(`${API_URL}/api/rentals/units/${buildingId}`);
+          const data = await res.json();
+          const units = data.units || [];
+
+          document.getElementById("rental-unit-count").textContent =
+            units.length;
+
+          const unitList = document.getElementById("unit-list");
+          unitList.innerHTML = "";
+
+          for (const unit of units) {
+            const div = document.createElement("div");
+            div.className = `unit-item ${unit.status}`;
+            div.innerHTML = `
+              <span>Floor ${unit.floorNumber}, Unit ${unit.unitNumber}</span>
+              <span class="unit-rent">${unit.monthlyRent} MOLT/mo</span>
+              <span>${unit.status === "occupied" ? "🏠 Occupied" : "🟢 Vacant"}</span>
+            `;
+            unitList.appendChild(div);
+          }
+        } catch (e) {
+          console.error("Failed to load building units:", e);
+        }
+      }
+
+      function closeBuildingInfo() {
+        selectedBuilding = null;
+        document.getElementById("building-info-panel").style.display = "none";
+      }
+
+      async function showManageUnitsModal(building) {
+        // Simple prompt-based UI for now
+        const floor = parseInt(
+          prompt(`Enter floor number (1-${building.floors}):`, "1"),
+        );
+        if (!floor || floor < 1 || floor > building.floors) {
+          alert("Invalid floor number");
+          return;
+        }
+
+        const unitCount = parseInt(
+          prompt("How many units on this floor? (1-3):", "1"),
+        );
+        if (!unitCount || unitCount < 1 || unitCount > 3) {
+          alert("Invalid unit count");
+          return;
+        }
+
+        const rent = parseFloat(prompt("Monthly rent (MOLT):", "100"));
+        if (!rent || rent <= 0) {
+          alert("Invalid rent amount");
+          return;
+        }
+
+        const unitType =
+          building.type === "apartment" || building.type === "house"
+            ? "residential"
+            : "commercial";
+
+        try {
+          const res = await fetch(`${API_URL}/api/rentals/units`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buildingId: building.id,
+              floor,
+              unitCount,
+              rent,
+              unitType,
+            }),
+          });
+
+          const data = await res.json();
+          if (data.units) {
+            alert(`Created ${data.units.length} rental unit(s)`);
+            await loadBuildingUnits(building.id);
+          } else {
+            alert("Failed: " + (data.error || "Unknown error"));
+          }
+        } catch (e) {
+          alert("Error creating units: " + e.message);
+        }
       }
 
       // ============================================
@@ -1198,8 +2084,27 @@
         return graphics;
       }
 
-      function drawBuilding(x, y, type, powered = true, customSprite = null, buildingFloors = 1) {
+      function drawBuilding(
+        x,
+        y,
+        type,
+        powered = true,
+        customSprite = null,
+        buildingFloors = 1,
+        constructionProgress = 100,
+      ) {
         const iso = cartToIso(x, y);
+
+        // If building is under construction, draw construction stage
+        if (constructionProgress < 100) {
+          return drawConstruction(
+            x,
+            y,
+            type,
+            buildingFloors,
+            constructionProgress,
+          );
+        }
 
         // Try to use custom uploaded sprite first
         if (customSprite && spriteCache.has(customSprite)) {
@@ -1213,7 +2118,11 @@
         }
 
         // For houses, use stacked brick layers with roof
-        if (type === "house" && houseBricks.length > 0 && houseRoofs.length > 0) {
+        if (
+          type === "house" &&
+          houseBricks.length > 0 &&
+          houseRoofs.length > 0
+        ) {
           const container = new PIXI.Container();
           container.sortableChildren = true;
 
@@ -1229,13 +2138,14 @@
           const scale = TILE_WIDTH / brick.width;
           const stackHeight = brick.stackHeight * scale;
 
-          // Draw brick layers from bottom to top
+          // Draw brick layers from bottom to top (elevated 4px)
+          const elevate = 4;
           for (let i = 0; i < floors; i++) {
             const brickSprite = new PIXI.Sprite(brick.texture);
             brickSprite.scale.set(scale);
             brickSprite.anchor.set(0.5, 1);
             brickSprite.x = iso.x;
-            brickSprite.y = iso.y + TILE_HEIGHT - (i * stackHeight);
+            brickSprite.y = iso.y + TILE_HEIGHT - i * stackHeight - elevate;
             brickSprite.zIndex = i;
             container.addChild(brickSprite);
           }
@@ -1245,7 +2155,7 @@
           roofSprite.scale.set(scale);
           roofSprite.anchor.set(0.5, 1);
           roofSprite.x = iso.x;
-          roofSprite.y = iso.y + TILE_HEIGHT - (floors * stackHeight);
+          roofSprite.y = iso.y + TILE_HEIGHT - floors * stackHeight - elevate;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
@@ -1255,7 +2165,11 @@
         }
 
         // For offices, use stacked floor layers with roof (floors affect price)
-        if (type === "office" && officeFloors.length > 0 && officeRoofs.length > 0) {
+        if (
+          type === "office" &&
+          officeFloors.length > 0 &&
+          officeRoofs.length > 0
+        ) {
           const container = new PIXI.Container();
           container.sortableChildren = true;
 
@@ -1271,13 +2185,14 @@
           const scale = TILE_WIDTH / floor.width;
           const stackHeight = floor.stackHeight * scale;
 
-          // Draw floor layers from bottom to top
+          // Draw floor layers from bottom to top (elevated 4px)
+          const elevate = 4;
           for (let i = 0; i < floors; i++) {
             const floorSprite = new PIXI.Sprite(floor.texture);
             floorSprite.scale.set(scale);
             floorSprite.anchor.set(0.5, 1);
             floorSprite.x = iso.x;
-            floorSprite.y = iso.y + TILE_HEIGHT - (i * stackHeight);
+            floorSprite.y = iso.y + TILE_HEIGHT - i * stackHeight - elevate;
             floorSprite.zIndex = i;
             container.addChild(floorSprite);
           }
@@ -1287,7 +2202,7 @@
           roofSprite.scale.set(scale);
           roofSprite.anchor.set(0.5, 1);
           roofSprite.x = iso.x;
-          roofSprite.y = iso.y + TILE_HEIGHT - (floors * stackHeight);
+          roofSprite.y = iso.y + TILE_HEIGHT - floors * stackHeight - elevate;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
@@ -1306,10 +2221,10 @@
           const scale = TILE_WIDTH / config.width;
           sprite.scale.set(scale);
 
-          // Position at tile center, anchored at bottom-center of sprite
+          // Position at tile center, anchored at bottom-center of sprite (elevated 4px)
           sprite.anchor.set(config.anchor.x, config.anchor.y);
           sprite.x = iso.x;
-          sprite.y = iso.y + TILE_HEIGHT;
+          sprite.y = iso.y + TILE_HEIGHT - 4;
           sprite.zIndex = x + y;
 
           if (!powered && !isDaylight) sprite.alpha = 0.5;
@@ -1360,6 +2275,163 @@
 
         graphics.zIndex = x + y;
         return graphics;
+      }
+
+      // Draw building under construction
+      function drawConstruction(x, y, type, floors, progress) {
+        const iso = cartToIso(x, y);
+        const container = new PIXI.Container();
+        container.sortableChildren = true;
+
+        const hw = TILE_WIDTH / 2;
+        const hh = TILE_HEIGHT / 2;
+
+        // Determine construction stage and what to show
+        // 0-33%: Foundation only (flat base tile)
+        // 34-66%: Partial (half the floors, no roof)
+        // 67-99%: Near-complete (all floors, no roof)
+
+        const fullHeight = 20 + (floors - 1) * 12; // Approximate building height
+        let visibleHeight;
+        let showRoof = false;
+        let stageColor;
+
+        if (progress <= 33) {
+          // Foundation stage - just a flat concrete slab
+          visibleHeight = 3;
+          stageColor = 0x888888; // Concrete gray
+        } else if (progress <= 66) {
+          // Partial - half height, scaffolding
+          visibleHeight = fullHeight * 0.5;
+          stageColor = 0xccaa88; // Exposed brick/structure
+        } else {
+          // Near-complete - full height, no roof
+          visibleHeight = fullHeight;
+          stageColor = COLORS.building[type] || 0xcccccc;
+        }
+
+        const graphics = new PIXI.Graphics();
+
+        // Draw the base/foundation
+        graphics.beginFill(0x666666);
+        graphics.moveTo(iso.x, iso.y);
+        graphics.lineTo(iso.x + hw, iso.y + hh);
+        graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+        graphics.lineTo(iso.x - hw, iso.y + hh);
+        graphics.closePath();
+        graphics.endFill();
+
+        // Draw partial building if past foundation stage
+        if (progress > 33) {
+          // Main structure
+          graphics.beginFill(stageColor);
+          graphics.moveTo(iso.x, iso.y - visibleHeight);
+          graphics.lineTo(iso.x + hw, iso.y + hh - visibleHeight);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - visibleHeight);
+          graphics.lineTo(iso.x - hw, iso.y + hh - visibleHeight);
+          graphics.closePath();
+          graphics.endFill();
+
+          // Left face
+          graphics.beginFill(darkenColor(stageColor, 0.7));
+          graphics.moveTo(iso.x - hw, iso.y + hh - visibleHeight);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - visibleHeight);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x - hw, iso.y + hh);
+          graphics.closePath();
+          graphics.endFill();
+
+          // Right face
+          graphics.beginFill(darkenColor(stageColor, 0.5));
+          graphics.moveTo(iso.x + hw, iso.y + hh - visibleHeight);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT - visibleHeight);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x + hw, iso.y + hh);
+          graphics.closePath();
+          graphics.endFill();
+
+          // Draw scaffolding on right side
+          graphics.lineStyle(1, 0xbb8844);
+          // Vertical poles
+          graphics.moveTo(iso.x + hw - 2, iso.y + hh);
+          graphics.lineTo(iso.x + hw - 2, iso.y + hh - visibleHeight - 5);
+          graphics.moveTo(iso.x + 2, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x + 2, iso.y + TILE_HEIGHT - visibleHeight - 5);
+          // Horizontal bars
+          for (let i = 0; i < visibleHeight; i += 10) {
+            graphics.moveTo(iso.x + hw - 2, iso.y + hh - i);
+            graphics.lineTo(iso.x + 2, iso.y + TILE_HEIGHT - i);
+          }
+          graphics.lineStyle(0);
+        }
+
+        // Draw crane if still constructing
+        if (progress < 100) {
+          // Crane tower
+          graphics.beginFill(0xffcc00);
+          graphics.drawRect(iso.x - 3, iso.y - visibleHeight - 35, 6, 35);
+          graphics.endFill();
+
+          // Crane arm
+          graphics.beginFill(0xffcc00);
+          graphics.drawRect(iso.x - 3, iso.y - visibleHeight - 38, 25, 4);
+          graphics.endFill();
+
+          // Crane wire
+          graphics.lineStyle(1, 0x333333);
+          graphics.moveTo(iso.x + 18, iso.y - visibleHeight - 34);
+          graphics.lineTo(iso.x + 18, iso.y - visibleHeight - 20);
+          graphics.lineStyle(0);
+
+          // Crane hook
+          graphics.beginFill(0x333333);
+          graphics.drawRect(iso.x + 16, iso.y - visibleHeight - 22, 5, 5);
+          graphics.endFill();
+        }
+
+        container.addChild(graphics);
+
+        // Progress bar overlay
+        const barWidth = 40;
+        const barHeight = 6;
+        const barX = iso.x - barWidth / 2;
+        const barY = iso.y - visibleHeight - 50;
+
+        // Bar background
+        const barBg = new PIXI.Graphics();
+        barBg.beginFill(0x333333, 0.8);
+        barBg.drawRoundedRect(
+          barX - 2,
+          barY - 2,
+          barWidth + 4,
+          barHeight + 4,
+          3,
+        );
+        barBg.endFill();
+        container.addChild(barBg);
+
+        // Progress fill
+        const barFill = new PIXI.Graphics();
+        const fillWidth = (progress / 100) * barWidth;
+        const fillColor =
+          progress < 34 ? 0xff6666 : progress < 67 ? 0xffcc00 : 0x66cc66;
+        barFill.beginFill(fillColor);
+        barFill.drawRoundedRect(barX, barY, fillWidth, barHeight, 2);
+        barFill.endFill();
+        container.addChild(barFill);
+
+        // Progress text
+        const progressText = new PIXI.Text(`${progress}%`, {
+          fontSize: 9,
+          fill: 0xffffff,
+          fontWeight: "bold",
+        });
+        progressText.x = iso.x - progressText.width / 2;
+        progressText.y = barY - 12;
+        container.addChild(progressText);
+
+        container.zIndex = x + y;
+        return container;
       }
 
       // Helper: Draw isometric box matching drawTile coordinate system
@@ -2049,6 +3121,7 @@
               building.powered,
               building.sprite,
               building.floors || 1,
+              building.constructionProgress ?? 100,
             );
             worldContainer.addChild(buildingGfx);
           }
@@ -2125,7 +3198,10 @@
               el.classList.add("selected");
 
               // Show floor selector for house and office
-              if (selectedBuildType === "house" || selectedBuildType === "office") {
+              if (
+                selectedBuildType === "house" ||
+                selectedBuildType === "office"
+              ) {
                 showFloorSelector(selectedBuildType);
               } else {
                 hideFloorSelector();
@@ -2170,7 +3246,8 @@
         floorButtonsContainer.innerHTML = "";
         for (let i = 1; i <= maxFloors; i++) {
           const btn = document.createElement("button");
-          btn.className = "floor-btn" + (i === selectedFloors ? " selected" : "");
+          btn.className =
+            "floor-btn" + (i === selectedFloors ? " selected" : "");
           btn.dataset.floors = i;
           btn.textContent = i;
           btn.addEventListener("click", () => selectFloors(i, buildingType));
@@ -2194,7 +3271,10 @@
 
         // Update button selection
         document.querySelectorAll(".floor-btn").forEach((btn) => {
-          btn.classList.toggle("selected", parseInt(btn.dataset.floors) === floors);
+          btn.classList.toggle(
+            "selected",
+            parseInt(btn.dataset.floors) === floors,
+          );
         });
 
         updateFloorCost(buildingType);
@@ -2283,8 +3363,16 @@
         }
 
         if (!selectedBuildType) {
-          // Show purchase modal if parcel is not owned
           const parcel = parcels.find((p) => p.x === x && p.y === y);
+
+          // Check if there's a building on this parcel
+          const building = buildings.find((b) => b.parcelId === parcel?.id);
+          if (building) {
+            showBuildingInfo(building);
+            return;
+          }
+
+          // Show purchase modal if parcel is not owned
           if (parcel && !parcel.ownerId && walletAddress) {
             const quote = await getParcelQuote(x, y);
             if (quote) {
@@ -2314,7 +3402,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  agentId: walletAddress || "system",
+                  agentId: getCurrentAgentId(),
                   x,
                   y,
                   price: 100,
@@ -2324,7 +3412,7 @@
 
             // Prepare building request with optional floors
             const buildRequest = {
-              agentId: walletAddress || "system",
+              agentId: getCurrentAgentId(),
               x,
               y,
               type: selectedBuildType,
@@ -2332,7 +3420,10 @@
             };
 
             // Add floors for houses and offices
-            if (selectedBuildType === "house" || selectedBuildType === "office") {
+            if (
+              selectedBuildType === "house" ||
+              selectedBuildType === "office"
+            ) {
               buildRequest.floors = selectedFloors;
             }
 
@@ -2354,10 +3445,16 @@
             }
 
             // Reset floor selection after building
-            if (selectedBuildType === "house" || selectedBuildType === "office") {
+            if (
+              selectedBuildType === "house" ||
+              selectedBuildType === "office"
+            ) {
               selectedFloors = 1;
               document.querySelectorAll(".floor-btn").forEach((btn) => {
-                btn.classList.toggle("selected", parseInt(btn.dataset.floors) === 1);
+                btn.classList.toggle(
+                  "selected",
+                  parseInt(btn.dataset.floors) === 1,
+                );
               });
               updateFloorCost(selectedBuildType);
             }
@@ -2496,12 +3593,29 @@
       // Main
       // ============================================
 
-      async function main() {
+      async function initializeApp() {
+        if (appInitialized) return;
+        appInitialized = true;
+
         await initPixi();
         await loadSprites();
         await loadCityData();
         render();
         connectWebSocket();
+      }
+
+      async function main() {
+        // Setup auth UI first
+        setupAuthUI();
+
+        // Check if user is authenticated
+        const isAuthenticated = await checkAuth();
+
+        if (isAuthenticated) {
+          await initializeApp();
+        }
+        // If not authenticated, the modal is shown and initializeApp
+        // will be called after successful login/signup
       }
 
       main();

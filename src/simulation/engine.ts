@@ -3,7 +3,7 @@
 // ============================================
 
 import { EventEmitter } from 'events';
-import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime } from '../models/types.js';
+import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState } from '../models/types.js';
 import { DatabaseManager } from '../models/database.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
 
@@ -18,6 +18,194 @@ const HOURS_PER_DAY = 24;
 
 const AGENT_WALK_SPEED = 0.5;           // Parcels per tick
 const VEHICLE_BASE_SPEED = 2.0;         // Parcels per tick
+
+// Time constants
+const TICKS_PER_HOUR = 600; // 10 ticks/min * 60 min
+const TICKS_PER_DAY = TICKS_PER_HOUR * 24;
+const WARNING_DEADLINE_DAYS = 3; // Days to pay after warning
+const JAIL_SENTENCE_DAYS = 7; // Days in jail for rent nonpayment
+
+// ============================================
+// Construction Simulator
+// ============================================
+
+export class ConstructionSimulator {
+  constructor(private db: DatabaseManager) {}
+
+  /**
+   * Advance construction progress for all buildings under construction
+   * Returns list of buildings that just completed
+   */
+  simulate(currentTick: number): Building[] {
+    const completedBuildings: Building[] = [];
+    const underConstruction = this.db.buildings.getBuildingsUnderConstruction();
+
+    for (const building of underConstruction) {
+      if (building.constructionTimeTicks <= 0) {
+        // Instant construction (e.g., roads)
+        this.db.buildings.updateConstructionProgress(building.id, 100);
+        continue;
+      }
+
+      const ticksElapsed = currentTick - (building.constructionStartedAt || 0);
+      const newProgress = Math.min(100, Math.floor((ticksElapsed / building.constructionTimeTicks) * 100));
+
+      if (newProgress !== building.constructionProgress) {
+        this.db.buildings.updateConstructionProgress(building.id, newProgress);
+
+        if (newProgress >= 100) {
+          completedBuildings.push({ ...building, constructionProgress: 100 });
+          console.log(`[Construction] Building completed: ${building.name} (${building.type})`);
+        }
+      }
+    }
+
+    return completedBuildings;
+  }
+}
+
+// ============================================
+// Rent Enforcement Simulator
+// ============================================
+
+export class RentEnforcementSimulator {
+  private lastProcessedDay: number = 0;
+
+  constructor(private db: DatabaseManager) {}
+
+  /**
+   * Process rent enforcement - runs once per day at midnight
+   */
+  simulate(currentTick: number, time: CityTime): void {
+    // Only run once per day (at hour 0)
+    if (time.hour !== 0 || this.lastProcessedDay === time.day) {
+      return;
+    }
+    this.lastProcessedDay = time.day;
+
+    console.log(`[RentEnforcement] Processing rent enforcement for day ${time.day}`);
+
+    // 1. Check for overdue rent and create warnings
+    this.processOverdueRent(currentTick, time);
+
+    // 2. Check for expired warnings and escalate to court
+    this.processExpiredWarnings(currentTick);
+
+    // 3. Process pending court cases (auto-judgment after 1 day)
+    this.processCourtCases(currentTick);
+
+    // 4. Release inmates whose sentence is complete
+    this.processJailReleases(currentTick);
+  }
+
+  private processOverdueRent(currentTick: number, time: CityTime): void {
+    const occupiedUnits = this.db.rentalUnits.getOccupiedUnits();
+
+    for (const unit of occupiedUnits) {
+      if (!unit.tenantId || !unit.leaseStart) continue;
+
+      // Check if rent is due (monthly - every 30 days since lease start)
+      const ticksSinceLeaseStart = currentTick - unit.leaseStart;
+      const daysSinceLeaseStart = Math.floor(ticksSinceLeaseStart / TICKS_PER_DAY);
+
+      // Rent is due on day 30, 60, 90, etc.
+      if (daysSinceLeaseStart > 0 && daysSinceLeaseStart % 30 === 0) {
+        // Check if there's already a pending warning for this unit
+        const existingWarning = this.db.rentWarnings.getWarningForUnit(unit.id, 'pending');
+        if (!existingWarning) {
+          // Create a warning with 3-day deadline
+          const dueDateTick = currentTick + (WARNING_DEADLINE_DAYS * TICKS_PER_DAY);
+          this.db.rentWarnings.createWarning(unit.id, unit.tenantId, unit.monthlyRent, currentTick, dueDateTick);
+          console.log(`[RentEnforcement] Warning issued to ${unit.tenantId} for unit ${unit.id}, amount: ${unit.monthlyRent}`);
+        }
+      }
+    }
+  }
+
+  private processExpiredWarnings(currentTick: number): void {
+    const pendingWarnings = this.db.rentWarnings.getPendingWarnings();
+
+    for (const warning of pendingWarnings) {
+      if (currentTick >= warning.dueDate) {
+        // Warning expired - escalate to court
+        this.db.rentWarnings.updateStatus(warning.id, 'escalated');
+
+        // Get the unit to find the building owner (plaintiff)
+        const unit = this.db.rentalUnits.getRentalUnit(warning.unitId);
+        if (!unit) continue;
+
+        const building = this.db.buildings.getBuilding(unit.buildingId);
+        if (!building) continue;
+
+        // Create court case - hearing in 1 day
+        const hearingDateTick = currentTick + TICKS_PER_DAY;
+        this.db.courtCases.createCase(
+          warning.id,
+          warning.tenantId,
+          building.ownerId,
+          'rent_nonpayment',
+          warning.amountOwed,
+          hearingDateTick
+        );
+        console.log(`[RentEnforcement] Court case created against ${warning.tenantId} for ${warning.amountOwed}`);
+      }
+    }
+  }
+
+  private processCourtCases(currentTick: number): void {
+    const pendingCases = this.db.courtCases.getPendingCases();
+
+    for (const courtCase of pendingCases) {
+      if (courtCase.hearingDate && currentTick >= courtCase.hearingDate) {
+        // Auto-judgment: guilty if they haven't paid
+        // Check if the warning was paid (if there's a warning associated)
+        let isPaid = false;
+        if (courtCase.warningId) {
+          const warning = this.db.rentWarnings.getWarning(courtCase.warningId);
+          if (warning && warning.status === 'paid') {
+            isPaid = true;
+          }
+        }
+
+        if (isPaid) {
+          // Dismiss the case
+          this.db.courtCases.setVerdict(courtCase.id, 'dismissed', null);
+          console.log(`[RentEnforcement] Case ${courtCase.id} dismissed - debt was paid`);
+        } else {
+          // Guilty - eviction and jail
+          this.db.courtCases.setVerdict(courtCase.id, 'guilty', 'jail');
+
+          // Evict the tenant
+          if (courtCase.warningId) {
+            const warning = this.db.rentWarnings.getWarning(courtCase.warningId);
+            if (warning) {
+              this.db.rentalUnits.terminateLease(warning.unitId);
+              console.log(`[RentEnforcement] Tenant ${courtCase.defendantId} evicted from unit`);
+            }
+          }
+
+          // Send to jail
+          const releaseDateTick = currentTick + (JAIL_SENTENCE_DAYS * TICKS_PER_DAY);
+          this.db.jailInmates.createInmate(courtCase.defendantId, courtCase.id, currentTick, releaseDateTick);
+
+          // Update agent state
+          this.db.agents.updateState(courtCase.defendantId, 'in_jail');
+          console.log(`[RentEnforcement] Agent ${courtCase.defendantId} sent to jail for ${JAIL_SENTENCE_DAYS} days`);
+        }
+      }
+    }
+  }
+
+  private processJailReleases(currentTick: number): void {
+    const toRelease = this.db.jailInmates.getInmatesForRelease(currentTick);
+
+    for (const inmate of toRelease) {
+      this.db.jailInmates.releaseInmate(inmate.id);
+      this.db.agents.updateState(inmate.agentId, 'idle');
+      console.log(`[RentEnforcement] Agent ${inmate.agentId} released from jail`);
+    }
+  }
+}
 
 // ============================================
 // Power Grid Simulation
@@ -298,6 +486,8 @@ export class SimulationEngine extends EventEmitter {
   private powerGrid: PowerGridSimulator;
   private agentSimulator: AgentSimulator;
   private vehicleSimulator: VehicleSimulator;
+  private constructionSimulator: ConstructionSimulator;
+  private rentEnforcementSimulator: RentEnforcementSimulator;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
@@ -308,6 +498,12 @@ export class SimulationEngine extends EventEmitter {
     this.powerGrid = new PowerGridSimulator(db);
     this.agentSimulator = new AgentSimulator(db, gridWidth, gridHeight);
     this.vehicleSimulator = new VehicleSimulator(db, gridWidth, gridHeight);
+    this.constructionSimulator = new ConstructionSimulator(db);
+    this.rentEnforcementSimulator = new RentEnforcementSimulator(db);
+  }
+
+  getCurrentTick(): number {
+    return this.currentTick;
   }
 
   /**
@@ -352,6 +548,19 @@ export class SimulationEngine extends EventEmitter {
       const powerStatus = this.powerGrid.simulate();
       this.powerGrid.applyPowerStatus(powerStatus);
     }
+
+    // Simulate construction progress
+    const completedBuildings = this.constructionSimulator.simulate(this.currentTick);
+    for (const building of completedBuildings) {
+      events.push({
+        type: 'building_powered' as CityEventType, // Reuse existing event type for completion
+        timestamp: Date.now(),
+        data: { buildingId: building.id, type: building.type, name: building.name, constructionComplete: true },
+      });
+    }
+
+    // Simulate rent enforcement (runs daily at midnight)
+    this.rentEnforcementSimulator.simulate(this.currentTick, time);
 
     // Simulate agents
     const agentEvents = this.agentSimulator.simulate(time);

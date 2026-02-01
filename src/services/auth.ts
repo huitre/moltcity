@@ -311,8 +311,8 @@ export class AuthService {
     }
 
     // Validate password
-    if (password.length < 8) {
-      return { success: false, error: 'Password must be at least 8 characters' };
+    if (password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters' };
     }
 
     // Check if user exists
@@ -389,8 +389,8 @@ export class AuthService {
       return { success: false, error: 'Current password is incorrect' };
     }
 
-    if (newPassword.length < 8) {
-      return { success: false, error: 'New password must be at least 8 characters' };
+    if (newPassword.length < 6) {
+      return { success: false, error: 'New password must be at least 6 characters' };
     }
 
     const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);

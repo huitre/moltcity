@@ -447,19 +447,17 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           return;
         }
 
-        // Allow "system" purchases or auto-create agent for wallet addresses
+        // Allow "system" purchases or auto-create agent for new identifiers
         if (agentId && agentId !== 'system') {
-          let agent = db.agents.getAgent(agentId);
+          let agent = db.agents.findAgent(agentId);
           if (!agent) {
-            // If it looks like a wallet address, create an agent for it
-            if (agentId.startsWith('0x') && agentId.length === 42) {
-              agent = db.agents.createAgent(`Wallet ${agentId.slice(0, 8)}`, x, y);
-              agentId = agent.id;
-            } else {
-              sendError(res, 'Agent not found', 404);
-              return;
-            }
+            // Auto-create agent with provided ID as moltbookId (or wallet)
+            const isWallet = agentId.startsWith('0x') && agentId.length === 42;
+            const name = isWallet ? `Wallet ${agentId.slice(0, 8)}` : `Agent ${agentId.slice(0, 12)}`;
+            agent = db.agents.createAgent(name, x, y, isWallet ? undefined : agentId);
+            console.log(`[API] Auto-created agent: ${agentId} -> ${agent.id}`);
           }
+          agentId = agent.id;
         } else {
           agentId = 'system';
         }
@@ -717,10 +715,24 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           return;
         }
 
+        // Auto-create agent if agentId provided but doesn't exist
+        let resolvedAgentId = agentId;
+        if (agentId && agentId !== 'system') {
+          let agent = db.agents.findAgent(agentId);
+          if (!agent) {
+            // Auto-create agent
+            const isWallet = agentId.startsWith('0x') && agentId.length === 42;
+            const name = isWallet ? `Wallet ${agentId.slice(0, 8)}` : `Agent ${agentId.slice(0, 12)}`;
+            agent = db.agents.createAgent(name, x, y, isWallet ? undefined : agentId);
+            console.log(`[API] Auto-created agent: ${agentId} -> ${agent.id}`);
+          }
+          resolvedAgentId = agent.id;
+        }
+
         // Check ownership (allow system or matching owner)
-        const isSystem = agentId === 'system' || !agentId;
-        const isOwner = parcel.ownerId === agentId;
-        const isWalletOwner = agentId?.startsWith('0x') && parcel.ownerId?.startsWith('0x');
+        const isSystem = resolvedAgentId === 'system' || !resolvedAgentId;
+        const isOwner = parcel.ownerId === resolvedAgentId;
+        const isWalletOwner = resolvedAgentId?.startsWith('0x') && parcel.ownerId?.startsWith('0x');
 
         if (!isSystem && !isOwner && !isWalletOwner && parcel.ownerId) {
           sendError(res, 'You do not own this parcel', 403);
@@ -748,14 +760,19 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           buildingCost = (buildingFloors - 1) * FLOOR_COST;
         }
 
-        const ownerId = agentId || parcel.ownerId || 'system';
-        const building = db.buildings.createBuilding(parcel.id, type as BuildingType, name, ownerId, sprite, buildingFloors);
+        const ownerId = resolvedAgentId || parcel.ownerId || 'system';
+        const currentTick = engine.getCurrentTick();
+        const building = db.buildings.createBuilding(parcel.id, type as BuildingType, name, ownerId, sprite, buildingFloors, currentTick);
 
         sendJson(res, {
           building,
           cost: buildingCost,
           isPremium: buildingFloors > 1,
-          message: buildingFloors > 1 ? `Multi-floor building costs ${buildingCost} ETH` : 'Building created'
+          isUnderConstruction: building.constructionProgress < 100,
+          constructionTimeTicks: building.constructionTimeTicks,
+          message: building.constructionProgress < 100
+            ? `Building under construction (${building.constructionTimeTicks / 600} hours)`
+            : (buildingFloors > 1 ? `Multi-floor building costs ${buildingCost} ETH` : 'Building created')
         });
         return;
       }
@@ -954,6 +971,264 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
 
         const vehicle = db.vehicles.createVehicle(ownerId, type as VehicleType, x, y);
         sendJson(res, { vehicle });
+        return;
+      }
+
+      // === Rental Routes ===
+
+      // Create rental units in a building
+      if (path === '/api/rentals/units' && method === 'POST') {
+        const body = await parseBody(req);
+        const { buildingId, floor, unitCount, rent, unitType } = body;
+
+        const building = db.buildings.getBuilding(buildingId);
+        if (!building) {
+          sendError(res, 'Building not found', 404);
+          return;
+        }
+
+        // Validate floor number
+        if (floor < 1 || floor > building.floors) {
+          sendError(res, `Invalid floor. Building has ${building.floors} floors.`, 400);
+          return;
+        }
+
+        // Validate unit count (max 3 per floor)
+        const clampedCount = Math.min(Math.max(unitCount || 1, 1), 3);
+
+        // Check existing units on this floor
+        const existingUnits = db.rentalUnits.getRentalUnitsForBuilding(buildingId)
+          .filter(u => u.floorNumber === floor);
+        if (existingUnits.length + clampedCount > 3) {
+          sendError(res, `Floor ${floor} can only have ${3 - existingUnits.length} more units (max 3 per floor)`, 400);
+          return;
+        }
+
+        // Determine unit type based on building type
+        const type = unitType || (building.type === 'apartment' || building.type === 'house' ? 'residential' : 'commercial');
+
+        // Create units
+        const units = [];
+        for (let i = 0; i < clampedCount; i++) {
+          const unitNumber = existingUnits.length + i + 1;
+          const unit = db.rentalUnits.createRentalUnit(buildingId, floor, unitNumber, rent, type);
+          units.push(unit);
+        }
+
+        sendJson(res, { units, message: `Created ${units.length} rental unit(s) on floor ${floor}` });
+        return;
+      }
+
+      // Get available rental units
+      if (path === '/api/rentals/available' && method === 'GET') {
+        const unitType = url.searchParams.get('type') as 'residential' | 'commercial' | undefined;
+        const units = db.rentalUnits.getAvailableUnits(unitType || undefined);
+
+        // Enrich with building info
+        const enrichedUnits = units.map(unit => {
+          const building = db.buildings.getBuilding(unit.buildingId);
+          return {
+            ...unit,
+            buildingName: building?.name,
+            buildingType: building?.type,
+          };
+        });
+
+        sendJson(res, { units: enrichedUnits });
+        return;
+      }
+
+      // Get rental units for a building
+      if (path.match(/^\/api\/rentals\/units\/[a-f0-9-]+$/) && method === 'GET') {
+        const buildingId = path.split('/').pop()!;
+        const units = db.rentalUnits.getRentalUnitsForBuilding(buildingId);
+        sendJson(res, { units });
+        return;
+      }
+
+      // Sign a lease
+      if (path === '/api/rentals/lease' && method === 'POST') {
+        const body = await parseBody(req);
+        const { agentId, unitId } = body;
+
+        const agent = db.agents.getAgent(agentId);
+        if (!agent) {
+          sendError(res, 'Agent not found', 404);
+          return;
+        }
+
+        const unit = db.rentalUnits.getRentalUnit(unitId);
+        if (!unit) {
+          sendError(res, 'Rental unit not found', 404);
+          return;
+        }
+
+        if (unit.status !== 'vacant') {
+          sendError(res, 'Unit is not available', 400);
+          return;
+        }
+
+        // Check if agent can afford first month's rent
+        if (agent.wallet.balance < unit.monthlyRent) {
+          sendError(res, `Insufficient funds. Need ${unit.monthlyRent} MOLT, have ${agent.wallet.balance}`, 400);
+          return;
+        }
+
+        // Deduct first month's rent
+        db.agents.deductFromWallet(agentId, unit.monthlyRent);
+
+        // Pay the building owner
+        const building = db.buildings.getBuilding(unit.buildingId);
+        if (building && building.ownerId !== 'system') {
+          const owner = db.agents.getAgent(building.ownerId);
+          if (owner) {
+            db.agents.addToWallet(building.ownerId, unit.monthlyRent);
+          }
+        }
+
+        // Sign the lease
+        const currentTick = engine.getCurrentTick();
+        db.rentalUnits.signLease(unitId, agentId, currentTick);
+
+        const updatedUnit = db.rentalUnits.getRentalUnit(unitId);
+        sendJson(res, { unit: updatedUnit, message: 'Lease signed successfully' });
+        return;
+      }
+
+      // Pay rent
+      if (path === '/api/rentals/pay' && method === 'POST') {
+        const body = await parseBody(req);
+        const { agentId, unitId } = body;
+
+        const agent = db.agents.getAgent(agentId);
+        if (!agent) {
+          sendError(res, 'Agent not found', 404);
+          return;
+        }
+
+        const unit = db.rentalUnits.getRentalUnit(unitId);
+        if (!unit) {
+          sendError(res, 'Rental unit not found', 404);
+          return;
+        }
+
+        if (unit.tenantId !== agentId) {
+          sendError(res, 'You are not the tenant of this unit', 403);
+          return;
+        }
+
+        // Check for pending warnings
+        const warning = db.rentWarnings.getWarningForUnit(unitId, 'pending');
+
+        // Determine amount to pay
+        const amountDue = warning ? warning.amountOwed : unit.monthlyRent;
+
+        if (agent.wallet.balance < amountDue) {
+          sendError(res, `Insufficient funds. Need ${amountDue} MOLT, have ${agent.wallet.balance}`, 400);
+          return;
+        }
+
+        // Deduct rent
+        db.agents.deductFromWallet(agentId, amountDue);
+
+        // Pay the building owner
+        const building = db.buildings.getBuilding(unit.buildingId);
+        if (building && building.ownerId !== 'system') {
+          db.agents.addToWallet(building.ownerId, amountDue);
+        }
+
+        // If there was a warning, mark it as paid
+        if (warning) {
+          db.rentWarnings.updateStatus(warning.id, 'paid');
+        }
+
+        sendJson(res, {
+          success: true,
+          amountPaid: amountDue,
+          warningCleared: !!warning,
+          message: warning ? 'Rent paid and warning cleared' : 'Rent paid successfully'
+        });
+        return;
+      }
+
+      // Terminate lease
+      if (path === '/api/rentals/terminate' && method === 'POST') {
+        const body = await parseBody(req);
+        const { agentId, unitId } = body;
+
+        const unit = db.rentalUnits.getRentalUnit(unitId);
+        if (!unit) {
+          sendError(res, 'Rental unit not found', 404);
+          return;
+        }
+
+        // Check if requester is tenant or building owner
+        const building = db.buildings.getBuilding(unit.buildingId);
+        const isTenant = unit.tenantId === agentId;
+        const isOwner = building && building.ownerId === agentId;
+
+        if (!isTenant && !isOwner) {
+          sendError(res, 'Only tenant or building owner can terminate lease', 403);
+          return;
+        }
+
+        db.rentalUnits.terminateLease(unitId);
+        sendJson(res, { success: true, message: 'Lease terminated' });
+        return;
+      }
+
+      // === Justice System Routes ===
+
+      // Get warnings for an agent
+      if (path.match(/^\/api\/warnings\/[a-f0-9-]+$/) && method === 'GET') {
+        const agentId = path.split('/').pop()!;
+        const warnings = db.rentWarnings.getWarningsForTenant(agentId);
+        sendJson(res, { warnings });
+        return;
+      }
+
+      // Get court cases for an agent
+      if (path.match(/^\/api\/cases\/[a-f0-9-]+$/) && method === 'GET') {
+        const agentId = path.split('/').pop()!;
+        const cases = db.courtCases.getCasesForDefendant(agentId);
+        sendJson(res, { cases });
+        return;
+      }
+
+      // Get all jail inmates
+      if (path === '/api/jail/inmates' && method === 'GET') {
+        const inmates = db.jailInmates.getAllInmates();
+
+        // Enrich with agent info
+        const enrichedInmates = inmates.map(inmate => {
+          const agent = db.agents.getAgent(inmate.agentId);
+          return {
+            ...inmate,
+            agentName: agent?.name,
+          };
+        });
+
+        sendJson(res, { inmates: enrichedInmates });
+        return;
+      }
+
+      // Get jail status for an agent
+      if (path.match(/^\/api\/jail\/status\/[a-f0-9-]+$/) && method === 'GET') {
+        const agentId = path.split('/').pop()!;
+        const inmate = db.jailInmates.getInmateByAgent(agentId);
+        if (inmate) {
+          const currentTick = engine.getCurrentTick();
+          const ticksRemaining = Math.max(0, inmate.releaseDate - currentTick);
+          const hoursRemaining = Math.ceil(ticksRemaining / 600);
+          sendJson(res, {
+            isIncarcerated: true,
+            inmate,
+            ticksRemaining,
+            hoursRemaining,
+          });
+        } else {
+          sendJson(res, { isIncarcerated: false });
+        }
         return;
       }
 

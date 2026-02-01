@@ -4,7 +4,7 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
-import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType } from './types.js';
+import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType, RentalUnit, RentWarning, CourtCase, JailInmate, RentalUnitType, RentalUnitStatus, RentWarningStatus, CourtCaseStatus, CourtVerdict, CourtSentence, JailStatus } from './types.js';
 
 const DEFAULT_DB_PATH = path.join(process.cwd(), 'moltcity.db');
 
@@ -62,7 +62,10 @@ export function createDatabase(): Database.Database {
       has_water INTEGER NOT NULL DEFAULT 0,
       operational INTEGER NOT NULL DEFAULT 0,
       built_at INTEGER NOT NULL,
-      owner_id TEXT NOT NULL
+      owner_id TEXT NOT NULL,
+      construction_progress INTEGER NOT NULL DEFAULT 100,
+      construction_started_at INTEGER,
+      construction_time_ticks INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_buildings_parcel ON buildings(parcel_id);
     CREATE INDEX IF NOT EXISTS idx_buildings_owner ON buildings(owner_id);
@@ -143,6 +146,66 @@ export function createDatabase(): Database.Database {
     );
     CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
     CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+
+    -- Rental units
+    CREATE TABLE IF NOT EXISTS rental_units (
+      id TEXT PRIMARY KEY,
+      building_id TEXT NOT NULL REFERENCES buildings(id),
+      floor_number INTEGER NOT NULL,
+      unit_number INTEGER NOT NULL,
+      unit_type TEXT NOT NULL DEFAULT 'residential',
+      monthly_rent REAL NOT NULL,
+      tenant_id TEXT REFERENCES agents(id),
+      lease_start INTEGER,
+      status TEXT NOT NULL DEFAULT 'vacant',
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_rental_units_building ON rental_units(building_id);
+    CREATE INDEX IF NOT EXISTS idx_rental_units_tenant ON rental_units(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_rental_units_status ON rental_units(status);
+
+    -- Rent warnings
+    CREATE TABLE IF NOT EXISTS rent_warnings (
+      id TEXT PRIMARY KEY,
+      unit_id TEXT NOT NULL REFERENCES rental_units(id),
+      tenant_id TEXT NOT NULL REFERENCES agents(id),
+      amount_owed REAL NOT NULL,
+      warning_date INTEGER NOT NULL,
+      due_date INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_rent_warnings_tenant ON rent_warnings(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_rent_warnings_status ON rent_warnings(status);
+
+    -- Court cases
+    CREATE TABLE IF NOT EXISTS court_cases (
+      id TEXT PRIMARY KEY,
+      warning_id TEXT REFERENCES rent_warnings(id),
+      defendant_id TEXT NOT NULL REFERENCES agents(id),
+      plaintiff_id TEXT NOT NULL,
+      case_type TEXT NOT NULL,
+      amount REAL NOT NULL,
+      hearing_date INTEGER,
+      verdict TEXT,
+      sentence TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_court_cases_defendant ON court_cases(defendant_id);
+    CREATE INDEX IF NOT EXISTS idx_court_cases_status ON court_cases(status);
+
+    -- Jail inmates
+    CREATE TABLE IF NOT EXISTS jail_inmates (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL REFERENCES agents(id),
+      case_id TEXT REFERENCES court_cases(id),
+      check_in INTEGER NOT NULL,
+      release_date INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'incarcerated'
+    );
+    CREATE INDEX IF NOT EXISTS idx_jail_inmates_agent ON jail_inmates(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_jail_inmates_status ON jail_inmates(status);
   `);
 
   return db;
@@ -348,7 +411,7 @@ export class BuildingRepository {
     return rows.map(row => this.rowToBuilding(row));
   }
 
-  createBuilding(parcelId: string, type: BuildingType, name: string, ownerId: string, sprite?: string, floors: number = 1): Building {
+  createBuilding(parcelId: string, type: BuildingType, name: string, ownerId: string, sprite?: string, floors: number = 1, currentTick: number = 0): Building {
     const id = crypto.randomUUID();
     // Power/water requirements scale with number of floors
     const basePower = this.getPowerRequirement(type);
@@ -356,10 +419,17 @@ export class BuildingRepository {
     const powerRequired = basePower * floors;
     const waterRequired = baseWater * floors;
 
+    // Calculate construction time: 24 real seconds per floor
+    // 10 ticks per second, so 24 seconds = 240 ticks per floor
+    const TICKS_PER_FLOOR = 240;
+    const constructionTimeTicks = type === 'road' ? 0 : floors * TICKS_PER_FLOOR;
+    const constructionProgress = type === 'road' ? 100 : 0;
+    const constructionStartedAt = type === 'road' ? null : currentTick;
+
     this.db.prepare(`
-      INSERT INTO buildings (id, parcel_id, type, name, sprite, floors, power_required, water_required, built_at, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, parcelId, type, name, sprite || '', floors, powerRequired, waterRequired, Date.now(), ownerId);
+      INSERT INTO buildings (id, parcel_id, type, name, sprite, floors, power_required, water_required, built_at, owner_id, construction_progress, construction_started_at, construction_time_ticks)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, parcelId, type, name, sprite || '', floors, powerRequired, waterRequired, Date.now(), ownerId, constructionProgress, constructionStartedAt, constructionTimeTicks);
 
     return this.getBuilding(id)!;
   }
@@ -405,6 +475,15 @@ export class BuildingRepository {
     this.db.prepare('DELETE FROM buildings WHERE id = ?').run(buildingId);
   }
 
+  updateConstructionProgress(buildingId: string, progress: number): void {
+    this.db.prepare('UPDATE buildings SET construction_progress = ? WHERE id = ?').run(progress, buildingId);
+  }
+
+  getBuildingsUnderConstruction(): Building[] {
+    const rows = this.db.prepare('SELECT * FROM buildings WHERE construction_progress < 100').all() as any[];
+    return rows.map(row => this.rowToBuilding(row));
+  }
+
   private rowToBuilding(row: any): Building {
     return {
       id: row.id,
@@ -422,6 +501,9 @@ export class BuildingRepository {
       operational: row.operational === 1,
       builtAt: row.built_at,
       ownerId: row.owner_id,
+      constructionProgress: row.construction_progress ?? 100,
+      constructionStartedAt: row.construction_started_at,
+      constructionTimeTicks: row.construction_time_ticks ?? 0,
     };
   }
 
@@ -438,6 +520,9 @@ export class BuildingRepository {
       park: 20,
       plaza: 100,
       city_hall: 1000,
+      police_station: 800,
+      courthouse: 1200,
+      jail: 1500,
     };
     return requirements[type] || 100;
   }
@@ -455,6 +540,9 @@ export class BuildingRepository {
       park: 100,
       plaza: 50,
       city_hall: 200,
+      police_station: 100,
+      courthouse: 150,
+      jail: 300,
     };
     return requirements[type] || 50;
   }
@@ -560,6 +648,43 @@ export class AgentRepository {
 
   setWork(agentId: string, buildingId: string): void {
     this.db.prepare('UPDATE agents SET work_building_id = ? WHERE id = ?').run(buildingId, agentId);
+  }
+
+  getAgentByMoltbookId(moltbookId: string): Agent | null {
+    const row = this.db.prepare('SELECT * FROM agents WHERE moltbook_id = ?').get(moltbookId) as any;
+    if (!row) return null;
+    return this.rowToAgent(row);
+  }
+
+  /**
+   * Find an agent by ID, moltbookId, or wallet address.
+   * Returns the agent if found, null otherwise.
+   */
+  findAgent(identifier: string): Agent | null {
+    // Try direct ID first
+    let agent = this.getAgent(identifier);
+    if (agent) return agent;
+
+    // Try moltbookId
+    agent = this.getAgentByMoltbookId(identifier);
+    if (agent) return agent;
+
+    return null;
+  }
+
+  updateWalletBalance(agentId: string, newBalance: number): void {
+    this.db.prepare('UPDATE agents SET wallet_balance = ? WHERE id = ?').run(newBalance, agentId);
+  }
+
+  addToWallet(agentId: string, amount: number): void {
+    this.db.prepare('UPDATE agents SET wallet_balance = wallet_balance + ? WHERE id = ?').run(amount, agentId);
+  }
+
+  deductFromWallet(agentId: string, amount: number): boolean {
+    const agent = this.getAgent(agentId);
+    if (!agent || agent.wallet.balance < amount) return false;
+    this.db.prepare('UPDATE agents SET wallet_balance = wallet_balance - ? WHERE id = ?').run(amount, agentId);
+    return true;
   }
 
   private rowToAgent(row: any): Agent {
@@ -716,6 +841,272 @@ export class WaterPipeRepository {
 }
 
 // ============================================
+// Rental Unit Repository
+// ============================================
+
+export class RentalUnitRepository {
+  constructor(private db: Database.Database) {}
+
+  getRentalUnit(id: string): RentalUnit | null {
+    const row = this.db.prepare('SELECT * FROM rental_units WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToRentalUnit(row);
+  }
+
+  getRentalUnitsForBuilding(buildingId: string): RentalUnit[] {
+    const rows = this.db.prepare('SELECT * FROM rental_units WHERE building_id = ? ORDER BY floor_number, unit_number').all(buildingId) as any[];
+    return rows.map(row => this.rowToRentalUnit(row));
+  }
+
+  getAvailableUnits(unitType?: RentalUnitType): RentalUnit[] {
+    let query = 'SELECT * FROM rental_units WHERE status = ?';
+    const params: any[] = ['vacant'];
+    if (unitType) {
+      query += ' AND unit_type = ?';
+      params.push(unitType);
+    }
+    const rows = this.db.prepare(query).all(...params) as any[];
+    return rows.map(row => this.rowToRentalUnit(row));
+  }
+
+  getUnitsByTenant(tenantId: string): RentalUnit[] {
+    const rows = this.db.prepare('SELECT * FROM rental_units WHERE tenant_id = ?').all(tenantId) as any[];
+    return rows.map(row => this.rowToRentalUnit(row));
+  }
+
+  getOccupiedUnits(): RentalUnit[] {
+    const rows = this.db.prepare('SELECT * FROM rental_units WHERE status = ?').all('occupied') as any[];
+    return rows.map(row => this.rowToRentalUnit(row));
+  }
+
+  createRentalUnit(buildingId: string, floorNumber: number, unitNumber: number, monthlyRent: number, unitType: RentalUnitType = 'residential'): RentalUnit {
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO rental_units (id, building_id, floor_number, unit_number, unit_type, monthly_rent, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'vacant', ?)
+    `).run(id, buildingId, floorNumber, unitNumber, unitType, monthlyRent, now);
+    return this.getRentalUnit(id)!;
+  }
+
+  signLease(unitId: string, tenantId: string, currentTick: number): void {
+    this.db.prepare(`
+      UPDATE rental_units SET tenant_id = ?, lease_start = ?, status = 'occupied' WHERE id = ?
+    `).run(tenantId, currentTick, unitId);
+  }
+
+  terminateLease(unitId: string): void {
+    this.db.prepare(`
+      UPDATE rental_units SET tenant_id = NULL, lease_start = NULL, status = 'vacant' WHERE id = ?
+    `).run(unitId);
+  }
+
+  deleteUnit(id: string): void {
+    this.db.prepare('DELETE FROM rental_units WHERE id = ?').run(id);
+  }
+
+  deleteUnitsForBuilding(buildingId: string): void {
+    this.db.prepare('DELETE FROM rental_units WHERE building_id = ?').run(buildingId);
+  }
+
+  private rowToRentalUnit(row: any): RentalUnit {
+    return {
+      id: row.id,
+      buildingId: row.building_id,
+      floorNumber: row.floor_number,
+      unitNumber: row.unit_number,
+      unitType: row.unit_type as RentalUnitType,
+      monthlyRent: row.monthly_rent,
+      tenantId: row.tenant_id,
+      leaseStart: row.lease_start,
+      status: row.status as RentalUnitStatus,
+      createdAt: row.created_at,
+    };
+  }
+}
+
+// ============================================
+// Rent Warning Repository
+// ============================================
+
+export class RentWarningRepository {
+  constructor(private db: Database.Database) {}
+
+  getWarning(id: string): RentWarning | null {
+    const row = this.db.prepare('SELECT * FROM rent_warnings WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToWarning(row);
+  }
+
+  getWarningsForTenant(tenantId: string): RentWarning[] {
+    const rows = this.db.prepare('SELECT * FROM rent_warnings WHERE tenant_id = ? ORDER BY created_at DESC').all(tenantId) as any[];
+    return rows.map(row => this.rowToWarning(row));
+  }
+
+  getPendingWarnings(): RentWarning[] {
+    const rows = this.db.prepare('SELECT * FROM rent_warnings WHERE status = ?').all('pending') as any[];
+    return rows.map(row => this.rowToWarning(row));
+  }
+
+  getWarningForUnit(unitId: string, status?: RentWarningStatus): RentWarning | null {
+    let query = 'SELECT * FROM rent_warnings WHERE unit_id = ?';
+    const params: any[] = [unitId];
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    query += ' ORDER BY created_at DESC LIMIT 1';
+    const row = this.db.prepare(query).get(...params) as any;
+    if (!row) return null;
+    return this.rowToWarning(row);
+  }
+
+  createWarning(unitId: string, tenantId: string, amountOwed: number, currentTick: number, dueDateTick: number): RentWarning {
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO rent_warnings (id, unit_id, tenant_id, amount_owed, warning_date, due_date, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(id, unitId, tenantId, amountOwed, currentTick, dueDateTick, now);
+    return this.getWarning(id)!;
+  }
+
+  updateStatus(id: string, status: RentWarningStatus): void {
+    this.db.prepare('UPDATE rent_warnings SET status = ? WHERE id = ?').run(status, id);
+  }
+
+  private rowToWarning(row: any): RentWarning {
+    return {
+      id: row.id,
+      unitId: row.unit_id,
+      tenantId: row.tenant_id,
+      amountOwed: row.amount_owed,
+      warningDate: row.warning_date,
+      dueDate: row.due_date,
+      status: row.status as RentWarningStatus,
+      createdAt: row.created_at,
+    };
+  }
+}
+
+// ============================================
+// Court Case Repository
+// ============================================
+
+export class CourtCaseRepository {
+  constructor(private db: Database.Database) {}
+
+  getCase(id: string): CourtCase | null {
+    const row = this.db.prepare('SELECT * FROM court_cases WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToCase(row);
+  }
+
+  getCasesForDefendant(defendantId: string): CourtCase[] {
+    const rows = this.db.prepare('SELECT * FROM court_cases WHERE defendant_id = ? ORDER BY created_at DESC').all(defendantId) as any[];
+    return rows.map(row => this.rowToCase(row));
+  }
+
+  getPendingCases(): CourtCase[] {
+    const rows = this.db.prepare('SELECT * FROM court_cases WHERE status = ?').all('pending') as any[];
+    return rows.map(row => this.rowToCase(row));
+  }
+
+  getInProgressCases(): CourtCase[] {
+    const rows = this.db.prepare('SELECT * FROM court_cases WHERE status = ?').all('in_progress') as any[];
+    return rows.map(row => this.rowToCase(row));
+  }
+
+  createCase(warningId: string | null, defendantId: string, plaintiffId: string, caseType: 'rent_nonpayment', amount: number, hearingDateTick: number): CourtCase {
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO court_cases (id, warning_id, defendant_id, plaintiff_id, case_type, amount, hearing_date, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(id, warningId, defendantId, plaintiffId, caseType, amount, hearingDateTick, now);
+    return this.getCase(id)!;
+  }
+
+  updateStatus(id: string, status: CourtCaseStatus): void {
+    this.db.prepare('UPDATE court_cases SET status = ? WHERE id = ?').run(status, id);
+  }
+
+  setVerdict(id: string, verdict: CourtVerdict, sentence: CourtSentence | null): void {
+    this.db.prepare('UPDATE court_cases SET verdict = ?, sentence = ?, status = ? WHERE id = ?').run(verdict, sentence, 'closed', id);
+  }
+
+  private rowToCase(row: any): CourtCase {
+    return {
+      id: row.id,
+      warningId: row.warning_id,
+      defendantId: row.defendant_id,
+      plaintiffId: row.plaintiff_id,
+      caseType: row.case_type as 'rent_nonpayment',
+      amount: row.amount,
+      hearingDate: row.hearing_date,
+      verdict: row.verdict as CourtVerdict | null,
+      sentence: row.sentence as CourtSentence | null,
+      status: row.status as CourtCaseStatus,
+      createdAt: row.created_at,
+    };
+  }
+}
+
+// ============================================
+// Jail Inmate Repository
+// ============================================
+
+export class JailInmateRepository {
+  constructor(private db: Database.Database) {}
+
+  getInmate(id: string): JailInmate | null {
+    const row = this.db.prepare('SELECT * FROM jail_inmates WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToInmate(row);
+  }
+
+  getInmateByAgent(agentId: string): JailInmate | null {
+    const row = this.db.prepare('SELECT * FROM jail_inmates WHERE agent_id = ? AND status = ?').get(agentId, 'incarcerated') as any;
+    if (!row) return null;
+    return this.rowToInmate(row);
+  }
+
+  getAllInmates(): JailInmate[] {
+    const rows = this.db.prepare('SELECT * FROM jail_inmates WHERE status = ?').all('incarcerated') as any[];
+    return rows.map(row => this.rowToInmate(row));
+  }
+
+  getInmatesForRelease(currentTick: number): JailInmate[] {
+    const rows = this.db.prepare('SELECT * FROM jail_inmates WHERE status = ? AND release_date <= ?').all('incarcerated', currentTick) as any[];
+    return rows.map(row => this.rowToInmate(row));
+  }
+
+  createInmate(agentId: string, caseId: string | null, currentTick: number, releaseDateTick: number): JailInmate {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO jail_inmates (id, agent_id, case_id, check_in, release_date, status)
+      VALUES (?, ?, ?, ?, ?, 'incarcerated')
+    `).run(id, agentId, caseId, currentTick, releaseDateTick);
+    return this.getInmate(id)!;
+  }
+
+  releaseInmate(id: string): void {
+    this.db.prepare('UPDATE jail_inmates SET status = ? WHERE id = ?').run('released', id);
+  }
+
+  private rowToInmate(row: any): JailInmate {
+    return {
+      id: row.id,
+      agentId: row.agent_id,
+      caseId: row.case_id,
+      checkIn: row.check_in,
+      releaseDate: row.release_date,
+      status: row.status as JailStatus,
+    };
+  }
+}
+
+// ============================================
 // Database Manager
 // ============================================
 
@@ -729,6 +1120,10 @@ export class DatabaseManager {
   public vehicles: VehicleRepository;
   public powerLines: PowerLineRepository;
   public waterPipes: WaterPipeRepository;
+  public rentalUnits: RentalUnitRepository;
+  public rentWarnings: RentWarningRepository;
+  public courtCases: CourtCaseRepository;
+  public jailInmates: JailInmateRepository;
 
   constructor() {
     this.db = createDatabase();
@@ -740,6 +1135,10 @@ export class DatabaseManager {
     this.vehicles = new VehicleRepository(this.db);
     this.powerLines = new PowerLineRepository(this.db);
     this.waterPipes = new WaterPipeRepository(this.db);
+    this.rentalUnits = new RentalUnitRepository(this.db);
+    this.rentWarnings = new RentWarningRepository(this.db);
+    this.courtCases = new CourtCaseRepository(this.db);
+    this.jailInmates = new JailInmateRepository(this.db);
   }
 
   close(): void {

@@ -35,7 +35,10 @@ export type BuildingType =
   | 'road'
   | 'park'
   | 'plaza'
-  | 'city_hall';
+  | 'city_hall'
+  | 'police_station'
+  | 'courthouse'
+  | 'jail';
 
 export interface Building {
   id: string;
@@ -53,6 +56,10 @@ export interface Building {
   operational: boolean;
   builtAt: number; // Unix timestamp
   ownerId: string;
+  // Construction system
+  constructionProgress: number; // 0-100, 100 = complete
+  constructionStartedAt: number | null; // tick when construction started
+  constructionTimeTicks: number; // total ticks needed to complete
 }
 
 // === Infrastructure: Roads ===
@@ -109,7 +116,7 @@ export interface WaterPipe {
 }
 
 // === Agents (Citizens) ===
-export type AgentState = 'idle' | 'traveling' | 'working' | 'shopping' | 'sleeping' | 'socializing';
+export type AgentState = 'idle' | 'traveling' | 'working' | 'shopping' | 'sleeping' | 'socializing' | 'in_jail';
 
 export interface DailySchedule {
   wakeUp: number;    // hour (0-23)
@@ -217,4 +224,79 @@ export interface BuildRequest {
 export interface MoveAgentRequest {
   agentId: string;
   destination: Coordinate;
+}
+
+// === Rental System ===
+export type RentalUnitType = 'residential' | 'commercial';
+export type RentalUnitStatus = 'vacant' | 'occupied' | 'reserved';
+export type RentWarningStatus = 'pending' | 'paid' | 'escalated';
+export type CourtCaseStatus = 'pending' | 'in_progress' | 'closed';
+export type CourtVerdict = 'guilty' | 'not_guilty' | 'dismissed';
+export type CourtSentence = 'eviction' | 'jail' | 'fine';
+export type JailStatus = 'incarcerated' | 'released';
+
+export interface RentalUnit {
+  id: string;
+  buildingId: string;
+  floorNumber: number;
+  unitNumber: number; // 1, 2, or 3 per floor
+  unitType: RentalUnitType;
+  monthlyRent: number;
+  tenantId: string | null;
+  leaseStart: number | null; // tick when lease started
+  status: RentalUnitStatus;
+  createdAt: number;
+}
+
+export interface RentWarning {
+  id: string;
+  unitId: string;
+  tenantId: string;
+  amountOwed: number;
+  warningDate: number; // tick when warning issued
+  dueDate: number; // tick deadline to pay
+  status: RentWarningStatus;
+  createdAt: number;
+}
+
+export interface CourtCase {
+  id: string;
+  warningId: string | null;
+  defendantId: string;
+  plaintiffId: string; // building owner
+  caseType: 'rent_nonpayment';
+  amount: number;
+  hearingDate: number | null; // tick of hearing
+  verdict: CourtVerdict | null;
+  sentence: CourtSentence | null;
+  status: CourtCaseStatus;
+  createdAt: number;
+}
+
+export interface JailInmate {
+  id: string;
+  agentId: string;
+  caseId: string | null;
+  checkIn: number; // tick when incarcerated
+  releaseDate: number; // tick when to release
+  status: JailStatus;
+}
+
+// === Rental API Types ===
+export interface CreateRentalUnitsRequest {
+  buildingId: string;
+  floor: number;
+  unitCount: number; // 1-3
+  rent: number;
+  unitType?: RentalUnitType;
+}
+
+export interface SignLeaseRequest {
+  agentId: string;
+  unitId: string;
+}
+
+export interface PayRentRequest {
+  agentId: string;
+  unitId: string;
 }
