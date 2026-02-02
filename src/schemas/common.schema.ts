@@ -16,12 +16,12 @@ export const intCoordinateSchema = z.object({
   y: z.number().int().min(0),
 });
 
-// Range query schema
+// Range query schema (defaults to full 50x50 grid)
 export const rangeQuerySchema = z.object({
-  minX: z.coerce.number().int().min(0),
-  minY: z.coerce.number().int().min(0),
-  maxX: z.coerce.number().int().min(0),
-  maxY: z.coerce.number().int().min(0),
+  minX: z.coerce.number().int().min(0).default(0),
+  minY: z.coerce.number().int().min(0).default(0),
+  maxX: z.coerce.number().int().min(0).default(49),
+  maxY: z.coerce.number().int().min(0).default(49),
 });
 
 // Pagination schema
