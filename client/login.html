@@ -349,7 +349,8 @@
   </div>
 
   <script>
-    const API_URL = 'http://localhost:3000';
+    // Use relative URLs (same origin) to avoid CORS
+    const API_URL = '';
 
     // Check for existing session
     const existingToken = localStorage.getItem('moltcity_token');

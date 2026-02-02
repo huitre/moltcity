@@ -42,18 +42,19 @@
       }
 
       .panel {
-        background: rgba(26, 26, 46, 0.9);
-        border: 1px solid #4a4a6a;
-        border-radius: 8px;
-        padding: 12px;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(74, 74, 106, 0.5);
+        border-radius: 10px;
+        padding: 14px;
         color: #e0e0e0;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       }
 
       .panel h3 {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         color: #7c7cff;
-        font-size: 14px;
+        font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 1px;
       }
@@ -61,17 +62,18 @@
       .stat {
         display: flex;
         justify-content: space-between;
-        margin: 4px 0;
+        align-items: center;
+        margin: 6px 0;
         font-size: 13px;
       }
 
       .stat-label {
-        color: #888;
+        color: #999;
       }
 
       .stat-value {
         color: #4ecdc4;
-        font-weight: bold;
+        font-weight: 600;
       }
 
       #controls {
@@ -82,50 +84,140 @@
       }
 
       button {
-        background: #4a4a6a;
-        border: none;
+        background: linear-gradient(135deg, #4a4a6a, #3a3a5a);
+        border: 1px solid rgba(124, 124, 255, 0.2);
         color: #fff;
         padding: 8px 16px;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
         font-size: 13px;
-        transition: all 0.2s;
+        font-weight: 500;
+        transition: all 0.2s ease;
       }
 
       button:hover {
-        background: #5a5a8a;
+        background: linear-gradient(135deg, #5a5a8a, #4a4a7a);
+        border-color: rgba(124, 124, 255, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      button:active {
+        transform: translateY(0);
       }
 
       button.active {
-        background: #7c7cff;
+        background: linear-gradient(135deg, #7c7cff, #6c6cef);
+        border-color: #7c7cff;
+        box-shadow: 0 0 12px rgba(124, 124, 255, 0.3);
       }
 
       button.success {
-        background: #4ecdc4;
+        background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+        border-color: #4ecdc4;
         color: #1a1a2e;
       }
 
+      button.success:hover {
+        background: linear-gradient(135deg, #5eddd4, #4ecdc4);
+        box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+      }
+
       button.wallet {
-        background: #f7931a;
+        background: linear-gradient(135deg, #f7931a, #e8820a);
+        border-color: #f7931a;
         color: #fff;
       }
 
+      button.wallet:hover {
+        background: linear-gradient(135deg, #ffa32a, #f7931a);
+        box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+      }
+
       button.wallet.connected {
-        background: #4ecdc4;
+        background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+        border-color: #4ecdc4;
       }
 
       #tooltip {
         position: fixed;
-        background: rgba(26, 26, 46, 0.95);
-        border: 1px solid #7c7cff;
-        border-radius: 4px;
-        padding: 8px 12px;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.5);
+        border-radius: 8px;
+        padding: 10px 14px;
         color: #e0e0e0;
         font-size: 12px;
         pointer-events: none;
         display: none;
         z-index: 200;
-        max-width: 250px;
+        max-width: 280px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(124, 124, 255, 0.1);
+        backdrop-filter: blur(10px);
+        animation: tooltipFadeIn 0.15s ease-out;
+      }
+
+      @keyframes tooltipFadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      #tooltip .tooltip-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(124, 124, 255, 0.2);
+      }
+
+      #tooltip .tooltip-header .coords {
+        font-size: 11px;
+        color: #888;
+        margin-left: auto;
+      }
+
+      #tooltip .tooltip-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 4px 0;
+        font-size: 12px;
+      }
+
+      #tooltip .tooltip-row .icon {
+        width: 16px;
+        text-align: center;
+      }
+
+      #tooltip .tooltip-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      #tooltip .tooltip-status.available {
+        background: rgba(78, 205, 196, 0.2);
+        color: #4ecdc4;
+      }
+
+      #tooltip .tooltip-status.owned {
+        background: rgba(124, 124, 255, 0.2);
+        color: #7c7cff;
+      }
+
+      #tooltip .tooltip-status.powered {
+        background: rgba(255, 204, 0, 0.2);
+        color: #ffcc00;
+      }
+
+      #tooltip .tooltip-status.unpowered {
+        background: rgba(255, 107, 107, 0.2);
+        color: #ff6b6b;
       }
 
       #build-menu {
@@ -134,59 +226,96 @@
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        gap: 8px;
-        background: rgba(26, 26, 46, 0.9);
-        border: 1px solid #4a4a6a;
-        border-radius: 8px;
-        padding: 8px;
+        gap: 6px;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.3);
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(124, 124, 255, 0.1);
+        backdrop-filter: blur(10px);
       }
 
       .build-option {
-        width: 50px;
-        height: 50px;
+        width: 54px;
+        height: 54px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #2a2a4e;
-        border: 2px solid transparent;
-        border-radius: 4px;
+        background: rgba(42, 42, 78, 0.8);
+        border: 2px solid rgba(74, 74, 106, 0.5);
+        border-radius: 8px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
+        position: relative;
       }
 
       .build-option:hover {
-        border-color: #7c7cff;
+        border-color: rgba(124, 124, 255, 0.8);
+        background: rgba(58, 58, 94, 0.9);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(124, 124, 255, 0.2);
       }
 
       .build-option.selected {
         border-color: #4ecdc4;
-        background: #3a3a5e;
+        background: rgba(78, 205, 196, 0.15);
+        box-shadow: 0 0 15px rgba(78, 205, 196, 0.3);
+      }
+
+      .build-option.selected::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background: #4ecdc4;
+        border-radius: 50%;
       }
 
       .build-option span {
-        font-size: 20px;
+        font-size: 22px;
         margin-bottom: 2px;
       }
 
       .build-option small {
-        font-size: 9px;
+        font-size: 8px;
         color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .build-option:hover small {
+        color: #aaa;
+      }
+
+      .build-option.selected small {
+        color: #4ecdc4;
       }
 
       /* Floor selector panel */
       #floor-selector {
         position: fixed;
-        bottom: 80px;
+        bottom: 85px;
         left: 50%;
         transform: translateX(-50%);
         display: none;
-        background: rgba(26, 26, 46, 0.95);
-        border: 1px solid #7c7cff;
-        border-radius: 8px;
-        padding: 12px 16px;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.4);
+        border-radius: 12px;
+        padding: 14px 18px;
         color: #e0e0e0;
         z-index: 150;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(124, 124, 255, 0.15);
+        backdrop-filter: blur(10px);
+        animation: floatUp 0.2s ease-out;
+      }
+
+      @keyframes floatUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
       }
 
       #floor-selector.visible {
@@ -194,50 +323,60 @@
       }
 
       #floor-selector h4 {
-        margin: 0 0 8px 0;
+        margin: 0 0 10px 0;
         color: #7c7cff;
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
       }
 
       .floor-buttons {
         display: flex;
         gap: 6px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        justify-content: center;
       }
 
       .floor-btn {
-        width: 36px;
-        height: 36px;
-        background: #2a2a4e;
-        border: 2px solid #4a4a6a;
-        border-radius: 4px;
+        width: 38px;
+        height: 38px;
+        background: rgba(42, 42, 78, 0.8);
+        border: 2px solid rgba(74, 74, 106, 0.6);
+        border-radius: 6px;
         color: #e0e0e0;
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
       }
 
       .floor-btn:hover {
-        border-color: #7c7cff;
-        background: #3a3a5e;
+        border-color: rgba(124, 124, 255, 0.8);
+        background: rgba(58, 58, 94, 0.9);
+        transform: scale(1.05);
       }
 
       .floor-btn.selected {
         border-color: #4ecdc4;
-        background: #4ecdc4;
+        background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
         color: #1a1a2e;
+        box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
       }
 
       #floor-cost {
-        font-size: 11px;
+        font-size: 12px;
         color: #4ecdc4;
         text-align: center;
+        font-weight: 600;
+        padding: 6px 10px;
+        background: rgba(78, 205, 196, 0.1);
+        border-radius: 6px;
       }
 
       #floor-cost.premium {
         color: #f7931a;
+        background: rgba(247, 147, 26, 0.1);
       }
 
       #connection-status {
@@ -361,72 +500,158 @@
         position: fixed;
         bottom: 80px;
         right: 10px;
-        width: 280px;
-        max-height: 400px;
+        width: 300px;
+        max-height: 450px;
         overflow-y: auto;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 30px rgba(124, 124, 255, 0.1);
+        animation: panelSlideIn 0.2s ease-out;
+      }
+
+      @keyframes panelSlideIn {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
       }
 
       #building-info-panel h3 {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(124, 124, 255, 0.2);
+        margin-bottom: 12px;
+      }
+
+      #building-info-panel .building-icon {
+        font-size: 24px;
+        margin-right: 8px;
       }
 
       #building-info-panel .close-btn {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.1);
         border: none;
         color: #888;
-        font-size: 18px;
+        font-size: 16px;
         cursor: pointer;
-        padding: 0;
+        padding: 4px 8px;
         line-height: 1;
+        border-radius: 4px;
+        transition: all 0.2s;
       }
 
       #building-info-panel .close-btn:hover {
         color: #fff;
+        background: rgba(255, 107, 107, 0.3);
+      }
+
+      #building-info-panel .stat {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      #building-info-panel .stat:last-child {
+        border-bottom: none;
+      }
+
+      #building-info-panel .section-title {
+        font-size: 11px;
+        color: #7c7cff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 16px 0 8px 0;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(124, 124, 255, 0.2);
       }
 
       .construction-badge {
-        display: inline-block;
-        background: #f7931a;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: linear-gradient(135deg, #f7931a, #e67e22);
         color: #fff;
-        padding: 2px 6px;
-        border-radius: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
         font-size: 10px;
+        font-weight: 600;
         text-transform: uppercase;
-        margin-left: 8px;
+        letter-spacing: 0.5px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(247, 147, 26, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(247, 147, 26, 0); }
       }
 
       .construction-progress {
-        margin: 8px 0;
+        margin: 12px 0;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
       }
 
       .construction-progress .progress-bar {
-        height: 8px;
-        background: #333;
-        border-radius: 4px;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
         overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
       }
 
       .construction-progress .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #ff6666, #ffcc00, #66cc66);
-        transition: width 0.3s;
+        background: linear-gradient(90deg, #ff6b6b, #feca57, #1dd1a1);
+        transition: width 0.5s ease-out;
+        border-radius: 5px;
+        position: relative;
+      }
+
+      .construction-progress .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
+      .construction-progress small {
+        display: block;
+        text-align: center;
+        margin-top: 6px;
+        color: #888;
+        font-size: 11px;
       }
 
       .unit-list {
         margin-top: 12px;
+        max-height: 150px;
+        overflow-y: auto;
       }
 
       .unit-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 8px;
+        padding: 8px 10px;
         background: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        margin: 4px 0;
+        border-radius: 6px;
+        margin: 6px 0;
         font-size: 12px;
+        transition: all 0.2s;
+      }
+
+      .unit-item:hover {
+        background: rgba(0, 0, 0, 0.3);
+        transform: translateX(2px);
       }
 
       .unit-item.occupied {
@@ -434,7 +659,18 @@
       }
 
       .unit-item.vacant {
-        border-left: 3px solid #66cc66;
+        border-left: 3px solid #1dd1a1;
+      }
+
+      .unit-item .unit-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .unit-item .unit-floor {
+        font-size: 10px;
+        color: #888;
       }
 
       .unit-rent {
@@ -444,8 +680,16 @@
 
       .manage-units-btn {
         width: 100%;
-        margin-top: 8px;
-        background: #5a5a8a;
+        margin-top: 12px;
+        background: linear-gradient(135deg, #5a5a8a, #4a4a7a);
+        border: 1px solid rgba(124, 124, 255, 0.3);
+        transition: all 0.2s;
+      }
+
+      .manage-units-btn:hover {
+        background: linear-gradient(135deg, #6a6a9a, #5a5a8a);
+        border-color: rgba(124, 124, 255, 0.5);
+        transform: translateY(-1px);
       }
 
       /* Justice badges */
@@ -1006,23 +1250,15 @@
     <!-- Building Info Panel -->
     <div class="panel" id="building-info-panel">
       <h3>
-        <span id="building-name">Building</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="building-icon" id="building-icon">🏠</span>
+          <span id="building-name">Building</span>
+        </div>
         <button class="close-btn" onclick="closeBuildingInfo()">&times;</button>
       </h3>
-      <div class="stat">
-        <span class="stat-label">Type</span>
-        <span class="stat-value" id="building-type">-</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Floors</span>
-        <span class="stat-value" id="building-floors">1</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Owner</span>
-        <span class="stat-value" id="building-owner">-</span>
-      </div>
+
       <div id="construction-info" style="display: none">
-        <span class="construction-badge">Under Construction</span>
+        <span class="construction-badge">🔨 Under Construction</span>
         <div class="construction-progress">
           <div class="progress-bar">
             <div
@@ -1034,10 +1270,34 @@
           <small id="construction-progress-text">0% complete</small>
         </div>
       </div>
+
+      <div class="section-title">Details</div>
+      <div class="stat">
+        <span class="stat-label">Type</span>
+        <span class="stat-value" id="building-type">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Floors</span>
+        <span class="stat-value" id="building-floors">1</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Power</span>
+        <span class="stat-value" id="building-power">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Owner</span>
+        <span class="stat-value" id="building-owner">-</span>
+      </div>
+
       <div id="rental-info">
+        <div class="section-title">Rental Units</div>
         <div class="stat">
-          <span class="stat-label">Rental Units</span>
+          <span class="stat-label">Total Units</span>
           <span class="stat-value" id="rental-unit-count">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Occupancy</span>
+          <span class="stat-value" id="rental-occupancy">-</span>
         </div>
         <div class="unit-list" id="unit-list"></div>
         <button
@@ -1045,7 +1305,7 @@
           id="manage-units-btn"
           style="display: none"
         >
-          Manage Units
+          + Add Rental Units
         </button>
       </div>
     </div>
@@ -1057,7 +1317,7 @@
 
       // Use relative URLs (same origin) to avoid CORS
       const API_URL = "";
-      const WS_URL = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
+      const WS_URL = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
 
       // Check if we're in spectator mode (read-only, no auth required)
       const isSpectatorMode = window.location.pathname === "/spectate";
@@ -1770,6 +2030,7 @@
 
       function closePurchaseModal() {
         pendingPurchase = null;
+        clearSelection();
         document.getElementById("modal-overlay").style.display = "none";
         document.getElementById("purchase-modal").style.display = "none";
       }
@@ -1784,15 +2045,26 @@
         selectedBuilding = building;
         const panel = document.getElementById("building-info-panel");
 
+        // Set icon based on building type
+        document.getElementById("building-icon").textContent = getBuildingIcon(building.type);
         document.getElementById("building-name").textContent =
-          building.name || building.type;
-        document.getElementById("building-type").textContent = building.type;
+          building.name || building.type.charAt(0).toUpperCase() + building.type.slice(1).replace('_', ' ');
+        document.getElementById("building-type").textContent =
+          building.type.charAt(0).toUpperCase() + building.type.slice(1).replace('_', ' ');
         document.getElementById("building-floors").textContent =
           building.floors || 1;
         document.getElementById("building-owner").textContent =
           building.ownerId === walletAddress
             ? "You"
             : building.ownerId?.slice(0, 8) + "..." || "Unknown";
+
+        // Show power status
+        const powerEl = document.getElementById("building-power");
+        if (building.powered) {
+          powerEl.innerHTML = '<span style="color:#4ecdc4;">⚡ Connected</span>';
+        } else {
+          powerEl.innerHTML = '<span style="color:#ff6b6b;">⚠️ No Power</span>';
+        }
 
         // Show construction info if under construction
         const constructionInfo = document.getElementById("construction-info");
@@ -1836,6 +2108,16 @@
           document.getElementById("rental-unit-count").textContent =
             units.length;
 
+          // Calculate occupancy
+          const occupied = units.filter(u => u.status === "occupied").length;
+          const occupancyEl = document.getElementById("rental-occupancy");
+          if (units.length > 0) {
+            const pct = Math.round((occupied / units.length) * 100);
+            occupancyEl.innerHTML = `<span style="color:${pct > 50 ? '#4ecdc4' : '#feca57'}">${occupied}/${units.length} (${pct}%)</span>`;
+          } else {
+            occupancyEl.textContent = "-";
+          }
+
           const unitList = document.getElementById("unit-list");
           unitList.innerHTML = "";
 
@@ -1843,9 +2125,12 @@
             const div = document.createElement("div");
             div.className = `unit-item ${unit.status}`;
             div.innerHTML = `
-              <span>Floor ${unit.floorNumber}, Unit ${unit.unitNumber}</span>
-              <span class="unit-rent">${unit.monthlyRent} MOLT/mo</span>
-              <span>${unit.status === "occupied" ? "🏠 Occupied" : "🟢 Vacant"}</span>
+              <div class="unit-info">
+                <span>Unit ${unit.unitNumber}</span>
+                <span class="unit-floor">Floor ${unit.floorNumber}</span>
+              </div>
+              <span class="unit-rent">${unit.monthlyRent} MOLT</span>
+              <span>${unit.status === "occupied" ? "🏠" : "🟢"}</span>
             `;
             unitList.appendChild(div);
           }
@@ -1856,6 +2141,7 @@
 
       function closeBuildingInfo() {
         selectedBuilding = null;
+        clearSelection();
         document.getElementById("building-info-panel").style.display = "none";
       }
 
@@ -3677,19 +3963,58 @@
         return graphics;
       }
 
-      function drawHighlight(x, y, color = COLORS.highlight) {
+      let selectionGraphics = null;
+
+      function drawHighlight(x, y, color = COLORS.highlight, isSelection = false) {
         const iso = cartToIso(x, y);
         const graphics = new PIXI.Graphics();
 
-        graphics.lineStyle(2, color, 0.8);
+        // Outer glow effect
+        if (isSelection) {
+          graphics.lineStyle(4, color, 0.3);
+          graphics.moveTo(iso.x, iso.y - 2);
+          graphics.lineTo(iso.x + TILE_WIDTH / 2 + 2, iso.y + TILE_HEIGHT / 2);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT + 2);
+          graphics.lineTo(iso.x - TILE_WIDTH / 2 - 2, iso.y + TILE_HEIGHT / 2);
+          graphics.closePath();
+        }
+
+        // Main highlight
+        graphics.lineStyle(isSelection ? 3 : 2, color, isSelection ? 1 : 0.8);
         graphics.moveTo(iso.x, iso.y);
         graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
         graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
         graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
         graphics.closePath();
 
+        // Fill for selection
+        if (isSelection) {
+          graphics.beginFill(color, 0.15);
+          graphics.moveTo(iso.x, iso.y);
+          graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+          graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+          graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+          graphics.closePath();
+          graphics.endFill();
+        }
+
         graphics.zIndex = 9999;
         return graphics;
+      }
+
+      function setSelection(x, y, color = 0x4ecdc4) {
+        if (selectionGraphics) {
+          worldContainer.removeChild(selectionGraphics);
+        }
+        selectionGraphics = drawHighlight(x, y, color, true);
+        worldContainer.addChild(selectionGraphics);
+      }
+
+      function clearSelection() {
+        if (selectionGraphics) {
+          worldContainer.removeChild(selectionGraphics);
+          selectionGraphics = null;
+        }
       }
 
       function darkenColor(color, factor) {
@@ -3989,6 +4314,16 @@
         }
       }
 
+      function getBuildingIcon(type) {
+        const icons = {
+          house: '🏠', apartment: '🏢', shop: '🏪', office: '🏛️',
+          factory: '🏭', power_plant: '⚡', water_tower: '💧',
+          road: '🛤️', park: '🌳', plaza: '🏛️', city_hall: '🏛️',
+          police_station: '🚔', courthouse: '⚖️', jail: '🔒'
+        };
+        return icons[type] || '🏗️';
+      }
+
       function onTileHover(x, y) {
         const tooltip = document.getElementById("tooltip");
         const parcel = parcels.find((p) => p.x === x && p.y === y);
@@ -3998,17 +4333,81 @@
           return bp && bp.x === x && bp.y === y;
         });
 
-        let content = `<b>Parcel (${x}, ${y})</b><br>`;
+        let content = '<div class="tooltip-header">';
+
+        if (building) {
+          content += `<span>${getBuildingIcon(building.type)}</span>`;
+          content += `<strong>${building.name || building.type}</strong>`;
+        } else if (road) {
+          content += `<span>🛤️</span>`;
+          content += `<strong>Road</strong>`;
+        } else {
+          content += `<span>📍</span>`;
+          content += `<strong>Parcel</strong>`;
+        }
+        content += `<span class="coords">(${x}, ${y})</span>`;
+        content += '</div>';
+
+        // Ownership status
         if (parcel?.ownerId) {
           const addr = parcel.ownerId;
-          content += `Owner: ${addr.slice(0, 8)}...<br>`;
+          content += `<div class="tooltip-row">`;
+          content += `<span class="icon">👤</span>`;
+          content += `<span>Owner: ${addr.slice(0, 8)}...</span>`;
+          content += `</div>`;
         } else {
-          content += `<span style="color:#4ecdc4">Available for purchase</span><br>`;
+          content += `<div class="tooltip-row">`;
+          content += `<span class="tooltip-status available">Available</span>`;
+          content += `</div>`;
         }
-        if (road) content += `Road (${road.lanes} lanes)<br>`;
+
+        // Road info
+        if (road) {
+          content += `<div class="tooltip-row">`;
+          content += `<span class="icon">🚗</span>`;
+          content += `<span>${road.lanes || 2} lanes</span>`;
+          content += `</div>`;
+        }
+
+        // Building info
         if (building) {
-          content += `${building.type}: ${building.name}<br>`;
-          content += building.powered ? "⚡ Powered" : "⚠️ No Power";
+          content += `<div class="tooltip-row">`;
+          content += `<span class="icon">🏗️</span>`;
+          content += `<span>${building.type.charAt(0).toUpperCase() + building.type.slice(1).replace('_', ' ')}</span>`;
+          content += `</div>`;
+
+          if (building.floors > 1) {
+            content += `<div class="tooltip-row">`;
+            content += `<span class="icon">📊</span>`;
+            content += `<span>${building.floors} floors</span>`;
+            content += `</div>`;
+          }
+
+          content += `<div class="tooltip-row">`;
+          if (building.powered) {
+            content += `<span class="tooltip-status powered">⚡ Powered</span>`;
+          } else {
+            content += `<span class="tooltip-status unpowered">⚠️ No Power</span>`;
+          }
+          content += `</div>`;
+
+          if (building.constructionProgress !== undefined && building.constructionProgress < 100) {
+            content += `<div class="tooltip-row">`;
+            content += `<span class="icon">🔨</span>`;
+            content += `<span>Under construction (${building.constructionProgress}%)</span>`;
+            content += `</div>`;
+          }
+        }
+
+        // Click hint
+        if (!building && !parcel?.ownerId) {
+          content += `<div class="tooltip-row" style="margin-top:6px;color:#888;font-size:10px;">`;
+          content += `<span>Click to purchase</span>`;
+          content += `</div>`;
+        } else if (building) {
+          content += `<div class="tooltip-row" style="margin-top:6px;color:#888;font-size:10px;">`;
+          content += `<span>Click for details</span>`;
+          content += `</div>`;
         }
 
         tooltip.innerHTML = content;
@@ -4059,12 +4458,14 @@
           // Check if there's a building on this parcel
           const building = buildings.find((b) => b.parcelId === parcel?.id);
           if (building) {
+            setSelection(x, y, 0x4ecdc4);
             showBuildingInfo(building);
             return;
           }
 
           // Show purchase modal if parcel is not owned
           if (parcel && !parcel.ownerId && walletAddress) {
+            setSelection(x, y, 0x1dd1a1);
             const quote = await getParcelQuote(x, y);
             if (quote) {
               showPurchaseModal(x, y, quote);
