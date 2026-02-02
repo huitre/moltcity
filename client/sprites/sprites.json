@@ -75,7 +75,7 @@
   },
   "roads": {
     "road_055": {
-      "file": "city-pack/PNG/cityTiles_055.png",
+      "file": "city-pack/PNG/cityTiles_056.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -288,43 +288,22 @@
     ],
     "bottoms": [
       {
-        "id": "brick_109",
-        "file": "buildings-pack/PNG/buildingTiles_109.png",
+        "id": "brick_030",
+        "file": "buildings-pack/PNG/buildingTiles_030.png",
         "width": 132,
         "height": 127,
         "stackHeight": 36
       },
       {
-        "id": "brick_116",
-        "file": "buildings-pack/PNG/buildingTiles_116.png",
+        "id": "brick_014",
+        "file": "buildings-pack/PNG/buildingTiles_014.png",
         "width": 132,
         "height": 127,
         "stackHeight": 36
       },
       {
-        "id": "brick_117",
-        "file": "buildings-pack/PNG/buildingTiles_117.png",
-        "width": 132,
-        "height": 127,
-        "stackHeight": 36
-      },
-      {
-        "id": "brick_123",
-        "file": "buildings-pack/PNG/buildingTiles_123.png",
-        "width": 132,
-        "height": 127,
-        "stackHeight": 36
-      },
-      {
-        "id": "brick_124",
-        "file": "buildings-pack/PNG/buildingTiles_124.png",
-        "width": 132,
-        "height": 127,
-        "stackHeight": 36
-      },
-      {
-        "id": "brick_125",
-        "file": "buildings-pack/PNG/buildingTiles_125.png",
+        "id": "brick_022",
+        "file": "buildings-pack/PNG/buildingTiles_022.png",
         "width": 132,
         "height": 127,
         "stackHeight": 36
@@ -376,6 +355,78 @@
     ]
   },
   "officeParts": {
+    "bottoms": [
+      {
+        "id": "brick_123",
+        "file": "buildings-pack/PNG/buildingTiles_123.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_124",
+        "file": "buildings-pack/PNG/buildingTiles_124.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_125",
+        "file": "buildings-pack/PNG/buildingTiles_125.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_109",
+        "file": "buildings-pack/PNG/buildingTiles_109.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_116",
+        "file": "buildings-pack/PNG/buildingTiles_116.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_117",
+        "file": "buildings-pack/PNG/buildingTiles_117.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_bottom_099",
+        "file": "buildings-pack/PNG/buildingTiles_099.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_bottom_100",
+        "file": "buildings-pack/PNG/buildingTiles_100.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_bottom_101",
+        "file": "buildings-pack/PNG/buildingTiles_101.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "office_bottom_117",
+        "file": "buildings-pack/PNG/buildingTiles_117.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      }
+    ],
     "floors": [
       {
         "id": "office_000",
