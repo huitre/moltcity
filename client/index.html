@@ -1062,6 +1062,15 @@
       let lastMousePos = { x: 0, y: 0 };
       let isDaylight = true;
 
+      // Ambient animation state
+      let cloudsContainer = null;
+      let birdsContainer = null;
+      let dayNightOverlay = null;
+      const clouds = [];
+      const birds = [];
+      const CLOUD_COUNT = 8;
+      const BIRD_COUNT = 12;
+
       // Wallet state
       let provider = null;
       let signer = null;
@@ -1790,11 +1799,168 @@
         worldContainer.x = app.screen.width / 2;
         worldContainer.y = 100;
 
+        // Ambient layers
+        cloudsContainer = new PIXI.Container();
+        cloudsContainer.zIndex = 10000;
+        app.stage.addChild(cloudsContainer);
+
+        birdsContainer = new PIXI.Container();
+        birdsContainer.zIndex = 9999;
+        app.stage.addChild(birdsContainer);
+
+        // Day/night overlay
+        dayNightOverlay = new PIXI.Graphics();
+        dayNightOverlay.zIndex = 9998;
+        app.stage.addChild(dayNightOverlay);
+
+        // Initialize ambient elements
+        initClouds();
+        initBirds();
+
+        // Start animation loop
+        app.ticker.add(animateAmbient);
+
         setupInteractions();
 
         window.addEventListener("resize", () => {
           app.renderer.resize(window.innerWidth, window.innerHeight);
         });
+      }
+
+      // ============================================
+      // Ambient Animations
+      // ============================================
+
+      function initClouds() {
+        for (let i = 0; i < CLOUD_COUNT; i++) {
+          const cloud = createCloud();
+          cloud.x = Math.random() * app.screen.width * 1.5 - app.screen.width * 0.25;
+          cloud.y = Math.random() * app.screen.height * 0.4;
+          cloud.speed = 0.2 + Math.random() * 0.3;
+          cloud.alpha = 0.4 + Math.random() * 0.3;
+          clouds.push(cloud);
+          cloudsContainer.addChild(cloud);
+        }
+      }
+
+      function createCloud() {
+        const cloud = new PIXI.Graphics();
+        const scale = 0.5 + Math.random() * 0.5;
+
+        cloud.beginFill(0xffffff, 0.8);
+        // Draw fluffy cloud shape
+        cloud.drawEllipse(0, 0, 40 * scale, 20 * scale);
+        cloud.drawEllipse(-25 * scale, 5, 30 * scale, 18 * scale);
+        cloud.drawEllipse(25 * scale, 5, 35 * scale, 16 * scale);
+        cloud.drawEllipse(10 * scale, -10, 25 * scale, 15 * scale);
+        cloud.endFill();
+
+        return cloud;
+      }
+
+      function initBirds() {
+        for (let i = 0; i < BIRD_COUNT; i++) {
+          const bird = createBird();
+          bird.x = Math.random() * app.screen.width;
+          bird.y = 50 + Math.random() * app.screen.height * 0.3;
+          bird.vx = (Math.random() - 0.5) * 2;
+          bird.vy = (Math.random() - 0.5) * 0.5;
+          bird.flapPhase = Math.random() * Math.PI * 2;
+          bird.flapSpeed = 0.15 + Math.random() * 0.1;
+          birds.push(bird);
+          birdsContainer.addChild(bird);
+        }
+      }
+
+      function createBird() {
+        const bird = new PIXI.Graphics();
+        bird.lineStyle(2, 0x333333);
+        // Simple V-shape bird
+        bird.moveTo(-6, 0);
+        bird.lineTo(0, -3);
+        bird.lineTo(6, 0);
+        return bird;
+      }
+
+      function animateAmbient(delta) {
+        // Animate clouds
+        for (const cloud of clouds) {
+          cloud.x += cloud.speed * delta;
+          // Wrap around
+          if (cloud.x > app.screen.width + 100) {
+            cloud.x = -100;
+            cloud.y = Math.random() * app.screen.height * 0.4;
+          }
+        }
+
+        // Animate birds
+        for (const bird of birds) {
+          bird.flapPhase += bird.flapSpeed * delta;
+
+          // Flapping animation
+          bird.clear();
+          bird.lineStyle(2, isDaylight ? 0x333333 : 0x666666);
+          const flapOffset = Math.sin(bird.flapPhase) * 3;
+          bird.moveTo(-6, flapOffset);
+          bird.lineTo(0, -3);
+          bird.lineTo(6, flapOffset);
+
+          // Movement with slight wobble
+          bird.x += bird.vx * delta;
+          bird.y += bird.vy * delta + Math.sin(bird.flapPhase * 0.5) * 0.2;
+
+          // Boundary behavior - birds turn around
+          if (bird.x < -20 || bird.x > app.screen.width + 20) {
+            bird.vx *= -1;
+          }
+          if (bird.y < 30 || bird.y > app.screen.height * 0.5) {
+            bird.vy *= -1;
+          }
+
+          // Random direction changes
+          if (Math.random() < 0.005) {
+            bird.vx += (Math.random() - 0.5) * 0.5;
+            bird.vy += (Math.random() - 0.5) * 0.2;
+          }
+
+          // Clamp velocity
+          bird.vx = Math.max(-2, Math.min(2, bird.vx));
+          bird.vy = Math.max(-0.5, Math.min(0.5, bird.vy));
+        }
+
+        // Update day/night overlay
+        updateDayNightOverlay();
+      }
+
+      function updateDayNightOverlay() {
+        dayNightOverlay.clear();
+
+        if (!isDaylight) {
+          // Night overlay - dark blue tint
+          dayNightOverlay.beginFill(0x0a1128, 0.4);
+          dayNightOverlay.drawRect(0, 0, app.screen.width, app.screen.height);
+          dayNightOverlay.endFill();
+
+          // Draw some stars
+          dayNightOverlay.beginFill(0xffffff, 0.8);
+          for (let i = 0; i < 50; i++) {
+            const x = (i * 137.5) % app.screen.width;
+            const y = (i * 73.3) % (app.screen.height * 0.4);
+            const size = 1 + (i % 3);
+            const twinkle = 0.5 + Math.sin(Date.now() * 0.003 + i) * 0.5;
+            dayNightOverlay.beginFill(0xffffff, twinkle * 0.8);
+            dayNightOverlay.drawCircle(x, y, size);
+          }
+          dayNightOverlay.endFill();
+
+          // Hide clouds at night, show fewer birds
+          cloudsContainer.alpha = 0.2;
+          birdsContainer.alpha = 0.3;
+        } else {
+          // Daytime - no overlay, full visibility
+          cloudsContainer.alpha = 1;
+          birdsContainer.alpha = 1;
+        }
       }
 
       // ============================================
@@ -3170,8 +3336,51 @@
           );
         }
 
-        // Day/night
+        // Day/night background
         app.renderer.background.color = isDaylight ? 0x87ceeb : COLORS.night;
+
+        // Building lights at night
+        if (!isDaylight) {
+          for (const building of buildings) {
+            const parcel = parcels.find((p) => p.id === building.parcelId);
+            if (parcel && building.powered && building.type !== 'road' && building.type !== 'park') {
+              const lightGfx = drawBuildingLights(parcel.x, parcel.y, building.floors || 1);
+              worldContainer.addChild(lightGfx);
+            }
+          }
+        }
+      }
+
+      function drawBuildingLights(x, y, floors) {
+        const iso = cartToIso(x, y);
+        const lights = new PIXI.Graphics();
+
+        // Draw warm yellow window lights
+        for (let f = 0; f < Math.min(floors, 5); f++) {
+          const yOffset = f * 25;
+          const windowCount = 2 + Math.floor(Math.random() * 2);
+
+          for (let w = 0; w < windowCount; w++) {
+            const wx = iso.x - 10 + w * 12 + (Math.random() - 0.5) * 4;
+            const wy = iso.y - 20 - yOffset + (Math.random() - 0.5) * 4;
+
+            // Only show some windows lit (random but consistent per building)
+            if ((x * 7 + y * 13 + f * 3 + w) % 3 !== 0) {
+              // Warm glow
+              lights.beginFill(0xffcc66, 0.6);
+              lights.drawRect(wx - 3, wy - 4, 6, 8);
+              lights.endFill();
+
+              // Bright center
+              lights.beginFill(0xffffaa, 0.8);
+              lights.drawRect(wx - 2, wy - 3, 4, 6);
+              lights.endFill();
+            }
+          }
+        }
+
+        lights.zIndex = x + y + 0.9;
+        return lights;
       }
 
       // ============================================
