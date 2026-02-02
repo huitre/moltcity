@@ -2420,20 +2420,21 @@
           const brick = houseBricks[brickIndex % houseBricks.length];
           const roof = houseRoofs[roofIndex % houseRoofs.length];
 
-          // Scale to fit tile
-          const brickScale = TILE_WIDTH / brick.width;
+          // Scale to fit tile (scale bricks to match bottom width for alignment)
           const bottomScale = TILE_WIDTH / bottom.width;
-          const brickStackHeight = brick.stackHeight * brickScale;
-          // Use actual height of bottom sprite for positioning (not stackHeight)
-          const bottomVisualHeight = (bottom.height || bottom.stackHeight) * bottomScale;
+          const brickScale = TILE_WIDTH / brick.width;
+
+          // Stack heights with overlap adjustment to close gaps
+          const gapFix = 2; // Pixels to overlap to close gaps
+          const brickStackHeight = (brick.stackHeight * brickScale) - gapFix;
+          const bottomStackHeight = (bottom.stackHeight * bottomScale) - gapFix;
 
           // Draw bottom (ground floor) first
-          const elevate = 0;
           const bottomSprite = new PIXI.Sprite(bottom.texture);
           bottomSprite.scale.set(bottomScale);
           bottomSprite.anchor.set(0.5, 1);
           bottomSprite.x = iso.x;
-          bottomSprite.y = iso.y + TILE_HEIGHT - elevate;
+          bottomSprite.y = iso.y + TILE_HEIGHT;
           bottomSprite.zIndex = 0;
           container.addChild(bottomSprite);
 
@@ -2446,9 +2447,8 @@
             brickSprite.y =
               iso.y +
               TILE_HEIGHT -
-              bottomVisualHeight -
-              (i - 1) * brickStackHeight -
-              elevate;
+              bottomStackHeight -
+              (i - 1) * brickStackHeight;
             brickSprite.zIndex = i;
             container.addChild(brickSprite);
           }
@@ -2460,7 +2460,10 @@
           roofSprite.x = iso.x;
           const upperFloorsHeight = Math.max(0, floors - 1) * brickStackHeight;
           roofSprite.y =
-            iso.y + TILE_HEIGHT - bottomVisualHeight - upperFloorsHeight - elevate;
+            iso.y +
+            TILE_HEIGHT -
+            bottomStackHeight -
+            upperFloorsHeight;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
