@@ -2146,11 +2146,15 @@
             else if (!conn.se) roadType = "road_088"; // missing SE
           } else if (connCount === 2) {
             if (conn.ne && conn.sw) {
-              // Straight NE-SW
-              roadType = "road_081";
+              // Straight NE-SW - pick random variant (some have trees, crosswalks, bus stops)
+              const neSwVariants = ["road_081", "road_055", "road_044"];
+              const rng = mulberry32(x * 1000 + y);
+              roadType = neSwVariants[Math.floor(rng() * neSwVariants.length)];
             } else if (conn.nw && conn.se) {
-              // Straight NW-SE
-              roadType = "road_073";
+              // Straight NW-SE - pick random variant (some have trees, crosswalks, bus stops)
+              const nwSeVariants = ["road_073", "road_064", "road_036"];
+              const rng = mulberry32(x * 1000 + y);
+              roadType = nwSeVariants[Math.floor(rng() * nwSeVariants.length)];
             } else if (conn.nw && conn.ne) {
               // Corner top (NW + NE)
               roadType = "road_125";
@@ -2420,21 +2424,23 @@
           const brick = houseBricks[brickIndex % houseBricks.length];
           const roof = houseRoofs[roofIndex % houseRoofs.length];
 
-          // Scale to fit tile (scale bricks to match bottom width for alignment)
-          const bottomScale = TILE_WIDTH / bottom.width;
+          // Scale to fit tile
           const brickScale = TILE_WIDTH / brick.width;
-
-          // Stack heights with overlap adjustment to close gaps
-          const gapFix = 2; // Pixels to overlap to close gaps
-          const brickStackHeight = (brick.stackHeight * brickScale) - gapFix;
-          const bottomStackHeight = (bottom.stackHeight * bottomScale) - gapFix;
+          const bottomScale = TILE_WIDTH / bottom.width;
+          const brickStackHeight = brick.stackHeight * brickScale;
+          // Use actual height of bottom sprite for positioning (not stackHeight)
+          const bottomVisualHeight =
+            (bottom.height || bottom.stackHeight) * bottomScale;
+          const adjustedBottomVisualHeight =
+            bottomVisualHeight - Math.floor(bottomVisualHeight / 2 - 4);
 
           // Draw bottom (ground floor) first
+          const elevate = -8;
           const bottomSprite = new PIXI.Sprite(bottom.texture);
           bottomSprite.scale.set(bottomScale);
           bottomSprite.anchor.set(0.5, 1);
           bottomSprite.x = iso.x;
-          bottomSprite.y = iso.y + TILE_HEIGHT;
+          bottomSprite.y = iso.y + TILE_HEIGHT - elevate;
           bottomSprite.zIndex = 0;
           container.addChild(bottomSprite);
 
@@ -2447,8 +2453,10 @@
             brickSprite.y =
               iso.y +
               TILE_HEIGHT -
-              bottomStackHeight -
-              (i - 1) * brickStackHeight;
+              adjustedBottomVisualHeight -
+              (i - 1) * brickStackHeight -
+              +1 -
+              elevate;
             brickSprite.zIndex = i;
             container.addChild(brickSprite);
           }
@@ -2462,8 +2470,9 @@
           roofSprite.y =
             iso.y +
             TILE_HEIGHT -
-            bottomStackHeight -
-            upperFloorsHeight;
+            adjustedBottomVisualHeight -
+            upperFloorsHeight -
+            elevate;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
