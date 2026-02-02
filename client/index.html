@@ -2066,6 +2066,50 @@
       // Vehicle Animation
       // ============================================
 
+      // Helper to get road at position
+      function getRoadAt(x, y) {
+        const parcelId = `parcel_${x}_${y}`;
+        return roads.find(r => r.parcelId === parcelId);
+      }
+
+      // Check which directions have connecting roads
+      function getRoadConnections(x, y) {
+        return {
+          ne: !!getRoadAt(x + 1, y - 1),
+          se: !!getRoadAt(x + 1, y + 1),
+          sw: !!getRoadAt(x - 1, y + 1),
+          nw: !!getRoadAt(x - 1, y - 1)
+        };
+      }
+
+      // Get valid travel directions for a road tile
+      function getValidDirections(x, y) {
+        const conn = getRoadConnections(x, y);
+        const valid = [];
+
+        // NE-SW axis (road goes diagonally)
+        if (conn.ne) valid.push('NE');
+        if (conn.sw) valid.push('SW');
+        // NW-SE axis
+        if (conn.nw) valid.push('NW');
+        if (conn.se) valid.push('SE');
+
+        return valid;
+      }
+
+      // Direction vectors for grid movement
+      const DIR_VECTORS = {
+        NE: { dx: 1, dy: -1 },
+        SE: { dx: 1, dy: 1 },
+        SW: { dx: -1, dy: 1 },
+        NW: { dx: -1, dy: -1 }
+      };
+
+      // Opposite directions
+      const OPPOSITE_DIR = {
+        NE: 'SW', SW: 'NE', NW: 'SE', SE: 'NW'
+      };
+
       function initVehicles() {
         // Spawn initial vehicles on roads
         if (roads.length > 0 && vehicleSprites.size > 0) {
@@ -2087,24 +2131,20 @@
         const startX = parseInt(match[1]);
         const startY = parseInt(match[2]);
 
+        // Get valid directions for this road
+        const validDirs = getValidDirections(startX, startY);
+        if (validDirs.length === 0) return;
+
+        // Pick a random valid direction
+        const dir = validDirs[Math.floor(Math.random() * validDirs.length)];
+
         // Pick random vehicle type
         const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
         const vehicleData = vehicleSprites.get(vehicleType);
         if (!vehicleData || vehicleData.directions.size === 0) return;
 
-        // Pick a random direction (NE, SE, SW, NW)
-        const directions = ['NE', 'SE', 'SW', 'NW'];
-        const dir = directions[Math.floor(Math.random() * directions.length)];
         const texture = vehicleData.directions.get(dir);
         if (!texture) return;
-
-        // Direction vectors (in isometric space)
-        const dirVectors = {
-          NE: { dx: 1, dy: -1 },
-          SE: { dx: 1, dy: 1 },
-          SW: { dx: -1, dy: 1 },
-          NW: { dx: -1, dy: -1 }
-        };
 
         const sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5, 0.7);
@@ -2112,12 +2152,12 @@
 
         const vehicle = {
           sprite,
-          x: startX,
-          y: startY,
+          x: startX + 0.5,  // Center of tile
+          y: startY + 0.5,
           dir,
-          dx: dirVectors[dir].dx,
-          dy: dirVectors[dir].dy,
-          speed: VEHICLE_SPEED + Math.random() * 0.3,
+          targetX: startX + DIR_VECTORS[dir].dx,
+          targetY: startY + DIR_VECTORS[dir].dy,
+          speed: VEHICLE_SPEED + Math.random() * 0.2,
           vehicleType,
           vehicleData
         };
@@ -2134,7 +2174,7 @@
 
       function animateVehicles(delta) {
         // Try to maintain vehicle count
-        if (animatedVehicles.length < MAX_ANIMATED_VEHICLES && Math.random() < 0.02) {
+        if (animatedVehicles.length < MAX_ANIMATED_VEHICLES && Math.random() < 0.01) {
           const vehicleTypes = Array.from(vehicleSprites.keys());
           if (vehicleTypes.length > 0) {
             spawnVehicle(vehicleTypes);
@@ -2144,9 +2184,57 @@
         for (let i = animatedVehicles.length - 1; i >= 0; i--) {
           const vehicle = animatedVehicles[i];
 
-          // Move vehicle
-          vehicle.x += vehicle.dx * vehicle.speed * delta * 0.02;
-          vehicle.y += vehicle.dy * vehicle.speed * delta * 0.02;
+          // Move toward target
+          const dx = vehicle.targetX + 0.5 - vehicle.x;
+          const dy = vehicle.targetY + 0.5 - vehicle.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 0.1) {
+            // Reached target tile - find next tile
+            const currentX = Math.floor(vehicle.targetX);
+            const currentY = Math.floor(vehicle.targetY);
+
+            // Check if target is a road
+            const targetRoad = getRoadAt(currentX, currentY);
+            if (!targetRoad) {
+              // No road - remove vehicle
+              vehiclesContainer.removeChild(vehicle.sprite);
+              animatedVehicles.splice(i, 1);
+              continue;
+            }
+
+            // Get valid directions from new position (excluding where we came from)
+            const validDirs = getValidDirections(currentX, currentY)
+              .filter(d => d !== OPPOSITE_DIR[vehicle.dir]);
+
+            if (validDirs.length === 0) {
+              // Dead end - remove vehicle
+              vehiclesContainer.removeChild(vehicle.sprite);
+              animatedVehicles.splice(i, 1);
+              continue;
+            }
+
+            // Pick next direction (prefer continuing straight if possible)
+            let nextDir = validDirs.includes(vehicle.dir) ? vehicle.dir : validDirs[Math.floor(Math.random() * validDirs.length)];
+
+            // Update vehicle direction and target
+            vehicle.dir = nextDir;
+            vehicle.x = currentX + 0.5;
+            vehicle.y = currentY + 0.5;
+            vehicle.targetX = currentX + DIR_VECTORS[nextDir].dx;
+            vehicle.targetY = currentY + DIR_VECTORS[nextDir].dy;
+
+            // Update sprite texture for new direction
+            const texture = vehicle.vehicleData.directions.get(nextDir);
+            if (texture) {
+              vehicle.sprite.texture = texture;
+            }
+          } else {
+            // Move toward target
+            const moveSpeed = vehicle.speed * delta * 0.03;
+            vehicle.x += (dx / dist) * moveSpeed;
+            vehicle.y += (dy / dist) * moveSpeed;
+          }
 
           // Update sprite position
           const iso = cartToIso(vehicle.x, vehicle.y);
@@ -2154,16 +2242,8 @@
           vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
           vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.6;
 
-          // Check if vehicle is on a road
-          const tileX = Math.floor(vehicle.x);
-          const tileY = Math.floor(vehicle.y);
-          const onRoad = roads.some(r => {
-            const m = r.parcelId.match(/parcel_(\d+)_(\d+)/);
-            return m && parseInt(m[1]) === tileX && parseInt(m[2]) === tileY;
-          });
-
-          // Remove if off road or out of bounds
-          if (!onRoad || tileX < 0 || tileX >= GRID_SIZE || tileY < 0 || tileY >= GRID_SIZE) {
+          // Remove if out of bounds
+          if (vehicle.x < 0 || vehicle.x >= GRID_SIZE || vehicle.y < 0 || vehicle.y >= GRID_SIZE) {
             vehiclesContainer.removeChild(vehicle.sprite);
             animatedVehicles.splice(i, 1);
           }

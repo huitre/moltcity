@@ -104,19 +104,19 @@
     "road_036": {
       "file": "city-pack/PNG/cityTiles_036.png",
       "width": 132,
-      "height": 101,
+      "height": 123,
       "anchor": {
         "x": 0.5,
-        "y": 0.85
+        "y": 0.88
       }
     },
     "road_044": {
       "file": "city-pack/PNG/cityTiles_044.png",
       "width": 132,
-      "height": 101,
+      "height": 123,
       "anchor": {
         "x": 0.5,
-        "y": 0.85
+        "y": 0.88
       }
     },
     "road_064": {
