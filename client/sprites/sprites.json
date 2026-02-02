@@ -46,9 +46,9 @@
       }
     },
     "city_hall": {
-      "file": "buildings/city_hall.png",
-      "width": 133,
-      "height": 127,
+      "file": "buildings/city-hall.png",
+      "width": 623,
+      "height": 691,
       "anchor": {
         "x": 0.5,
         "y": 0.85
