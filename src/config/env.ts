@@ -40,7 +40,7 @@ const envSchema = z.object({
   USE_NEW_PAYMENTS: coerceBoolean.default(false),
 
   // Sprites
-  SPRITES_DIR: z.string().default('./sprites'),
+  SPRITES_DIR: z.string().default('./client/sprites'),
 });
 
 export type Env = z.infer<typeof envSchema>;
