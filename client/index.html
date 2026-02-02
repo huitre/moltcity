@@ -1297,7 +1297,9 @@
         const floors = Math.floor(rng() * 3) + 1;
 
         // Pick random bottom (from bottoms array), upper brick, and roof
-        const bottomIndex = Math.floor(rng() * Math.max(1, houseBottoms.length));
+        const bottomIndex = Math.floor(
+          rng() * Math.max(1, houseBottoms.length),
+        );
         const brickIndex = Math.floor(rng() * houseBricks.length);
         const roofIndex = Math.floor(rng() * houseRoofs.length);
 
@@ -2411,19 +2413,22 @@
           const { bottomIndex, brickIndex, roofIndex } = houseStyle;
 
           // Use houseBottoms for ground floor, houseBricks for upper floors
-          const bottom = houseBottoms.length > 0
-            ? houseBottoms[bottomIndex % houseBottoms.length]
-            : houseBricks[brickIndex % houseBricks.length];
+          const bottom =
+            houseBottoms.length > 0
+              ? houseBottoms[bottomIndex % houseBottoms.length]
+              : houseBricks[brickIndex % houseBricks.length];
           const brick = houseBricks[brickIndex % houseBricks.length];
           const roof = houseRoofs[roofIndex % houseRoofs.length];
 
-          // Scale to fit tile (use brick for reference since bottoms may be different size)
+          // Scale to fit tile
           const brickScale = TILE_WIDTH / brick.width;
           const bottomScale = TILE_WIDTH / bottom.width;
-          const stackHeight = brick.stackHeight * brickScale;
+          const brickStackHeight = brick.stackHeight * brickScale;
+          // Use actual height of bottom sprite for positioning (not stackHeight)
+          const bottomVisualHeight = (bottom.height || bottom.stackHeight) * bottomScale;
 
           // Draw bottom (ground floor) first
-          const elevate = 4;
+          const elevate = 0;
           const bottomSprite = new PIXI.Sprite(bottom.texture);
           bottomSprite.scale.set(bottomScale);
           bottomSprite.anchor.set(0.5, 1);
@@ -2433,13 +2438,17 @@
           container.addChild(bottomSprite);
 
           // Draw upper brick layers (starting from floor 1)
-          const bottomHeight = bottom.stackHeight * bottomScale;
           for (let i = 1; i < floors; i++) {
             const brickSprite = new PIXI.Sprite(brick.texture);
             brickSprite.scale.set(brickScale);
             brickSprite.anchor.set(0.5, 1);
             brickSprite.x = iso.x;
-            brickSprite.y = iso.y + TILE_HEIGHT - bottomHeight - (i - 1) * stackHeight - elevate;
+            brickSprite.y =
+              iso.y +
+              TILE_HEIGHT -
+              bottomVisualHeight -
+              (i - 1) * brickStackHeight -
+              elevate;
             brickSprite.zIndex = i;
             container.addChild(brickSprite);
           }
@@ -2449,8 +2458,9 @@
           roofSprite.scale.set(brickScale);
           roofSprite.anchor.set(0.5, 1);
           roofSprite.x = iso.x;
-          const upperFloorsHeight = Math.max(0, floors - 1) * stackHeight;
-          roofSprite.y = iso.y + TILE_HEIGHT - bottomHeight - upperFloorsHeight - elevate;
+          const upperFloorsHeight = Math.max(0, floors - 1) * brickStackHeight;
+          roofSprite.y =
+            iso.y + TILE_HEIGHT - bottomVisualHeight - upperFloorsHeight - elevate;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
