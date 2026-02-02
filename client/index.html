@@ -1146,6 +1146,7 @@
       const defaultSprites = new Map();
       const roadSprites = new Map();
       const houseBricks = [];
+      const houseBottoms = [];
       const houseRoofs = [];
       const officeFloors = [];
       const officeRoofs = [];
@@ -1207,6 +1208,22 @@
               loadPromises.push(promise);
             }
 
+            // Load bottom sprites (ground floor)
+            for (const bottom of spritesConfig.houseParts.bottoms || []) {
+              const promise = PIXI.Assets.load(`/sprites/${bottom.file}`)
+                .then((texture) => {
+                  houseBottoms.push({ texture, ...bottom });
+                  console.log(`[Sprites] Loaded bottom: ${bottom.id}`);
+                })
+                .catch((err) => {
+                  console.warn(
+                    `[Sprites] Failed to load bottom ${bottom.id}:`,
+                    err,
+                  );
+                });
+              loadPromises.push(promise);
+            }
+
             // Load roof sprites
             for (const roof of spritesConfig.houseParts.roofs || []) {
               const promise = PIXI.Assets.load(`/sprites/${roof.file}`)
@@ -1261,7 +1278,7 @@
 
           await Promise.all(loadPromises);
           console.log(
-            `[Sprites] Loaded ${defaultSprites.size} buildings, ${roadSprites.size} roads, ${houseBricks.length} house bricks, ${officeFloors.length} office floors`,
+            `[Sprites] Loaded ${defaultSprites.size} buildings, ${roadSprites.size} roads, ${houseBricks.length} house bricks, ${houseBottoms.length} house bottoms, ${officeFloors.length} office floors`,
           );
         } catch (err) {
           console.warn(
@@ -1279,12 +1296,12 @@
         // Random number of floors (1-3)
         const floors = Math.floor(rng() * 3) + 1;
 
-        // Pick random bottom brick (ground floor), upper brick, and roof
-        const bottomBrickIndex = Math.floor(rng() * houseBricks.length);
-        const upperBrickIndex = Math.floor(rng() * houseBricks.length);
+        // Pick random bottom (from bottoms array), upper brick, and roof
+        const bottomIndex = Math.floor(rng() * Math.max(1, houseBottoms.length));
+        const brickIndex = Math.floor(rng() * houseBricks.length);
         const roofIndex = Math.floor(rng() * houseRoofs.length);
 
-        return { floors, bottomBrickIndex, upperBrickIndex, roofIndex };
+        return { floors, bottomIndex, brickIndex, roofIndex };
       }
 
       // Generate office style (floors can be specified or random)
@@ -2391,36 +2408,49 @@
           // Generate consistent house style based on position, use stored floors
           const houseStyle = generateStackedHouse(x, y, x * 1000 + y);
           const floors = buildingFloors || houseStyle.floors;
-          const { bottomBrickIndex, upperBrickIndex, roofIndex } = houseStyle;
+          const { bottomIndex, brickIndex, roofIndex } = houseStyle;
 
-          const bottomBrick = houseBricks[bottomBrickIndex % houseBricks.length];
-          const upperBrick = houseBricks[upperBrickIndex % houseBricks.length];
+          // Use houseBottoms for ground floor, houseBricks for upper floors
+          const bottom = houseBottoms.length > 0
+            ? houseBottoms[bottomIndex % houseBottoms.length]
+            : houseBricks[brickIndex % houseBricks.length];
+          const brick = houseBricks[brickIndex % houseBricks.length];
           const roof = houseRoofs[roofIndex % houseRoofs.length];
 
-          // Scale to fit tile (use bottom brick for reference)
-          const scale = TILE_WIDTH / bottomBrick.width;
-          const stackHeight = bottomBrick.stackHeight * scale;
+          // Scale to fit tile (use brick for reference since bottoms may be different size)
+          const brickScale = TILE_WIDTH / brick.width;
+          const bottomScale = TILE_WIDTH / bottom.width;
+          const stackHeight = brick.stackHeight * brickScale;
 
-          // Draw brick layers from bottom to top (elevated 4px)
-          const elevate = 8;
-          for (let i = 0; i < floors; i++) {
-            // Use bottom brick for ground floor, upper brick for rest
-            const brick = i === 0 ? bottomBrick : upperBrick;
+          // Draw bottom (ground floor) first
+          const elevate = 4;
+          const bottomSprite = new PIXI.Sprite(bottom.texture);
+          bottomSprite.scale.set(bottomScale);
+          bottomSprite.anchor.set(0.5, 1);
+          bottomSprite.x = iso.x;
+          bottomSprite.y = iso.y + TILE_HEIGHT - elevate;
+          bottomSprite.zIndex = 0;
+          container.addChild(bottomSprite);
+
+          // Draw upper brick layers (starting from floor 1)
+          const bottomHeight = bottom.stackHeight * bottomScale;
+          for (let i = 1; i < floors; i++) {
             const brickSprite = new PIXI.Sprite(brick.texture);
-            brickSprite.scale.set(scale);
+            brickSprite.scale.set(brickScale);
             brickSprite.anchor.set(0.5, 1);
             brickSprite.x = iso.x;
-            brickSprite.y = iso.y + TILE_HEIGHT - i * stackHeight - elevate;
+            brickSprite.y = iso.y + TILE_HEIGHT - bottomHeight - (i - 1) * stackHeight - elevate;
             brickSprite.zIndex = i;
             container.addChild(brickSprite);
           }
 
-          // Add roof on top
+          // Add roof on top (account for bottom + upper floors)
           const roofSprite = new PIXI.Sprite(roof.texture);
-          roofSprite.scale.set(scale);
+          roofSprite.scale.set(brickScale);
           roofSprite.anchor.set(0.5, 1);
           roofSprite.x = iso.x;
-          roofSprite.y = iso.y + TILE_HEIGHT - floors * stackHeight - elevate;
+          const upperFloorsHeight = Math.max(0, floors - 1) * stackHeight;
+          roofSprite.y = iso.y + TILE_HEIGHT - bottomHeight - upperFloorsHeight - elevate;
           roofSprite.zIndex = floors;
           container.addChild(roofSprite);
 
