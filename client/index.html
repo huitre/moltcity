@@ -1286,13 +1286,16 @@
           // Load vehicle sprites
           if (spritesConfig.vehicles) {
             // Direction mappings: numbered (0-15) and directional (N, NE, E, etc.)
-            const numberedDirs = { NE: '002', SE: '006', SW: '010', NW: '014' };
-            const directionalDirs = { NE: 'NE', SE: 'SE', SW: 'SW', NW: 'NW' };
+            const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };
+            const directionalDirs = { NE: "NE", SE: "SE", SW: "SW", NW: "NW" };
 
-            for (const [vehicleType, config] of Object.entries(spritesConfig.vehicles)) {
+            for (const [vehicleType, config] of Object.entries(
+              spritesConfig.vehicles,
+            )) {
               const directions = new Map();
-              const dirMap = config.type === 'numbered' ? numberedDirs : directionalDirs;
-              const ext = config.type === 'numbered' ? '.png' : '.png';
+              const dirMap =
+                config.type === "numbered" ? numberedDirs : directionalDirs;
+              const ext = config.type === "numbered" ? ".png" : ".png";
 
               for (const [dir, suffix] of Object.entries(dirMap)) {
                 const filePath = `/sprites/${config.basePath}${suffix}${ext}`;
@@ -1301,7 +1304,10 @@
                     directions.set(dir, texture);
                   })
                   .catch((err) => {
-                    console.warn(`[Sprites] Failed to load vehicle ${vehicleType} ${dir}:`, err);
+                    console.warn(
+                      `[Sprites] Failed to load vehicle ${vehicleType} ${dir}:`,
+                      err,
+                    );
                   });
                 loadPromises.push(promise);
               }
@@ -2069,7 +2075,7 @@
       // Helper to get road at position
       function getRoadAt(x, y) {
         const parcelId = `parcel_${x}_${y}`;
-        return roads.find(r => r.parcelId === parcelId);
+        return roads.find((r) => r.parcelId === parcelId);
       }
 
       // Check which directions have connecting roads
@@ -2078,7 +2084,7 @@
           ne: !!getRoadAt(x + 1, y - 1),
           se: !!getRoadAt(x + 1, y + 1),
           sw: !!getRoadAt(x - 1, y + 1),
-          nw: !!getRoadAt(x - 1, y - 1)
+          nw: !!getRoadAt(x - 1, y - 1),
         };
       }
 
@@ -2088,11 +2094,11 @@
         const valid = [];
 
         // NE-SW axis (road goes diagonally)
-        if (conn.ne) valid.push('NE');
-        if (conn.sw) valid.push('SW');
+        if (conn.ne) valid.push("NE");
+        if (conn.sw) valid.push("SW");
         // NW-SE axis
-        if (conn.nw) valid.push('NW');
-        if (conn.se) valid.push('SE');
+        if (conn.nw) valid.push("NW");
+        if (conn.se) valid.push("SE");
 
         return valid;
       }
@@ -2102,26 +2108,37 @@
         NE: { dx: 1, dy: -1 },
         SE: { dx: 1, dy: 1 },
         SW: { dx: -1, dy: 1 },
-        NW: { dx: -1, dy: -1 }
+        NW: { dx: -1, dy: -1 },
       };
 
       // Opposite directions
       const OPPOSITE_DIR = {
-        NE: 'SW', SW: 'NE', NW: 'SE', SE: 'NW'
+        NE: "SW",
+        SW: "NE",
+        NW: "SE",
+        SE: "NW",
       };
 
       function initVehicles() {
         // Spawn initial vehicles on roads
         if (roads.length > 0 && vehicleSprites.size > 0) {
           const vehicleTypes = Array.from(vehicleSprites.keys());
-          for (let i = 0; i < Math.min(MAX_ANIMATED_VEHICLES, roads.length); i++) {
+          for (
+            let i = 0;
+            i < Math.min(MAX_ANIMATED_VEHICLES, roads.length);
+            i++
+          ) {
             spawnVehicle(vehicleTypes);
           }
         }
       }
 
       function spawnVehicle(vehicleTypes) {
-        if (animatedVehicles.length >= MAX_ANIMATED_VEHICLES || roads.length === 0) return;
+        if (
+          animatedVehicles.length >= MAX_ANIMATED_VEHICLES ||
+          roads.length === 0
+        )
+          return;
 
         // Pick a random road to spawn on
         const road = roads[Math.floor(Math.random() * roads.length)];
@@ -2139,7 +2156,8 @@
         const dir = validDirs[Math.floor(Math.random() * validDirs.length)];
 
         // Pick random vehicle type
-        const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
+        const vehicleType =
+          vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
         const vehicleData = vehicleSprites.get(vehicleType);
         if (!vehicleData || vehicleData.directions.size === 0) return;
 
@@ -2148,18 +2166,18 @@
 
         const sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5, 0.7);
-        sprite.scale.set(1.2);
+        sprite.scale.set(0.7);
 
         const vehicle = {
           sprite,
-          x: startX + 0.5,  // Center of tile
+          x: startX + 0.5, // Center of tile
           y: startY + 0.5,
           dir,
           targetX: startX + DIR_VECTORS[dir].dx,
           targetY: startY + DIR_VECTORS[dir].dy,
           speed: VEHICLE_SPEED + Math.random() * 0.2,
           vehicleType,
-          vehicleData
+          vehicleData,
         };
 
         // Position sprite
@@ -2174,7 +2192,10 @@
 
       function animateVehicles(delta) {
         // Try to maintain vehicle count
-        if (animatedVehicles.length < MAX_ANIMATED_VEHICLES && Math.random() < 0.01) {
+        if (
+          animatedVehicles.length < MAX_ANIMATED_VEHICLES &&
+          Math.random() < 0.01
+        ) {
           const vehicleTypes = Array.from(vehicleSprites.keys());
           if (vehicleTypes.length > 0) {
             spawnVehicle(vehicleTypes);
@@ -2204,8 +2225,9 @@
             }
 
             // Get valid directions from new position (excluding where we came from)
-            const validDirs = getValidDirections(currentX, currentY)
-              .filter(d => d !== OPPOSITE_DIR[vehicle.dir]);
+            const validDirs = getValidDirections(currentX, currentY).filter(
+              (d) => d !== OPPOSITE_DIR[vehicle.dir],
+            );
 
             if (validDirs.length === 0) {
               // Dead end - remove vehicle
@@ -2215,7 +2237,9 @@
             }
 
             // Pick next direction (prefer continuing straight if possible)
-            let nextDir = validDirs.includes(vehicle.dir) ? vehicle.dir : validDirs[Math.floor(Math.random() * validDirs.length)];
+            let nextDir = validDirs.includes(vehicle.dir)
+              ? vehicle.dir
+              : validDirs[Math.floor(Math.random() * validDirs.length)];
 
             // Update vehicle direction and target
             vehicle.dir = nextDir;
@@ -2240,10 +2264,16 @@
           const iso = cartToIso(vehicle.x, vehicle.y);
           vehicle.sprite.x = iso.x;
           vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
-          vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.6;
+          vehicle.sprite.zIndex =
+            Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.6;
 
           // Remove if out of bounds
-          if (vehicle.x < 0 || vehicle.x >= GRID_SIZE || vehicle.y < 0 || vehicle.y >= GRID_SIZE) {
+          if (
+            vehicle.x < 0 ||
+            vehicle.x >= GRID_SIZE ||
+            vehicle.y < 0 ||
+            vehicle.y >= GRID_SIZE
+          ) {
             vehiclesContainer.removeChild(vehicle.sprite);
             animatedVehicles.splice(i, 1);
           }
@@ -3627,7 +3657,7 @@
         // Re-add ambient containers (they were removed by removeChildren)
         if (cloudsContainer) worldContainer.addChild(cloudsContainer);
         if (birdsContainer) worldContainer.addChild(birdsContainer);
-        if (vehiclesContainer) worldContainer.addChild(vehiclesContainer);
+        // if (vehiclesContainer) worldContainer.addChild(vehiclesContainer);
 
         // Ground tiles
         for (let y = 0; y < GRID_SIZE; y++) {
