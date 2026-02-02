@@ -1145,12 +1145,19 @@
       const spriteCache = new Map();
       const defaultSprites = new Map();
       const roadSprites = new Map();
+      const vehicleSprites = new Map(); // vehicleType -> { directions: Map<dir, texture> }
       const houseBricks = [];
       const houseBottoms = [];
       const houseRoofs = [];
       const officeFloors = [];
       const officeRoofs = [];
       let spritesConfig = null;
+
+      // Animated vehicles state
+      let vehiclesContainer = null;
+      const animatedVehicles = [];
+      const MAX_ANIMATED_VEHICLES = 8;
+      const VEHICLE_SPEED = 0.5;
 
       // Load default building sprites from Kenney pack
       async function loadSprites() {
@@ -1276,9 +1283,37 @@
             }
           }
 
+          // Load vehicle sprites
+          if (spritesConfig.vehicles) {
+            // Direction mappings: numbered (0-15) and directional (N, NE, E, etc.)
+            const numberedDirs = { NE: '002', SE: '006', SW: '010', NW: '014' };
+            const directionalDirs = { NE: 'NE', SE: 'SE', SW: 'SW', NW: 'NW' };
+
+            for (const [vehicleType, config] of Object.entries(spritesConfig.vehicles)) {
+              const directions = new Map();
+              const dirMap = config.type === 'numbered' ? numberedDirs : directionalDirs;
+              const ext = config.type === 'numbered' ? '.png' : '.png';
+
+              for (const [dir, suffix] of Object.entries(dirMap)) {
+                const filePath = `/sprites/${config.basePath}${suffix}${ext}`;
+                const promise = PIXI.Assets.load(filePath)
+                  .then((texture) => {
+                    directions.set(dir, texture);
+                  })
+                  .catch((err) => {
+                    console.warn(`[Sprites] Failed to load vehicle ${vehicleType} ${dir}:`, err);
+                  });
+                loadPromises.push(promise);
+              }
+
+              vehicleSprites.set(vehicleType, { directions, config });
+              console.log(`[Sprites] Loading vehicle: ${vehicleType}`);
+            }
+          }
+
           await Promise.all(loadPromises);
           console.log(
-            `[Sprites] Loaded ${defaultSprites.size} buildings, ${roadSprites.size} roads, ${houseBricks.length} house bricks, ${houseBottoms.length} house bottoms, ${officeFloors.length} office floors`,
+            `[Sprites] Loaded ${defaultSprites.size} buildings, ${roadSprites.size} roads, ${houseBricks.length} house bricks, ${houseBottoms.length} house bottoms, ${officeFloors.length} office floors, ${vehicleSprites.size} vehicle types`,
           );
         } catch (err) {
           console.warn(
@@ -1884,6 +1919,12 @@
         birdsContainer.zIndex = 9999;
         worldContainer.addChild(birdsContainer);
 
+        // Vehicles container (in world space)
+        vehiclesContainer = new PIXI.Container();
+        vehiclesContainer.sortableChildren = true;
+        vehiclesContainer.zIndex = 500;
+        worldContainer.addChild(vehiclesContainer);
+
         // Day/night overlay (screen space - stays fixed on screen)
         dayNightOverlay = new PIXI.Graphics();
         dayNightOverlay.zIndex = 9998;
@@ -2016,6 +2057,117 @@
 
         // Update day/night overlay
         updateDayNightOverlay();
+
+        // Animate vehicles
+        animateVehicles(delta);
+      }
+
+      // ============================================
+      // Vehicle Animation
+      // ============================================
+
+      function initVehicles() {
+        // Spawn initial vehicles on roads
+        if (roads.length > 0 && vehicleSprites.size > 0) {
+          const vehicleTypes = Array.from(vehicleSprites.keys());
+          for (let i = 0; i < Math.min(MAX_ANIMATED_VEHICLES, roads.length); i++) {
+            spawnVehicle(vehicleTypes);
+          }
+        }
+      }
+
+      function spawnVehicle(vehicleTypes) {
+        if (animatedVehicles.length >= MAX_ANIMATED_VEHICLES || roads.length === 0) return;
+
+        // Pick a random road to spawn on
+        const road = roads[Math.floor(Math.random() * roads.length)];
+        const match = road.parcelId.match(/parcel_(\d+)_(\d+)/);
+        if (!match) return;
+
+        const startX = parseInt(match[1]);
+        const startY = parseInt(match[2]);
+
+        // Pick random vehicle type
+        const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
+        const vehicleData = vehicleSprites.get(vehicleType);
+        if (!vehicleData || vehicleData.directions.size === 0) return;
+
+        // Pick a random direction (NE, SE, SW, NW)
+        const directions = ['NE', 'SE', 'SW', 'NW'];
+        const dir = directions[Math.floor(Math.random() * directions.length)];
+        const texture = vehicleData.directions.get(dir);
+        if (!texture) return;
+
+        // Direction vectors (in isometric space)
+        const dirVectors = {
+          NE: { dx: 1, dy: -1 },
+          SE: { dx: 1, dy: 1 },
+          SW: { dx: -1, dy: 1 },
+          NW: { dx: -1, dy: -1 }
+        };
+
+        const sprite = new PIXI.Sprite(texture);
+        sprite.anchor.set(0.5, 0.7);
+        sprite.scale.set(1.2);
+
+        const vehicle = {
+          sprite,
+          x: startX,
+          y: startY,
+          dir,
+          dx: dirVectors[dir].dx,
+          dy: dirVectors[dir].dy,
+          speed: VEHICLE_SPEED + Math.random() * 0.3,
+          vehicleType,
+          vehicleData
+        };
+
+        // Position sprite
+        const iso = cartToIso(vehicle.x, vehicle.y);
+        sprite.x = iso.x;
+        sprite.y = iso.y + TILE_HEIGHT / 2;
+        sprite.zIndex = vehicle.x + vehicle.y + 0.6;
+
+        vehiclesContainer.addChild(sprite);
+        animatedVehicles.push(vehicle);
+      }
+
+      function animateVehicles(delta) {
+        // Try to maintain vehicle count
+        if (animatedVehicles.length < MAX_ANIMATED_VEHICLES && Math.random() < 0.02) {
+          const vehicleTypes = Array.from(vehicleSprites.keys());
+          if (vehicleTypes.length > 0) {
+            spawnVehicle(vehicleTypes);
+          }
+        }
+
+        for (let i = animatedVehicles.length - 1; i >= 0; i--) {
+          const vehicle = animatedVehicles[i];
+
+          // Move vehicle
+          vehicle.x += vehicle.dx * vehicle.speed * delta * 0.02;
+          vehicle.y += vehicle.dy * vehicle.speed * delta * 0.02;
+
+          // Update sprite position
+          const iso = cartToIso(vehicle.x, vehicle.y);
+          vehicle.sprite.x = iso.x;
+          vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
+          vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.6;
+
+          // Check if vehicle is on a road
+          const tileX = Math.floor(vehicle.x);
+          const tileY = Math.floor(vehicle.y);
+          const onRoad = roads.some(r => {
+            const m = r.parcelId.match(/parcel_(\d+)_(\d+)/);
+            return m && parseInt(m[1]) === tileX && parseInt(m[2]) === tileY;
+          });
+
+          // Remove if off road or out of bounds
+          if (!onRoad || tileX < 0 || tileX >= GRID_SIZE || tileY < 0 || tileY >= GRID_SIZE) {
+            vehiclesContainer.removeChild(vehicle.sprite);
+            animatedVehicles.splice(i, 1);
+          }
+        }
       }
 
       function updateDayNightOverlay() {
@@ -3395,6 +3547,7 @@
         // Re-add ambient containers (they were removed by removeChildren)
         if (cloudsContainer) worldContainer.addChild(cloudsContainer);
         if (birdsContainer) worldContainer.addChild(birdsContainer);
+        if (vehiclesContainer) worldContainer.addChild(vehiclesContainer);
 
         // Ground tiles
         for (let y = 0; y < GRID_SIZE; y++) {
@@ -3977,6 +4130,7 @@
         await loadSprites();
         await loadCityData();
         render();
+        initVehicles();
         connectWebSocket();
       }
 

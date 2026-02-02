@@ -101,6 +101,33 @@
         "y": 0.85
       }
     },
+    "road_036": {
+      "file": "city-pack/PNG/cityTiles_036.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_044": {
+      "file": "city-pack/PNG/cityTiles_044.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    "road_064": {
+      "file": "city-pack/PNG/cityTiles_064.png",
+      "width": 132,
+      "height": 101,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
     "road_081": {
       "file": "city-pack/PNG/cityTiles_081.png",
       "width": 132,
@@ -233,29 +260,73 @@
       {
         "id": "brick_000",
         "file": "buildings-pack/PNG/buildingTiles_000.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "brick_015",
         "file": "buildings-pack/PNG/buildingTiles_015.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "brick_016",
         "file": "buildings-pack/PNG/buildingTiles_016.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "brick_048",
         "file": "buildings-pack/PNG/buildingTiles_048.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
+        "stackHeight": 36
+      }
+    ],
+    "bottoms": [
+      {
+        "id": "brick_109",
+        "file": "buildings-pack/PNG/buildingTiles_109.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_116",
+        "file": "buildings-pack/PNG/buildingTiles_116.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_117",
+        "file": "buildings-pack/PNG/buildingTiles_117.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_123",
+        "file": "buildings-pack/PNG/buildingTiles_123.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_124",
+        "file": "buildings-pack/PNG/buildingTiles_124.png",
+        "width": 132,
+        "height": 127,
+        "stackHeight": 36
+      },
+      {
+        "id": "brick_125",
+        "file": "buildings-pack/PNG/buildingTiles_125.png",
+        "width": 132,
+        "height": 127,
         "stackHeight": 36
       }
     ],
@@ -263,43 +334,43 @@
       {
         "id": "roof_005",
         "file": "buildings-pack/PNG/buildingTiles_005.png",
-        "width": 99,
+        "width": 132,
         "height": 54
       },
       {
         "id": "roof_006",
         "file": "buildings-pack/PNG/buildingTiles_006.png",
-        "width": 99,
+        "width": 132,
         "height": 54
       },
       {
         "id": "roof_013",
         "file": "buildings-pack/PNG/buildingTiles_013.png",
-        "width": 99,
+        "width": 132,
         "height": 54
       },
       {
         "id": "roof_057",
         "file": "buildings-pack/PNG/buildingTiles_057.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       },
       {
         "id": "roof_061",
         "file": "buildings-pack/PNG/buildingTiles_061.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       },
       {
         "id": "roof_066",
         "file": "buildings-pack/PNG/buildingTiles_066.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       },
       {
         "id": "roof_075",
         "file": "buildings-pack/PNG/buildingTiles_075.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       }
     ]
@@ -309,42 +380,42 @@
       {
         "id": "office_000",
         "file": "buildings-pack/PNG/buildingTiles_000.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "office_007",
         "file": "buildings-pack/PNG/buildingTiles_007.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "office_008",
         "file": "buildings-pack/PNG/buildingTiles_008.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "office_015",
         "file": "buildings-pack/PNG/buildingTiles_015.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "office_023",
         "file": "buildings-pack/PNG/buildingTiles_023.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       },
       {
         "id": "office_031",
         "file": "buildings-pack/PNG/buildingTiles_031.png",
-        "width": 99,
+        "width": 132,
         "height": 85,
         "stackHeight": 36
       }
@@ -353,22 +424,54 @@
       {
         "id": "office_roof_057",
         "file": "buildings-pack/PNG/buildingTiles_057.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       },
       {
         "id": "office_roof_066",
         "file": "buildings-pack/PNG/buildingTiles_066.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       },
       {
         "id": "office_roof_068",
         "file": "buildings-pack/PNG/buildingTiles_068.png",
-        "width": 99,
+        "width": 132,
         "height": 60
       }
     ]
+  },
+  "vehicles": {
+    "sedan_blue": {
+      "type": "numbered",
+      "basePath": "vehicles/PNG/Civilian/Blue/Sedan 1/carBlue2_",
+      "width": 31,
+      "height": 30
+    },
+    "sedan_red": {
+      "type": "numbered",
+      "basePath": "vehicles/PNG/Civilian/Red/Sedan 1/carRed2_",
+      "width": 31,
+      "height": 30
+    },
+    "sedan_silver": {
+      "type": "numbered",
+      "basePath": "vehicles/PNG/Civilian/Silver/Sedan 1/carSilver2_",
+      "width": 31,
+      "height": 30
+    },
+    "taxi": {
+      "type": "directional",
+      "basePath": "vehicles/PNG/Taxi/taxi_",
+      "width": 31,
+      "height": 30
+    },
+    "police": {
+      "type": "directional",
+      "basePath": "vehicles/PNG/Police/police_",
+      "width": 31,
+      "height": 30
+    }
   },
   "meta": {
     "attribution": "Sprites by Kenney.nl (CC0 Public Domain)",
