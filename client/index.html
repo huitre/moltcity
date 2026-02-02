@@ -1279,11 +1279,12 @@
         // Random number of floors (1-3)
         const floors = Math.floor(rng() * 3) + 1;
 
-        // Pick random brick and roof
-        const brickIndex = Math.floor(rng() * houseBricks.length);
+        // Pick random bottom brick (ground floor), upper brick, and roof
+        const bottomBrickIndex = Math.floor(rng() * houseBricks.length);
+        const upperBrickIndex = Math.floor(rng() * houseBricks.length);
         const roofIndex = Math.floor(rng() * houseRoofs.length);
 
-        return { floors, brickIndex, roofIndex };
+        return { floors, bottomBrickIndex, upperBrickIndex, roofIndex };
       }
 
       // Generate office style (floors can be specified or random)
@@ -2390,18 +2391,21 @@
           // Generate consistent house style based on position, use stored floors
           const houseStyle = generateStackedHouse(x, y, x * 1000 + y);
           const floors = buildingFloors || houseStyle.floors;
-          const { brickIndex, roofIndex } = houseStyle;
+          const { bottomBrickIndex, upperBrickIndex, roofIndex } = houseStyle;
 
-          const brick = houseBricks[brickIndex % houseBricks.length];
+          const bottomBrick = houseBricks[bottomBrickIndex % houseBricks.length];
+          const upperBrick = houseBricks[upperBrickIndex % houseBricks.length];
           const roof = houseRoofs[roofIndex % houseRoofs.length];
 
-          // Scale to fit tile
-          const scale = TILE_WIDTH / brick.width;
-          const stackHeight = brick.stackHeight * scale;
+          // Scale to fit tile (use bottom brick for reference)
+          const scale = TILE_WIDTH / bottomBrick.width;
+          const stackHeight = bottomBrick.stackHeight * scale;
 
           // Draw brick layers from bottom to top (elevated 4px)
-          const elevate = 4;
+          const elevate = 8;
           for (let i = 0; i < floors; i++) {
+            // Use bottom brick for ground floor, upper brick for rest
+            const brick = i === 0 ? bottomBrick : upperBrick;
             const brickSprite = new PIXI.Sprite(brick.texture);
             brickSprite.scale.set(scale);
             brickSprite.anchor.set(0.5, 1);
