@@ -999,16 +999,9 @@
       // MOLTCITY - Isometric Client with Crypto
       // ============================================
 
-      // Auto-detect environment
-      const isLocal =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1";
-      const API_URL = isLocal
-        ? "http://localhost:3000"
-        : "https://api.moltcity.site";
-      const WS_URL = isLocal
-        ? "ws://localhost:3000"
-        : "wss://api.moltcity.site";
+      // Use relative URLs (same origin) to avoid CORS
+      const API_URL = "";
+      const WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
 
       // Check if we're in spectator mode (read-only, no auth required)
       const isSpectatorMode = window.location.pathname === '/spectate';
