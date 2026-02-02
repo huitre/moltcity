@@ -736,24 +736,55 @@
           <form id="login-form">
             <div class="form-group">
               <label for="login-email">Email</label>
-              <input type="email" id="login-email" placeholder="you@example.com" required>
+              <input
+                type="email"
+                id="login-email"
+                placeholder="you@example.com"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="login-password">Password</label>
-              <input type="password" id="login-password" placeholder="Your password" required>
+              <input
+                type="password"
+                id="login-password"
+                placeholder="Your password"
+                required
+              />
             </div>
             <button type="submit" class="auth-submit">Sign In</button>
           </form>
-          <p style="text-align: center; margin: 12px 0; color: #666; font-size: 12px">
-            <a href="#" id="show-register-link" style="color: #7c7cff">Don't have an account? Register</a>
+          <p
+            style="
+              text-align: center;
+              margin: 12px 0;
+              color: #666;
+              font-size: 12px;
+            "
+          >
+            <a href="#" id="show-register-link" style="color: #7c7cff"
+              >Don't have an account? Register</a
+            >
           </p>
           <div class="auth-divider"><span>or</span></div>
           <button class="google-btn" id="google-login-btn">
             <svg viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
             </svg>
             Sign in with Google
           </button>
@@ -764,20 +795,45 @@
           <form id="signup-form">
             <div class="form-group">
               <label for="signup-name">Name</label>
-              <input type="text" id="signup-name" placeholder="Your name" required>
+              <input
+                type="text"
+                id="signup-name"
+                placeholder="Your name"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="signup-email">Email</label>
-              <input type="email" id="signup-email" placeholder="you@example.com" required>
+              <input
+                type="email"
+                id="signup-email"
+                placeholder="you@example.com"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="signup-password">Password</label>
-              <input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6">
+              <input
+                type="password"
+                id="signup-password"
+                placeholder="Min 6 characters"
+                required
+                minlength="6"
+              />
             </div>
             <button type="submit" class="auth-submit">Create Account</button>
           </form>
-          <p style="text-align: center; margin-top: 12px; color: #666; font-size: 12px">
-            <a href="#" id="show-login-link" style="color: #7c7cff">Already have an account? Sign in</a>
+          <p
+            style="
+              text-align: center;
+              margin-top: 12px;
+              color: #666;
+              font-size: 12px;
+            "
+          >
+            <a href="#" id="show-login-link" style="color: #7c7cff"
+              >Already have an account? Sign in</a
+            >
           </p>
         </div>
 
@@ -1001,10 +1057,10 @@
 
       // Use relative URLs (same origin) to avoid CORS
       const API_URL = "";
-      const WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+      const WS_URL = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
 
       // Check if we're in spectator mode (read-only, no auth required)
-      const isSpectatorMode = window.location.pathname === '/spectate';
+      const isSpectatorMode = window.location.pathname === "/spectate";
 
       // Isometric tile dimensions
       const TILE_WIDTH = 64;
@@ -1832,9 +1888,9 @@
       // ============================================
 
       // World bounds for ambient elements (isometric coordinates)
-      const WORLD_MIN_X = -GRID_SIZE * TILE_WIDTH / 2 - 200;
-      const WORLD_MAX_X = GRID_SIZE * TILE_WIDTH / 2 + 200;
-      const WORLD_MIN_Y = -300;
+      const WORLD_MIN_X = (-GRID_SIZE * TILE_WIDTH) / 2 - 200;
+      const WORLD_MAX_X = (GRID_SIZE * TILE_WIDTH) / 2 + 200;
+      const WORLD_MIN_Y = -100;
       const WORLD_MAX_Y = GRID_SIZE * TILE_HEIGHT + 200;
 
       function initClouds() {
@@ -1870,7 +1926,8 @@
           const bird = createBird();
           // Position in world space - spread across the city
           bird.x = WORLD_MIN_X + Math.random() * (WORLD_MAX_X - WORLD_MIN_X);
-          bird.y = WORLD_MIN_Y + Math.random() * (WORLD_MAX_Y - WORLD_MIN_Y) * 0.5;
+          bird.y =
+            WORLD_MIN_Y + Math.random() * (WORLD_MAX_Y - WORLD_MIN_Y) * 0.5;
           bird.vx = (Math.random() - 0.5) * 3;
           bird.vy = (Math.random() - 0.5) * 1;
           bird.flapPhase = Math.random() * Math.PI * 2;
@@ -1891,13 +1948,14 @@
       }
 
       function animateAmbient(delta) {
-        // Animate clouds
+        // Animate clouds - move along isometric axis (45 degrees, 2:1 ratio)
         for (const cloud of clouds) {
           cloud.x += cloud.speed * delta;
-          // Wrap around in world space
-          if (cloud.x > WORLD_MAX_X + 100) {
-            cloud.x = WORLD_MIN_X - 100;
-            cloud.y = WORLD_MIN_Y + Math.random() * 400;
+          cloud.y += cloud.speed * 0.5 * delta; // Isometric 2:1 ratio
+          // Wrap around in world space when cloud exits bottom-right
+          if (cloud.x > WORLD_MAX_X + 100 || cloud.y > WORLD_MAX_Y * 0.4) {
+            cloud.x = WORLD_MIN_X - 100 + Math.random() * 400;
+            cloud.y = WORLD_MIN_Y - 100;
           }
         }
 
@@ -3355,8 +3413,17 @@
         if (!isDaylight) {
           for (const building of buildings) {
             const parcel = parcels.find((p) => p.id === building.parcelId);
-            if (parcel && building.powered && building.type !== 'road' && building.type !== 'park') {
-              const lightGfx = drawBuildingLights(parcel.x, parcel.y, building.floors || 1);
+            if (
+              parcel &&
+              building.powered &&
+              building.type !== "road" &&
+              building.type !== "park"
+            ) {
+              const lightGfx = drawBuildingLights(
+                parcel.x,
+                parcel.y,
+                building.floors || 1,
+              );
               worldContainer.addChild(lightGfx);
             }
           }
