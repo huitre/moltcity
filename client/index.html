@@ -682,9 +682,42 @@
         border-color: #ff6b6b;
         color: #ff6b6b;
       }
+
+      /* Spectator Mode Banner */
+      #spectator-banner {
+        display: none;
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(26, 26, 46, 0.95);
+        border: 1px solid #4ecdc4;
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: #4ecdc4;
+        font-size: 14px;
+        z-index: 150;
+        backdrop-filter: blur(10px);
+      }
+
+      #spectator-banner a {
+        color: #7c7cff;
+        text-decoration: none;
+        margin-left: 12px;
+      }
+
+      #spectator-banner a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
+    <!-- Spectator Mode Banner -->
+    <div id="spectator-banner">
+      Spectator Mode - View Only
+      <a href="/login">Sign in to interact</a>
+    </div>
+
     <!-- Auth Modal -->
     <div id="auth-overlay">
       <div id="auth-modal">
@@ -976,6 +1009,9 @@
       const WS_URL = isLocal
         ? "ws://localhost:3000"
         : "wss://api.moltcity.site";
+
+      // Check if we're in spectator mode (read-only, no auth required)
+      const isSpectatorMode = window.location.pathname === '/spectate';
 
       // Isometric tile dimensions
       const TILE_WIDTH = 64;
@@ -3340,6 +3376,9 @@
       }
 
       async function onTileClick(x, y) {
+        // Disable interactions in spectator mode
+        if (isSpectatorMode) return;
+
         // Infrastructure mode (power lines, water pipes)
         if (
           selectedBuildType === "power_line" ||
@@ -3605,6 +3644,17 @@
       }
 
       async function main() {
+        if (isSpectatorMode) {
+          // Spectator mode: hide auth modal and all interactive elements
+          document.getElementById("auth-overlay").style.display = "none";
+          document.getElementById("controls").style.display = "none";
+          document.getElementById("user-info").style.display = "none";
+          document.getElementById("build-menu").style.display = "none";
+          document.getElementById("spectator-banner").style.display = "block";
+          await initializeApp();
+          return;
+        }
+
         // Setup auth UI first
         setupAuthUI();
 

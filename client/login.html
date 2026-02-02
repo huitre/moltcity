@@ -211,6 +211,24 @@
       text-decoration: underline;
     }
 
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .footer-links a {
+      color: #666;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: #7c7cff;
+    }
+
     /* Loading spinner */
     .loading {
       display: none;
@@ -321,6 +339,13 @@
     <p class="footer-text">
       By continuing, you agree to MoltCity's Terms of Service
     </p>
+
+    <div class="footer-links">
+      <a href="/" title="Home">Home</a>
+      <a href="/skill.md" target="_blank" title="API Documentation">API Docs</a>
+      <a href="https://discord.gg/moltcity" target="_blank" title="Discord">Discord</a>
+      <a href="https://twitter.com/moltcity" target="_blank" title="Twitter">Twitter</a>
+    </div>
   </div>
 
   <script>
@@ -333,7 +358,7 @@
       fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${existingToken}` }
       })
-      .then(res => res.ok ? window.location.href = '/' : null)
+      .then(res => res.ok ? window.location.href = '/app' : null)
       .catch(() => localStorage.removeItem('moltcity_token'));
     }
 
@@ -342,7 +367,7 @@
     const tokenFromUrl = urlParams.get('token');
     if (tokenFromUrl) {
       localStorage.setItem('moltcity_token', tokenFromUrl);
-      window.location.href = '/';
+      window.location.href = '/app';
     }
 
     // Check for error in URL
@@ -384,7 +409,7 @@
           localStorage.setItem('moltcity_token', data.token);
           localStorage.setItem('moltcity_user', JSON.stringify(data.user));
           showSuccess('Login successful! Redirecting...');
-          setTimeout(() => window.location.href = '/', 1000);
+          setTimeout(() => window.location.href = '/app', 1000);
         } else {
           showError(data.error || 'Login failed');
         }
@@ -430,7 +455,7 @@
           localStorage.setItem('moltcity_token', data.token);
           localStorage.setItem('moltcity_user', JSON.stringify(data.user));
           showSuccess('Account created! Redirecting...');
-          setTimeout(() => window.location.href = '/', 1000);
+          setTimeout(() => window.location.href = '/app', 1000);
         } else {
           showError(data.error || 'Registration failed');
         }

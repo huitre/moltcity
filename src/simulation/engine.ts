@@ -506,6 +506,10 @@ export class SimulationEngine extends EventEmitter {
     return this.currentTick;
   }
 
+  isRunning(): boolean {
+    return this.running;
+  }
+
   /**
    * Start the simulation loop
    */
