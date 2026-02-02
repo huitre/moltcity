@@ -1799,16 +1799,16 @@
         worldContainer.x = app.screen.width / 2;
         worldContainer.y = 100;
 
-        // Ambient layers
+        // Ambient layers (in world space - move with camera)
         cloudsContainer = new PIXI.Container();
         cloudsContainer.zIndex = 10000;
-        app.stage.addChild(cloudsContainer);
+        worldContainer.addChild(cloudsContainer);
 
         birdsContainer = new PIXI.Container();
         birdsContainer.zIndex = 9999;
-        app.stage.addChild(birdsContainer);
+        worldContainer.addChild(birdsContainer);
 
-        // Day/night overlay
+        // Day/night overlay (screen space - stays fixed on screen)
         dayNightOverlay = new PIXI.Graphics();
         dayNightOverlay.zIndex = 9998;
         app.stage.addChild(dayNightOverlay);
@@ -1831,12 +1831,19 @@
       // Ambient Animations
       // ============================================
 
+      // World bounds for ambient elements (isometric coordinates)
+      const WORLD_MIN_X = -GRID_SIZE * TILE_WIDTH / 2 - 200;
+      const WORLD_MAX_X = GRID_SIZE * TILE_WIDTH / 2 + 200;
+      const WORLD_MIN_Y = -300;
+      const WORLD_MAX_Y = GRID_SIZE * TILE_HEIGHT + 200;
+
       function initClouds() {
         for (let i = 0; i < CLOUD_COUNT; i++) {
           const cloud = createCloud();
-          cloud.x = Math.random() * app.screen.width * 1.5 - app.screen.width * 0.25;
-          cloud.y = Math.random() * app.screen.height * 0.4;
-          cloud.speed = 0.2 + Math.random() * 0.3;
+          // Position in world space
+          cloud.x = WORLD_MIN_X + Math.random() * (WORLD_MAX_X - WORLD_MIN_X);
+          cloud.y = WORLD_MIN_Y + Math.random() * 400; // Clouds in upper part
+          cloud.speed = 0.3 + Math.random() * 0.4;
           cloud.alpha = 0.4 + Math.random() * 0.3;
           clouds.push(cloud);
           cloudsContainer.addChild(cloud);
@@ -1861,10 +1868,11 @@
       function initBirds() {
         for (let i = 0; i < BIRD_COUNT; i++) {
           const bird = createBird();
-          bird.x = Math.random() * app.screen.width;
-          bird.y = 50 + Math.random() * app.screen.height * 0.3;
-          bird.vx = (Math.random() - 0.5) * 2;
-          bird.vy = (Math.random() - 0.5) * 0.5;
+          // Position in world space - spread across the city
+          bird.x = WORLD_MIN_X + Math.random() * (WORLD_MAX_X - WORLD_MIN_X);
+          bird.y = WORLD_MIN_Y + Math.random() * (WORLD_MAX_Y - WORLD_MIN_Y) * 0.5;
+          bird.vx = (Math.random() - 0.5) * 3;
+          bird.vy = (Math.random() - 0.5) * 1;
           bird.flapPhase = Math.random() * Math.PI * 2;
           bird.flapSpeed = 0.15 + Math.random() * 0.1;
           birds.push(bird);
@@ -1886,10 +1894,10 @@
         // Animate clouds
         for (const cloud of clouds) {
           cloud.x += cloud.speed * delta;
-          // Wrap around
-          if (cloud.x > app.screen.width + 100) {
-            cloud.x = -100;
-            cloud.y = Math.random() * app.screen.height * 0.4;
+          // Wrap around in world space
+          if (cloud.x > WORLD_MAX_X + 100) {
+            cloud.x = WORLD_MIN_X - 100;
+            cloud.y = WORLD_MIN_Y + Math.random() * 400;
           }
         }
 
@@ -1909,23 +1917,23 @@
           bird.x += bird.vx * delta;
           bird.y += bird.vy * delta + Math.sin(bird.flapPhase * 0.5) * 0.2;
 
-          // Boundary behavior - birds turn around
-          if (bird.x < -20 || bird.x > app.screen.width + 20) {
+          // Boundary behavior in world space - birds turn around at world edges
+          if (bird.x < WORLD_MIN_X || bird.x > WORLD_MAX_X) {
             bird.vx *= -1;
           }
-          if (bird.y < 30 || bird.y > app.screen.height * 0.5) {
+          if (bird.y < WORLD_MIN_Y || bird.y > WORLD_MAX_Y * 0.6) {
             bird.vy *= -1;
           }
 
           // Random direction changes
           if (Math.random() < 0.005) {
-            bird.vx += (Math.random() - 0.5) * 0.5;
-            bird.vy += (Math.random() - 0.5) * 0.2;
+            bird.vx += (Math.random() - 0.5) * 0.8;
+            bird.vy += (Math.random() - 0.5) * 0.4;
           }
 
           // Clamp velocity
-          bird.vx = Math.max(-2, Math.min(2, bird.vx));
-          bird.vy = Math.max(-0.5, Math.min(0.5, bird.vy));
+          bird.vx = Math.max(-3, Math.min(3, bird.vx));
+          bird.vy = Math.max(-1, Math.min(1, bird.vy));
         }
 
         // Update day/night overlay
