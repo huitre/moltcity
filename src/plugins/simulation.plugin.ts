@@ -3,6 +3,7 @@
 // ============================================
 
 import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
 import { SimulationEngine } from '../simulation/engine.js';
 import { DatabaseManager } from '../models/database.js';
 import type { CityTime, CityEvent } from '../models/types.js';
@@ -30,7 +31,7 @@ export interface TickData {
   events: CityEvent[];
 }
 
-export const simulationPlugin: FastifyPluginAsync<SimulationPluginOptions> = async (fastify, options) => {
+const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async (fastify, options) => {
   const gridWidth = options.gridWidth || DEFAULT_GRID_WIDTH;
   const gridHeight = options.gridHeight || DEFAULT_GRID_HEIGHT;
 
@@ -43,6 +44,9 @@ export const simulationPlugin: FastifyPluginAsync<SimulationPluginOptions> = asy
   const engine = new SimulationEngine(legacyDb, gridWidth, gridHeight);
   fastify.decorate('simulationEngine', engine);
 
+  // Track last population broadcast to avoid spam
+  let lastPopulationBroadcast = 0;
+
   // Connect simulation events to WebSocket broadcasts
   engine.on('tick', (data: TickData) => {
     // Only broadcast every 10 ticks to reduce traffic
@@ -52,6 +56,21 @@ export const simulationPlugin: FastifyPluginAsync<SimulationPluginOptions> = asy
         time: data.time,
         eventCount: data.events.length,
       });
+
+      // Broadcast population update every 60 ticks (6 seconds)
+      if (data.tick - lastPopulationBroadcast >= 60) {
+        lastPopulationBroadcast = data.tick;
+        const populationStats = engine.getPopulationStats();
+        const targetVehicles = engine.getTargetVehicleCount(data.time);
+
+        fastify.broadcast('population_update', {
+          total: populationStats.total,
+          employed: populationStats.employed,
+          unemployed: populationStats.unemployed,
+          employmentRate: populationStats.employmentRate,
+          traffic: targetVehicles,
+        });
+      }
     }
 
     // Broadcast significant events immediately
@@ -98,3 +117,9 @@ export const simulationPlugin: FastifyPluginAsync<SimulationPluginOptions> = asy
     legacyDb.close();
   });
 };
+
+// Wrap with fastify-plugin to share decorators across encapsulation boundaries
+export const simulationPlugin = fp(simulationPluginImpl, {
+  name: 'moltcity-simulation',
+  dependencies: ['moltcity-websocket'],
+});

@@ -1107,6 +1107,145 @@ export class JailInmateRepository {
 }
 
 // ============================================
+// Population Repository (Residents)
+// ============================================
+
+// Random name generation data
+const FIRST_NAMES = [
+  'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Quinn', 'Avery',
+  'Peyton', 'Charlie', 'Skyler', 'Dakota', 'Sage', 'Phoenix', 'River', 'Blake',
+  'Emerson', 'Finley', 'Harper', 'Hayden', 'Jamie', 'Jesse', 'Kai', 'Lane',
+  'Max', 'Nico', 'Parker', 'Reese', 'Rory', 'Sam', 'Sawyer', 'Spencer'
+];
+
+const LAST_NAMES = [
+  'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+  'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Taylor',
+  'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris',
+  'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen'
+];
+
+export interface Resident {
+  id: string;
+  name: string;
+  homeBuildingId: string | null;
+  workBuildingId: string | null;
+  salary: number;
+  createdAt: number;
+}
+
+export class PopulationRepository {
+  constructor(private db: Database.Database) {
+    // Create table if not exists
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS residents (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        home_building_id TEXT REFERENCES buildings(id),
+        work_building_id TEXT,
+        salary REAL NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_residents_home ON residents(home_building_id);
+      CREATE INDEX IF NOT EXISTS idx_residents_work ON residents(work_building_id);
+    `);
+  }
+
+  generateRandomName(): string {
+    const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+    const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+    return `${firstName} ${lastName}`;
+  }
+
+  createResident(homeBuildingId: string, name?: string): Resident {
+    const id = crypto.randomUUID();
+    const residentName = name || this.generateRandomName();
+    const now = Date.now();
+
+    this.db.prepare(`
+      INSERT INTO residents (id, name, home_building_id, salary, created_at)
+      VALUES (?, ?, ?, 0, ?)
+    `).run(id, residentName, homeBuildingId, now);
+
+    return this.getResident(id)!;
+  }
+
+  getResident(id: string): Resident | null {
+    const row = this.db.prepare('SELECT * FROM residents WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToResident(row);
+  }
+
+  getAllResidents(): Resident[] {
+    const rows = this.db.prepare('SELECT * FROM residents').all() as any[];
+    return rows.map(row => this.rowToResident(row));
+  }
+
+  getResidentsByHome(homeBuildingId: string): Resident[] {
+    const rows = this.db.prepare('SELECT * FROM residents WHERE home_building_id = ?').all(homeBuildingId) as any[];
+    return rows.map(row => this.rowToResident(row));
+  }
+
+  getResidentsByWork(workBuildingId: string): Resident[] {
+    const rows = this.db.prepare('SELECT * FROM residents WHERE work_building_id = ?').all(workBuildingId) as any[];
+    return rows.map(row => this.rowToResident(row));
+  }
+
+  getUnemployedResidents(): Resident[] {
+    const rows = this.db.prepare('SELECT * FROM residents WHERE work_building_id IS NULL').all() as any[];
+    return rows.map(row => this.rowToResident(row));
+  }
+
+  getEmployedResidents(): Resident[] {
+    const rows = this.db.prepare('SELECT * FROM residents WHERE work_building_id IS NOT NULL').all() as any[];
+    return rows.map(row => this.rowToResident(row));
+  }
+
+  getTotalPopulation(): number {
+    const result = this.db.prepare('SELECT COUNT(*) as count FROM residents').get() as any;
+    return result?.count || 0;
+  }
+
+  getEmployedCount(): number {
+    const result = this.db.prepare('SELECT COUNT(*) as count FROM residents WHERE work_building_id IS NOT NULL').get() as any;
+    return result?.count || 0;
+  }
+
+  assignJob(residentId: string, workBuildingId: string, salary: number): void {
+    this.db.prepare('UPDATE residents SET work_building_id = ?, salary = ? WHERE id = ?').run(workBuildingId, salary, residentId);
+  }
+
+  removeJob(residentId: string): void {
+    this.db.prepare('UPDATE residents SET work_building_id = NULL, salary = 0 WHERE id = ?').run(residentId);
+  }
+
+  deleteResident(id: string): boolean {
+    const result = this.db.prepare('DELETE FROM residents WHERE id = ?').run(id);
+    return result.changes > 0;
+  }
+
+  deleteResidentsByHome(homeBuildingId: string): number {
+    const result = this.db.prepare('DELETE FROM residents WHERE home_building_id = ?').run(homeBuildingId);
+    return result.changes;
+  }
+
+  removeWorkFromBuilding(workBuildingId: string): void {
+    this.db.prepare('UPDATE residents SET work_building_id = NULL, salary = 0 WHERE work_building_id = ?').run(workBuildingId);
+  }
+
+  private rowToResident(row: any): Resident {
+    return {
+      id: row.id,
+      name: row.name,
+      homeBuildingId: row.home_building_id,
+      workBuildingId: row.work_building_id,
+      salary: row.salary,
+      createdAt: row.created_at,
+    };
+  }
+}
+
+// ============================================
 // Database Manager
 // ============================================
 
@@ -1124,6 +1263,7 @@ export class DatabaseManager {
   public rentWarnings: RentWarningRepository;
   public courtCases: CourtCaseRepository;
   public jailInmates: JailInmateRepository;
+  public population: PopulationRepository;
 
   constructor() {
     this.db = createDatabase();
@@ -1139,6 +1279,7 @@ export class DatabaseManager {
     this.rentWarnings = new RentWarningRepository(this.db);
     this.courtCases = new CourtCaseRepository(this.db);
     this.jailInmates = new JailInmateRepository(this.db);
+    this.population = new PopulationRepository(this.db);
   }
 
   close(): void {

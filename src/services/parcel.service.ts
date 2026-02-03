@@ -8,7 +8,7 @@ import { RoadRepository } from '../repositories/road.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, InsufficientFundsError, ValidationError, ForbiddenError } from '../plugins/error-handler.plugin.js';
-import { getMaxParcels, type UserRole } from '../config/game.js';
+import { getMaxParcels, getParcelCost, type UserRole } from '../config/game.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { FastifyInstance } from 'fastify';
 import type { Parcel, Building, Road, ZoningType } from '../models/types.js';
@@ -122,18 +122,23 @@ export class ParcelService {
       throw new ForbiddenError(`Parcel limit reached (max ${maxParcels} parcels)`);
     }
 
+    // Calculate price based on number of parcels already owned
+    // First 5 parcels are free, then 100$ * number of parcels owned
+    const calculatedPrice = getParcelCost(ownedParcels.length);
+    const finalPrice = Math.max(calculatedPrice, params.price || 0);
+
     // Check balance (if price > 0)
-    if (params.price > 0 && agent.wallet.balance < params.price) {
-      throw new InsufficientFundsError(params.price, agent.wallet.balance);
+    if (finalPrice > 0 && agent.wallet.balance < finalPrice) {
+      throw new InsufficientFundsError(finalPrice, agent.wallet.balance);
     }
 
     // Deduct from wallet
-    if (params.price > 0) {
-      await this.agentRepo.deductFromWallet(agent.id, params.price);
+    if (finalPrice > 0) {
+      await this.agentRepo.deductFromWallet(agent.id, finalPrice);
     }
 
     // Purchase parcel
-    await this.parcelRepo.purchaseParcel(parcel.id, agent.id, params.price);
+    await this.parcelRepo.purchaseParcel(parcel.id, agent.id, finalPrice);
 
     // Return updated parcel
     const updatedParcel = await this.parcelRepo.getParcelById(parcel.id);
@@ -192,6 +197,24 @@ export class ParcelService {
     }
 
     return (await this.parcelRepo.getParcelById(parcelId))!;
+  }
+
+  /**
+   * Get the price for purchasing a parcel based on how many the agent already owns
+   */
+  async getParcelQuote(agentId: string): Promise<{ price: number; parcelsOwned: number; freeRemaining: number }> {
+    const agent = await this.agentRepo.getAgent(agentId);
+    if (!agent) {
+      // New agent, no parcels owned
+      return { price: 0, parcelsOwned: 0, freeRemaining: 5 };
+    }
+
+    const ownedParcels = await this.parcelRepo.getParcelsByOwner(agentId);
+    const parcelsOwned = ownedParcels.length;
+    const price = getParcelCost(parcelsOwned);
+    const freeRemaining = Math.max(0, 5 - parcelsOwned);
+
+    return { price, parcelsOwned, freeRemaining };
   }
 
   async setZoning(parcelId: string, zoning: ZoningType): Promise<Parcel> {

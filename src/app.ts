@@ -74,6 +74,13 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     prefix: '/client/',
   });
 
+  // Also serve client JS files at /js/ for cleaner imports
+  await fastify.register(fastifyStatic, {
+    root: path.resolve(process.cwd(), 'client/js'),
+    prefix: '/js/',
+    decorateReply: false,
+  });
+
   // Serve main pages
   fastify.get('/', async (request, reply) => {
     // Landing page for discovery

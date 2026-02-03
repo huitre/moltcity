@@ -39,6 +39,15 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
     return { parcel };
   });
 
+  // Get parcel price quote for an agent
+  fastify.get('/api/parcels/quote', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+    const query = request.query as { agentId?: string };
+    const agentId = query.agentId || request.user?.userId || '';
+    const quote = await parcelService.getParcelQuote(agentId);
+    return quote;
+  });
+
   // Purchase parcel
   fastify.post('/api/parcels/purchase', async (request, reply) => {
     // Check authentication (optional - allows both authenticated and unauthenticated requests)

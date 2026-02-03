@@ -3,9 +3,10 @@
 // ============================================
 
 import { EventEmitter } from 'events';
-import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState } from '../models/types.js';
+import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
 import { DatabaseManager } from '../models/database.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
+import { BUILDING_JOBS, TRAFFIC } from '../config/game.js';
 
 // ============================================
 // Configuration
@@ -24,6 +25,12 @@ const TICKS_PER_HOUR = 600; // 10 ticks/min * 60 min
 const TICKS_PER_DAY = TICKS_PER_HOUR * 24;
 const WARNING_DEADLINE_DAYS = 3; // Days to pay after warning
 const JAIL_SENTENCE_DAYS = 7; // Days in jail for rent nonpayment
+
+// Population rules per building type
+const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boolean }> = {
+  house: { min: 2, max: 4, perFloor: false },
+  apartment: { min: 3, max: 3, perFloor: true },
+};
 
 // ============================================
 // Construction Simulator
@@ -478,6 +485,266 @@ export class VehicleSimulator {
 }
 
 // ============================================
+// Population Simulator
+// ============================================
+
+export class PopulationSimulator {
+  constructor(private db: DatabaseManager) {}
+
+  /**
+   * Spawn residents when a residential building is completed
+   */
+  onBuildingCompleted(building: Building): CityEvent[] {
+    const events: CityEvent[] = [];
+    const rules = POPULATION_RULES[building.type];
+
+    if (!rules) {
+      return events;
+    }
+
+    let residentCount: number;
+    if (rules.perFloor) {
+      residentCount = rules.min * building.floors;
+    } else {
+      residentCount = Math.floor(Math.random() * (rules.max - rules.min + 1)) + rules.min;
+    }
+
+    console.log(`[Population] Spawning ${residentCount} residents for ${building.type} "${building.name}"`);
+
+    for (let i = 0; i < residentCount; i++) {
+      const resident = this.db.population.createResident(building.id);
+      events.push({
+        type: 'resident_spawned' as CityEventType,
+        timestamp: Date.now(),
+        data: {
+          residentId: resident.id,
+          name: resident.name,
+          buildingId: building.id,
+          buildingName: building.name,
+        },
+      });
+    }
+
+    return events;
+  }
+
+  /**
+   * Remove residents when a building is demolished
+   */
+  onBuildingDemolished(buildingId: string): CityEvent[] {
+    const events: CityEvent[] = [];
+    const residents = this.db.population.getResidentsByHome(buildingId);
+    const count = this.db.population.deleteResidentsByHome(buildingId);
+
+    if (count > 0) {
+      console.log(`[Population] ${count} residents displaced from demolished building`);
+      events.push({
+        type: 'residents_displaced' as CityEventType,
+        timestamp: Date.now(),
+        data: {
+          buildingId,
+          count,
+          residentIds: residents.map(r => r.id),
+        },
+      });
+    }
+
+    this.db.population.removeWorkFromBuilding(buildingId);
+    return events;
+  }
+
+  getPopulationStats(): { total: number; employed: number; unemployed: number; employmentRate: number } {
+    const total = this.db.population.getTotalPopulation();
+    const employed = this.db.population.getEmployedCount();
+    const unemployed = total - employed;
+    const employmentRate = total > 0 ? (employed / total) * 100 : 0;
+    return { total, employed, unemployed, employmentRate };
+  }
+}
+
+// ============================================
+// Employment Simulator
+// ============================================
+
+export class EmploymentSimulator {
+  private lastPayrollDay: number = 0;
+  private lastJobMatchTick: number = 0;
+
+  constructor(private db: DatabaseManager) {}
+
+  /**
+   * Main simulation tick
+   */
+  simulate(currentTick: number, time: CityTime): CityEvent[] {
+    const events: CityEvent[] = [];
+
+    // Job matching runs every hour (600 ticks)
+    if (currentTick - this.lastJobMatchTick >= 600) {
+      this.lastJobMatchTick = currentTick;
+      const matchEvents = this.matchJobSeekers();
+      events.push(...matchEvents);
+    }
+
+    // Payroll runs once per day at midnight (hour 0)
+    if (time.hour === 0 && this.lastPayrollDay !== time.day) {
+      this.lastPayrollDay = time.day;
+      const payrollEvents = this.processPayroll();
+      events.push(...payrollEvents);
+    }
+
+    return events;
+  }
+
+  /**
+   * Match unemployed residents to available jobs
+   */
+  private matchJobSeekers(): CityEvent[] {
+    const events: CityEvent[] = [];
+    const unemployed = this.db.population.getUnemployedResidents();
+    if (unemployed.length === 0) return events;
+
+    const jobSlots = this.getAvailableJobSlots();
+    if (jobSlots.length === 0) return events;
+
+    console.log(`[Employment] Matching ${unemployed.length} job seekers to ${jobSlots.length} workplaces`);
+
+    for (const resident of unemployed) {
+      const availableSlot = jobSlots.find(slot => slot.filled < slot.capacity);
+      if (!availableSlot) break;
+
+      this.db.population.assignJob(resident.id, availableSlot.buildingId, availableSlot.salary);
+      availableSlot.filled++;
+
+      events.push({
+        type: 'resident_employed' as CityEventType,
+        timestamp: Date.now(),
+        data: {
+          residentId: resident.id,
+          residentName: resident.name,
+          buildingId: availableSlot.buildingId,
+          salary: availableSlot.salary,
+        },
+      });
+
+      console.log(`[Employment] ${resident.name} hired at ${availableSlot.buildingType} for ${availableSlot.salary}/day`);
+    }
+
+    return events;
+  }
+
+  private getAvailableJobSlots(): { buildingId: string; buildingType: BuildingType; capacity: number; filled: number; salary: number }[] {
+    const buildings = this.db.buildings.getAllBuildings();
+    const jobSlots: { buildingId: string; buildingType: BuildingType; capacity: number; filled: number; salary: number }[] = [];
+
+    for (const building of buildings) {
+      if (building.constructionProgress < 100) continue;
+
+      const jobConfig = BUILDING_JOBS[building.type];
+      if (!jobConfig) continue;
+
+      const employees = this.db.population.getResidentsByWork(building.id);
+      const capacity = jobConfig.count * building.floors;
+
+      if (employees.length < capacity) {
+        jobSlots.push({
+          buildingId: building.id,
+          buildingType: building.type,
+          capacity,
+          filled: employees.length,
+          salary: jobConfig.salary,
+        });
+      }
+    }
+
+    return jobSlots;
+  }
+
+  /**
+   * Process daily payroll
+   */
+  private processPayroll(): CityEvent[] {
+    const events: CityEvent[] = [];
+    const employed = this.db.population.getEmployedResidents();
+    if (employed.length === 0) return events;
+
+    let totalPaid = 0;
+
+    for (const resident of employed) {
+      if (resident.salary <= 0 || !resident.workBuildingId) continue;
+
+      const building = this.db.buildings.getBuilding(resident.workBuildingId);
+      if (building) {
+        // Add salary to building owner's wallet (simulating economic flow)
+        this.db.agents.addToWallet(building.ownerId, resident.salary);
+        totalPaid += resident.salary;
+      }
+    }
+
+    if (totalPaid > 0) {
+      console.log(`[Employment] Payroll processed: ${totalPaid} MOLT paid to ${employed.length} workers`);
+      events.push({
+        type: 'payroll_processed' as CityEventType,
+        timestamp: Date.now(),
+        data: { totalPaid, workerCount: employed.length },
+      });
+    }
+
+    return events;
+  }
+
+  /**
+   * Handle building demolition
+   */
+  onBuildingDemolished(buildingId: string): CityEvent[] {
+    const events: CityEvent[] = [];
+    const workers = this.db.population.getResidentsByWork(buildingId);
+
+    if (workers.length > 0) {
+      this.db.population.removeWorkFromBuilding(buildingId);
+      console.log(`[Employment] ${workers.length} workers lost jobs from demolished building`);
+
+      events.push({
+        type: 'jobs_lost' as CityEventType,
+        timestamp: Date.now(),
+        data: { buildingId, count: workers.length, residentIds: workers.map(w => w.id) },
+      });
+    }
+
+    return events;
+  }
+
+  getEmploymentStats(): { totalJobs: number; filledJobs: number; openJobs: number; averageSalary: number } {
+    const buildings = this.db.buildings.getAllBuildings();
+    let totalJobs = 0;
+    let filledJobs = 0;
+    let totalSalary = 0;
+    let jobBuildingCount = 0;
+
+    for (const building of buildings) {
+      if (building.constructionProgress < 100) continue;
+
+      const jobConfig = BUILDING_JOBS[building.type];
+      if (!jobConfig) continue;
+
+      const capacity = jobConfig.count * building.floors;
+      const employees = this.db.population.getResidentsByWork(building.id);
+
+      totalJobs += capacity;
+      filledJobs += employees.length;
+      totalSalary += jobConfig.salary;
+      jobBuildingCount++;
+    }
+
+    return {
+      totalJobs,
+      filledJobs,
+      openJobs: totalJobs - filledJobs,
+      averageSalary: jobBuildingCount > 0 ? totalSalary / jobBuildingCount : 0,
+    };
+  }
+}
+
+// ============================================
 // Main Simulation Engine
 // ============================================
 
@@ -488,6 +755,8 @@ export class SimulationEngine extends EventEmitter {
   private vehicleSimulator: VehicleSimulator;
   private constructionSimulator: ConstructionSimulator;
   private rentEnforcementSimulator: RentEnforcementSimulator;
+  private populationSimulator: PopulationSimulator;
+  private employmentSimulator: EmploymentSimulator;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
@@ -500,6 +769,8 @@ export class SimulationEngine extends EventEmitter {
     this.vehicleSimulator = new VehicleSimulator(db, gridWidth, gridHeight);
     this.constructionSimulator = new ConstructionSimulator(db);
     this.rentEnforcementSimulator = new RentEnforcementSimulator(db);
+    this.populationSimulator = new PopulationSimulator(db);
+    this.employmentSimulator = new EmploymentSimulator(db);
   }
 
   getCurrentTick(): number {
@@ -561,7 +832,15 @@ export class SimulationEngine extends EventEmitter {
         timestamp: Date.now(),
         data: { buildingId: building.id, type: building.type, name: building.name, constructionComplete: true },
       });
+
+      // Spawn population for completed residential buildings
+      const populationEvents = this.populationSimulator.onBuildingCompleted(building);
+      events.push(...populationEvents);
     }
+
+    // Simulate employment (job matching and payroll)
+    const employmentEvents = this.employmentSimulator.simulate(this.currentTick, time);
+    events.push(...employmentEvents);
 
     // Simulate rent enforcement (runs daily at midnight)
     this.rentEnforcementSimulator.simulate(this.currentTick, time);
@@ -626,6 +905,8 @@ export class SimulationEngine extends EventEmitter {
     const agents = this.db.agents.getAllAgents();
     const vehicles = this.db.vehicles.getAllVehicles();
     const buildings = this.db.buildings.getAllBuildings();
+    const populationStats = this.populationSimulator.getPopulationStats();
+    const employmentStats = this.employmentSimulator.getEmploymentStats();
 
     return {
       running: this.running,
@@ -634,7 +915,53 @@ export class SimulationEngine extends EventEmitter {
       agentCount: agents.length,
       vehicleCount: vehicles.length,
       buildingCount: buildings.length,
+      population: populationStats,
+      employment: employmentStats,
     };
+  }
+
+  /**
+   * Get population statistics
+   */
+  getPopulationStats() {
+    return this.populationSimulator.getPopulationStats();
+  }
+
+  /**
+   * Get employment statistics
+   */
+  getEmploymentStats() {
+    return this.employmentSimulator.getEmploymentStats();
+  }
+
+  /**
+   * Calculate traffic multiplier based on time of day
+   */
+  getTrafficMultiplier(time: CityTime): number {
+    const hour = time.hour;
+
+    // Rush hours: morning (7-9) and evening (17-19)
+    if ((hour >= TRAFFIC.RUSH_HOURS.morning.start && hour < TRAFFIC.RUSH_HOURS.morning.end) ||
+        (hour >= TRAFFIC.RUSH_HOURS.evening.start && hour < TRAFFIC.RUSH_HOURS.evening.end)) {
+      return TRAFFIC.RUSH_HOUR_MULTIPLIER;
+    }
+
+    // Night hours (22-5)
+    if (hour >= TRAFFIC.NIGHT_HOURS.start || hour < TRAFFIC.NIGHT_HOURS.end) {
+      return TRAFFIC.NIGHT_MULTIPLIER;
+    }
+
+    return 1;
+  }
+
+  /**
+   * Calculate target vehicle count based on population and time
+   */
+  getTargetVehicleCount(time: CityTime): number {
+    const population = this.db.population.getTotalPopulation();
+    const baseCount = Math.floor(population * TRAFFIC.VEHICLE_MULTIPLIER);
+    const multiplier = this.getTrafficMultiplier(time);
+    return Math.max(1, Math.floor(baseCount * multiplier));
   }
 
   /**

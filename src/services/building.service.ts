@@ -8,29 +8,13 @@ import { AgentRepository } from '../repositories/agent.repository.js';
 import { RentalUnitRepository } from '../repositories/rental.repository.js';
 import { CityRepository } from '../repositories/city.repository.js';
 import { ActivityService } from './activity.service.js';
-import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../plugins/error-handler.plugin.js';
-import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, type UserRole } from '../config/game.js';
+import { NotFoundError, ConflictError, ValidationError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
+import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, getBuildingCost, BUILDING_COSTS, type UserRole } from '../config/game.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { FastifyInstance } from 'fastify';
 import type { Building, BuildingType } from '../models/types.js';
 
-// Building costs per type (base cost per floor)
-const BUILDING_COSTS: Record<BuildingType, number> = {
-  house: 500,
-  apartment: 1000,
-  shop: 800,
-  office: 1500,
-  factory: 3000,
-  power_plant: 5000,
-  water_tower: 2000,
-  road: 100,
-  park: 300,
-  plaza: 500,
-  city_hall: 10000,
-  police_station: 3000,
-  courthouse: 5000,
-  jail: 4000,
-};
+// Building costs are imported from config/game.ts
 
 export interface BuildingQuote {
   type: BuildingType;
@@ -76,8 +60,8 @@ export class BuildingService {
   }
 
   getQuote(type: BuildingType, floors: number = 1): BuildingQuote {
+    const totalCost = getBuildingCost(type, floors);
     const baseCost = BUILDING_COSTS[type] || 500;
-    const totalCost = baseCost * floors;
     const powerRequired = this.buildingRepo.getPowerRequirement(type) * floors;
     const waterRequired = this.buildingRepo.getWaterRequirement(type) * floors;
     const constructionTimeTicks = type === 'road' ? 0 : floors * 240;
@@ -174,6 +158,20 @@ export class BuildingService {
     const existingBuilding = await this.buildingRepo.getBuildingAtParcel(parcel.id);
     if (existingBuilding) {
       throw new ConflictError('Parcel already has a building');
+    }
+
+    // Get building cost and check agent wallet (unless admin/mayor)
+    const quote = this.getQuote(params.type, params.floors || 1);
+    if (!hasElevatedPrivileges(role) && agent) {
+      if (agent.wallet.balance < quote.totalCost) {
+        throw new InsufficientFundsError(quote.totalCost, agent.wallet.balance);
+      }
+      // Deduct building cost from agent wallet
+      const deducted = await this.agentRepo.deductFromWallet(agent.id, quote.totalCost);
+      if (!deducted) {
+        throw new InsufficientFundsError(quote.totalCost, 0);
+      }
+      console.log(`[Building] Deducted ${quote.totalCost} MOLT from ${agent.name}'s wallet for ${params.type}`);
     }
 
     // Get current tick for construction
