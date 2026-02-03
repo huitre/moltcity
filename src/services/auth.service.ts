@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     // Generate token
-    const token = signToken({ userId: user.id, email: user.email });
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
     return { user, token };
   }
@@ -77,7 +77,7 @@ export class AuthService {
     // Update last login
     await this.userRepo.updateLastLogin(user.id);
 
-    const token = signToken({ userId: user.id, email: user.email });
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
     return { user, token };
   }
@@ -191,7 +191,7 @@ export class AuthService {
       }
     }
 
-    const token = signToken({ userId: user!.id, email: user!.email });
+    const token = signToken({ userId: user!.id, email: user!.email, role: user!.role });
 
     return { user: user!, token };
   }

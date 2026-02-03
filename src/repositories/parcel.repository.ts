@@ -32,6 +32,14 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     return results.map(row => this.rowToParcel(row));
   }
 
+  async getParcelsByOwner(ownerId: string): Promise<Parcel[]> {
+    const results = await this.db
+      .select()
+      .from(parcels)
+      .where(eq(parcels.ownerId, ownerId));
+    return results.map(row => this.rowToParcel(row));
+  }
+
   async getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number): Promise<Parcel[]> {
     const results = await this.db
       .select()

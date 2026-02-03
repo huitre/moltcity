@@ -16,6 +16,9 @@ export const createBuildingSchema = z.object({
   name: z.string().min(1).max(100),
   sprite: z.string().optional(),
   floors: z.number().int().min(1).max(10).default(1),
+  createAgent: z.boolean().optional(), // Auto-create agent if missing
+  agentName: z.string().min(1).max(100).optional(), // Name for auto-created agent
+  // isAdmin is set by server based on authenticated user, not from request body
 }).refine(
   data => data.parcelId || (data.x !== undefined && data.y !== undefined),
   { message: 'Either parcelId or x,y coordinates are required' }
