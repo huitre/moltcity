@@ -1,7 +1,7 @@
 import type { Config } from 'drizzle-kit';
 
 export default {
-  schema: './src/db/schema/index.ts',
+  schema: './dist/db/schema/*.js',
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {

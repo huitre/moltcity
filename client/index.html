@@ -953,6 +953,251 @@
       #spectator-banner a:hover {
         text-decoration: underline;
       }
+
+      /* Activity Feed Panel */
+      #activity-feed-panel {
+        position: fixed;
+        top: 200px;
+        left: 10px;
+        width: 280px;
+        max-height: 350px;
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.3);
+        border-radius: 10px;
+        padding: 14px;
+        color: #e0e0e0;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        z-index: 100;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #activity-feed-panel h3 {
+        margin-bottom: 10px;
+        color: #7c7cff;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+      }
+
+      #activity-list {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 270px;
+      }
+
+      .activity-item {
+        padding: 8px 10px;
+        margin: 4px 0;
+        background: rgba(42, 42, 78, 0.6);
+        border-radius: 6px;
+        font-size: 12px;
+        border-left: 3px solid #4ecdc4;
+        animation: activitySlideIn 0.3s ease-out;
+      }
+
+      @keyframes activitySlideIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+
+      .activity-item.parcel_purchase { border-left-color: #4ecdc4; }
+      .activity-item.building_created { border-left-color: #7c7cff; }
+      .activity-item.election_started { border-left-color: #f7931a; }
+      .activity-item.candidate_registered { border-left-color: #ff6b6b; }
+      .activity-item.mayor_elected { border-left-color: #ffd700; }
+
+      .activity-message {
+        color: #e0e0e0;
+        line-height: 1.4;
+      }
+
+      .activity-time {
+        color: #666;
+        font-size: 10px;
+        margin-top: 4px;
+      }
+
+      /* Mayor Banner */
+      #mayor-banner {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.15));
+        border: 1px solid #ffd700;
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: #ffd700;
+        font-size: 14px;
+        z-index: 150;
+        backdrop-filter: blur(10px);
+        display: none;
+      }
+
+      #mayor-banner .mayor-icon {
+        margin-right: 8px;
+      }
+
+      #mayor-banner .mayor-name {
+        font-weight: bold;
+      }
+
+      /* Election Panel */
+      #election-panel {
+        position: fixed;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 20, 35, 0.95);
+        border: 1px solid rgba(247, 147, 26, 0.5);
+        border-radius: 10px;
+        padding: 16px;
+        color: #e0e0e0;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        z-index: 140;
+        min-width: 300px;
+        max-width: 400px;
+        display: none;
+      }
+
+      #election-panel h3 {
+        margin-bottom: 12px;
+        color: #f7931a;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
+      }
+
+      #election-panel .phase-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+
+      #election-panel .phase-badge.nomination {
+        background: rgba(78, 205, 196, 0.2);
+        color: #4ecdc4;
+      }
+
+      #election-panel .phase-badge.voting {
+        background: rgba(124, 124, 255, 0.2);
+        color: #7c7cff;
+      }
+
+      #election-panel .time-remaining {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      .candidate-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin: 12px 0;
+      }
+
+      .candidate-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: rgba(42, 42, 78, 0.6);
+        border-radius: 6px;
+        margin: 6px 0;
+      }
+
+      .candidate-item .candidate-name {
+        font-weight: bold;
+        color: #e0e0e0;
+      }
+
+      .candidate-item .candidate-platform {
+        font-size: 11px;
+        color: #888;
+        margin-top: 4px;
+      }
+
+      .candidate-item .vote-count {
+        color: #4ecdc4;
+        font-weight: bold;
+      }
+
+      .candidate-item .vote-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+
+      #election-panel .election-actions {
+        text-align: center;
+        margin-top: 12px;
+      }
+
+      #election-panel .run-btn {
+        background: linear-gradient(135deg, #f7931a, #e8820a);
+        border-color: #f7931a;
+      }
+
+      #election-panel .run-btn:hover {
+        background: linear-gradient(135deg, #ffa32a, #f7931a);
+      }
+
+      #run-for-mayor-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(26, 26, 46, 0.98);
+        border: 2px solid #f7931a;
+        border-radius: 12px;
+        padding: 24px;
+        z-index: 300;
+        min-width: 320px;
+      }
+
+      #run-for-mayor-modal h2 {
+        color: #f7931a;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      #run-for-mayor-modal textarea {
+        width: 100%;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+        margin-bottom: 12px;
+      }
+
+      #run-for-mayor-modal textarea:focus {
+        outline: none;
+        border-color: #f7931a;
+      }
+
+      #run-for-mayor-modal .buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      #run-for-mayor-modal button {
+        flex: 1;
+      }
     </style>
   </head>
   <body>
@@ -960,6 +1205,46 @@
     <div id="spectator-banner">
       Spectator Mode - View Only
       <a href="/login">Sign in to interact</a>
+    </div>
+
+    <!-- Mayor Banner -->
+    <div id="mayor-banner">
+      <span class="mayor-icon">👑</span>
+      Mayor: <span class="mayor-name" id="mayor-name">-</span>
+    </div>
+
+    <!-- Activity Feed Panel -->
+    <div id="activity-feed-panel">
+      <h3>Activity Feed</h3>
+      <div id="activity-list">
+        <!-- Activities loaded dynamically -->
+      </div>
+    </div>
+
+    <!-- Election Panel -->
+    <div id="election-panel">
+      <h3>Mayoral Election</h3>
+      <div style="text-align: center;">
+        <span class="phase-badge" id="election-phase-badge">-</span>
+      </div>
+      <div class="time-remaining" id="election-time-remaining">-</div>
+      <div class="candidate-list" id="candidate-list">
+        <!-- Candidates loaded dynamically -->
+      </div>
+      <div class="election-actions">
+        <button class="run-btn" id="btn-run-for-mayor" style="display: none;">Run for Mayor</button>
+      </div>
+    </div>
+
+    <!-- Run for Mayor Modal -->
+    <div id="run-for-mayor-modal">
+      <h2>Run for Mayor</h2>
+      <label style="color: #888; font-size: 12px; display: block; margin-bottom: 6px;">Your Campaign Platform (optional)</label>
+      <textarea id="campaign-platform" placeholder="Tell citizens why they should vote for you..."></textarea>
+      <div class="buttons">
+        <button class="success" id="btn-submit-candidacy">Submit Candidacy</button>
+        <button id="btn-cancel-candidacy">Cancel</button>
+      </div>
     </div>
 
     <!-- Auth Modal -->
@@ -1360,6 +1645,9 @@
       let authToken = localStorage.getItem("moltcity_token");
       let currentUser = null;
       let appInitialized = false;
+
+      // Game config (restrictions, limits)
+      let gameConfig = null;
 
       // State
       let app = null;
@@ -1991,6 +2279,8 @@
               y,
               currency: "ETH",
               txHash: tx.hash,
+              createAgent: true,
+              agentName: currentUser?.email || `Wallet ${walletAddress.slice(0, 8)}`,
             }),
           });
 
@@ -4498,6 +4788,8 @@
                   x,
                   y,
                   price: 100,
+                  createAgent: true,
+                  agentName: currentUser?.email || `Citizen ${x},${y}`,
                 }),
               });
             }
@@ -4509,6 +4801,7 @@
               y,
               type: selectedBuildType,
               name: `${selectedBuildType} at ${x},${y}`,
+              createAgent: true,
             };
 
             // Add floors for houses and offices
@@ -4594,6 +4887,278 @@
         }
       }
 
+      async function loadGameConfig() {
+        try {
+          const headers = {};
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+          }
+          const res = await fetch(`${API_URL}/api/game/config`, { headers });
+          gameConfig = await res.json();
+          console.log('[GameConfig]', gameConfig);
+          updateBuildMenu();
+        } catch (error) {
+          console.error("Failed to load game config:", error);
+          // Use defaults
+          gameConfig = {
+            buildingTypes: {
+              allowed: ['house', 'apartment', 'shop', 'office', 'factory'],
+            },
+            limits: {
+              maxParcelsPerUser: 5,
+            },
+            userRole: 'guest',
+          };
+          updateBuildMenu();
+        }
+      }
+
+      function updateBuildMenu() {
+        const buildMenu = document.getElementById('build-menu');
+        const options = buildMenu.querySelectorAll('.build-option');
+        const allowed = gameConfig?.buildingTypes?.allowed || [];
+
+        options.forEach(option => {
+          const type = option.dataset.type;
+          // Infrastructure (power_line, water_pipe) don't have building types
+          if (type === 'power_line' || type === 'water_pipe') {
+            // Only show to admins or mayors
+            const role = gameConfig?.userRole;
+            option.style.display = (role === 'admin' || role === 'mayor') ? 'flex' : 'none';
+          } else if (allowed.includes(type)) {
+            option.style.display = 'flex';
+          } else {
+            option.style.display = 'none';
+          }
+        });
+      }
+
+      // ============================================
+      // Activity Feed
+      // ============================================
+      let activitiesLoaded = [];
+
+      async function loadActivities() {
+        try {
+          const res = await fetch(`${API_URL}/api/activities?limit=20`);
+          const data = await res.json();
+          activitiesLoaded = data.activities || [];
+          renderActivities();
+        } catch (error) {
+          console.error('Failed to load activities:', error);
+        }
+      }
+
+      function renderActivities() {
+        const container = document.getElementById('activity-list');
+        if (!container) return;
+
+        container.innerHTML = activitiesLoaded.map(activity => `
+          <div class="activity-item ${activity.type}">
+            <div class="activity-message">${activity.message}</div>
+            <div class="activity-time">${formatTimeAgo(activity.createdAt)}</div>
+          </div>
+        `).join('');
+      }
+
+      function addActivity(activity) {
+        activitiesLoaded.unshift(activity);
+        if (activitiesLoaded.length > 20) {
+          activitiesLoaded.pop();
+        }
+        renderActivities();
+      }
+
+      function formatTimeAgo(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        return `${Math.floor(seconds / 86400)}d ago`;
+      }
+
+      // ============================================
+      // Election System
+      // ============================================
+      let currentElection = null;
+      let currentMayor = null;
+      let electionCandidates = [];
+
+      async function loadElectionStatus() {
+        try {
+          const res = await fetch(`${API_URL}/api/election`);
+          const data = await res.json();
+          currentElection = data.election;
+          electionCandidates = data.candidates || [];
+          currentMayor = data.currentMayor;
+          renderElectionUI();
+          renderMayorBanner();
+        } catch (error) {
+          console.error('Failed to load election status:', error);
+        }
+      }
+
+      function renderMayorBanner() {
+        const banner = document.getElementById('mayor-banner');
+        const nameEl = document.getElementById('mayor-name');
+
+        if (currentMayor) {
+          nameEl.textContent = currentMayor.name;
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      function renderElectionUI() {
+        const panel = document.getElementById('election-panel');
+        const phaseBadge = document.getElementById('election-phase-badge');
+        const timeRemaining = document.getElementById('election-time-remaining');
+        const candidateList = document.getElementById('candidate-list');
+        const runBtn = document.getElementById('btn-run-for-mayor');
+
+        if (!currentElection) {
+          panel.style.display = 'none';
+          return;
+        }
+
+        panel.style.display = 'block';
+
+        // Phase badge
+        phaseBadge.className = `phase-badge ${currentElection.status}`;
+        phaseBadge.textContent = currentElection.status === 'nomination' ? 'Nomination Phase' : 'Voting Phase';
+
+        // Time remaining
+        const endTime = currentElection.status === 'nomination'
+          ? new Date(new Date(currentElection.nominationStart).getTime() + 72 * 60 * 60 * 1000)
+          : (currentElection.votingEnd ? new Date(currentElection.votingEnd) : null);
+
+        if (endTime) {
+          const remaining = endTime - new Date();
+          if (remaining > 0) {
+            const hours = Math.floor(remaining / (60 * 60 * 1000));
+            const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+            timeRemaining.textContent = `${hours}h ${minutes}m remaining`;
+          } else {
+            timeRemaining.textContent = 'Ending soon...';
+          }
+        } else {
+          timeRemaining.textContent = '';
+        }
+
+        // Candidates
+        candidateList.innerHTML = electionCandidates.map(candidate => `
+          <div class="candidate-item">
+            <div>
+              <div class="candidate-name">${candidate.userName || 'Unknown'}</div>
+              ${candidate.platform ? `<div class="candidate-platform">${candidate.platform}</div>` : ''}
+            </div>
+            ${currentElection.status === 'voting'
+              ? `<button class="vote-btn" onclick="voteForCandidate('${candidate.id}')">Vote</button>`
+              : `<span class="vote-count">${candidate.voteCount || 0} votes</span>`
+            }
+          </div>
+        `).join('') || '<div style="color: #666; text-align: center; padding: 10px;">No candidates yet</div>';
+
+        // Run button (only in nomination phase)
+        const isAlreadyCandidate = currentUser && electionCandidates.some(c => c.userId === currentUser.userId);
+        if (currentElection.status === 'nomination' && currentUser && !isAlreadyCandidate) {
+          runBtn.style.display = 'inline-block';
+        } else {
+          runBtn.style.display = 'none';
+        }
+      }
+
+      async function runForMayor() {
+        const modal = document.getElementById('run-for-mayor-modal');
+        const overlay = document.getElementById('modal-overlay');
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+      }
+
+      async function submitCandidacy() {
+        const platform = document.getElementById('campaign-platform').value.trim();
+
+        try {
+          const res = await fetch(`${API_URL}/api/election/run`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({ platform: platform || undefined }),
+          });
+
+          if (!res.ok) {
+            const error = await res.json();
+            alert(error.message || 'Failed to register as candidate');
+            return;
+          }
+
+          // Close modal
+          document.getElementById('run-for-mayor-modal').style.display = 'none';
+          document.getElementById('modal-overlay').style.display = 'none';
+          document.getElementById('campaign-platform').value = '';
+
+          // Reload election status
+          await loadElectionStatus();
+        } catch (error) {
+          console.error('Failed to run for mayor:', error);
+          alert('Failed to register as candidate');
+        }
+      }
+
+      async function voteForCandidate(candidateId) {
+        if (!authToken) {
+          alert('You must be logged in to vote');
+          return;
+        }
+
+        if (!confirm('Are you sure you want to vote for this candidate? You can only vote once.')) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API_URL}/api/election/vote`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({ candidateId }),
+          });
+
+          if (!res.ok) {
+            const error = await res.json();
+            alert(error.message || 'Failed to vote');
+            return;
+          }
+
+          alert('Your vote has been cast!');
+          await loadElectionStatus();
+        } catch (error) {
+          console.error('Failed to vote:', error);
+          alert('Failed to vote');
+        }
+      }
+
+      function setupElectionUI() {
+        // Run for mayor button
+        document.getElementById('btn-run-for-mayor')?.addEventListener('click', runForMayor);
+
+        // Submit candidacy
+        document.getElementById('btn-submit-candidacy')?.addEventListener('click', submitCandidacy);
+
+        // Cancel candidacy modal
+        document.getElementById('btn-cancel-candidacy')?.addEventListener('click', () => {
+          document.getElementById('run-for-mayor-modal').style.display = 'none';
+          document.getElementById('modal-overlay').style.display = 'none';
+        });
+      }
+
       function connectWebSocket() {
         ws = new WebSocket(WS_URL);
 
@@ -4631,6 +5196,18 @@
 
           if (msg.type === "day_started") isDaylight = true;
           if (msg.type === "night_started") isDaylight = false;
+
+          // Activity feed events
+          if (msg.event === "activity") {
+            addActivity(msg.data);
+          }
+
+          // Election events
+          if (msg.event === "election_started" || msg.event === "voting_started" ||
+              msg.event === "candidate_registered" || msg.event === "election_completed" ||
+              msg.event === "vote_cast") {
+            loadElectionStatus();
+          }
         };
       }
 
@@ -4691,10 +5268,16 @@
 
         await initPixi();
         await loadSprites();
+        await loadGameConfig();
         await loadCityData();
         render();
         initVehicles();
         connectWebSocket();
+
+        // Load social features
+        await loadActivities();
+        await loadElectionStatus();
+        setupElectionUI();
       }
 
       async function main() {

@@ -13,7 +13,7 @@ import {
 } from '../schemas/parcels.schema.js';
 
 export const parcelsController: FastifyPluginAsync = async (fastify) => {
-  const parcelService = new ParcelService(fastify.db);
+  const parcelService = new ParcelService(fastify.db, fastify);
 
   // Get parcels in range
   fastify.get('/api/parcels', async (request) => {
@@ -41,7 +41,12 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
 
   // Purchase parcel
   fastify.post('/api/parcels/purchase', async (request, reply) => {
+    // Check authentication (optional - allows both authenticated and unauthenticated requests)
+    await fastify.optionalAuth(request, reply);
+
     const body = purchaseParcelSchema.parse(request.body);
+    const role = request.user?.role || 'user';
+
     const result = await parcelService.purchaseParcel({
       parcelId: body.parcelId,
       x: body.x,
@@ -51,6 +56,7 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
       price: body.price,
       createAgent: body.createAgent,
       agentName: body.agentName,
+      role,
     });
 
     reply.status(201);

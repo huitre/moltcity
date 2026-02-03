@@ -7,6 +7,13 @@ import { CityService } from '../services/city.service.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { RoadRepository } from '../repositories/road.repository.js';
+import {
+  PARCEL_LIMITS,
+  ADMIN_ONLY_BUILDING_TYPES,
+  USER_BUILDING_TYPES,
+  BUILDING_COSTS,
+  BUILDING_LIMITS,
+} from '../config/game.js';
 import { z } from 'zod';
 
 const initCitySchema = z.object({
@@ -48,6 +55,27 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/city/stats', async () => {
     const stats = await cityService.calculateStats();
     return stats;
+  });
+
+  // Get game configuration and rules
+  fastify.get('/api/game/config', async (request) => {
+    await fastify.optionalAuth(request, {} as any);
+    const role = request.user?.role || 'guest';
+    const hasElevatedPrivileges = role === 'admin' || role === 'mayor';
+
+    return {
+      limits: {
+        maxParcelsPerUser: hasElevatedPrivileges ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER,
+        buildingLimits: BUILDING_LIMITS,
+      },
+      buildingTypes: {
+        user: USER_BUILDING_TYPES,
+        adminOnly: ADMIN_ONLY_BUILDING_TYPES,
+        allowed: hasElevatedPrivileges ? [...USER_BUILDING_TYPES, ...ADMIN_ONLY_BUILDING_TYPES] : USER_BUILDING_TYPES,
+      },
+      costs: BUILDING_COSTS,
+      userRole: role,
+    };
   });
 
   // Spectator mode - full city state without authentication

@@ -7,8 +7,11 @@ import { ParcelRepository } from '../repositories/parcel.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { RentalUnitRepository } from '../repositories/rental.repository.js';
 import { CityRepository } from '../repositories/city.repository.js';
+import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../plugins/error-handler.plugin.js';
+import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, type UserRole } from '../config/game.js';
 import type { DrizzleDb } from '../db/drizzle.js';
+import type { FastifyInstance } from 'fastify';
 import type { Building, BuildingType } from '../models/types.js';
 
 // Building costs per type (base cost per floor)
@@ -45,13 +48,15 @@ export class BuildingService {
   private agentRepo: AgentRepository;
   private rentalRepo: RentalUnitRepository;
   private cityRepo: CityRepository;
+  private activityService: ActivityService;
 
-  constructor(db: DrizzleDb) {
+  constructor(db: DrizzleDb, fastify?: FastifyInstance) {
     this.buildingRepo = new BuildingRepository(db);
     this.parcelRepo = new ParcelRepository(db);
     this.agentRepo = new AgentRepository(db);
     this.rentalRepo = new RentalUnitRepository(db);
     this.cityRepo = new CityRepository(db);
+    this.activityService = new ActivityService(db, fastify);
   }
 
   async getBuilding(id: string): Promise<Building | null> {
@@ -98,7 +103,17 @@ export class BuildingService {
     name: string;
     sprite?: string;
     floors?: number;
+    createAgent?: boolean;
+    agentName?: string;
+    role?: UserRole;
   }): Promise<Building> {
+    const role: UserRole = params.role || 'user';
+
+    // Check building type restrictions
+    if (!canUserBuild(params.type, role)) {
+      throw new ForbiddenError(`Building type '${params.type}' requires elevated privileges`);
+    }
+
     // Get parcel
     let parcel = null;
     if (params.parcelId) {
@@ -111,8 +126,8 @@ export class BuildingService {
       throw new NotFoundError('Parcel');
     }
 
-    // Check if parcel is owned
-    if (!parcel.ownerId) {
+    // Check if parcel is owned (admins/mayors can build on any parcel)
+    if (!parcel.ownerId && !hasElevatedPrivileges(role)) {
       throw new ValidationError('Parcel must be owned to build on it');
     }
 
@@ -120,15 +135,38 @@ export class BuildingService {
     let agent = null;
     if (params.agentId) {
       agent = await this.agentRepo.getAgent(params.agentId);
-    } else if (params.moltbookId) {
+      // Try by moltbookId if not found by direct ID
+      if (!agent) {
+        agent = await this.agentRepo.getAgentByMoltbookId(params.agentId);
+      }
+    }
+    if (!agent && params.moltbookId) {
       agent = await this.agentRepo.getAgentByMoltbookId(params.moltbookId);
     }
 
-    // If no agent specified, use parcel owner
-    const ownerId = agent?.id || parcel.ownerId;
+    // Auto-create agent if requested
+    if (!agent && params.createAgent) {
+      const name = params.agentName || 'New Citizen';
+      const x = params.x ?? 25;
+      const y = params.y ?? 25;
+      agent = await this.agentRepo.createAgent(name, x, y, params.agentId);
+    }
 
-    // Verify owner permission
-    if (agent && parcel.ownerId !== agent.id) {
+    // If no agent specified, use parcel owner or system for admin/mayor
+    const ownerId = agent?.id || parcel.ownerId || 'system';
+
+    // Check building limit for this type (only for regular users)
+    if (!hasElevatedPrivileges(role) && agent) {
+      const existingBuildings = await this.buildingRepo.getBuildingsByOwner(agent.id);
+      const sameTypeCount = existingBuildings.filter(b => b.type === params.type).length;
+      const limit = getBuildingLimit(params.type, role);
+      if (sameTypeCount >= limit) {
+        throw new ForbiddenError(`Building limit reached for '${params.type}' (max ${limit})`);
+      }
+    }
+
+    // Verify owner permission (unless admin/mayor)
+    if (!hasElevatedPrivileges(role) && agent && parcel.ownerId !== agent.id) {
       throw new ForbiddenError('Agent does not own this parcel');
     }
 
@@ -151,6 +189,17 @@ export class BuildingService {
       params.sprite,
       params.floors || 1,
       currentTick
+    );
+
+    // Log activity
+    const actorName = agent?.name || (hasElevatedPrivileges(role) ? 'MoltCity' : 'Unknown');
+    await this.activityService.logBuildingCreated(
+      agent?.id,
+      actorName,
+      params.type,
+      params.name,
+      parcel.x,
+      parcel.y
     );
 
     return building;

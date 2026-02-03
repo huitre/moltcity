@@ -12,7 +12,7 @@ import {
 } from '../schemas/buildings.schema.js';
 
 export const buildingsController: FastifyPluginAsync = async (fastify) => {
-  const buildingService = new BuildingService(fastify.db);
+  const buildingService = new BuildingService(fastify.db, fastify);
 
   // List all buildings
   fastify.get('/api/buildings', async () => {
@@ -36,7 +36,12 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
 
   // Create building
   fastify.post('/api/buildings', async (request, reply) => {
+    // Check authentication (optional - allows both authenticated and unauthenticated requests)
+    await fastify.optionalAuth(request, reply);
+
     const body = createBuildingSchema.parse(request.body);
+    const role = request.user?.role || 'user';
+
     const building = await buildingService.createBuilding({
       parcelId: body.parcelId,
       x: body.x,
@@ -47,6 +52,9 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
       name: body.name,
       sprite: body.sprite,
       floors: body.floors,
+      createAgent: body.createAgent,
+      agentName: body.agentName,
+      role,
     });
 
     reply.status(201);

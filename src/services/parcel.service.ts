@@ -6,8 +6,11 @@ import { ParcelRepository } from '../repositories/parcel.repository.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { RoadRepository } from '../repositories/road.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
-import { NotFoundError, ConflictError, InsufficientFundsError, ValidationError } from '../plugins/error-handler.plugin.js';
+import { ActivityService } from './activity.service.js';
+import { NotFoundError, ConflictError, InsufficientFundsError, ValidationError, ForbiddenError } from '../plugins/error-handler.plugin.js';
+import { getMaxParcels, type UserRole } from '../config/game.js';
 import type { DrizzleDb } from '../db/drizzle.js';
+import type { FastifyInstance } from 'fastify';
 import type { Parcel, Building, Road, ZoningType } from '../models/types.js';
 
 export interface ParcelWithDetails extends Parcel {
@@ -26,12 +29,14 @@ export class ParcelService {
   private buildingRepo: BuildingRepository;
   private roadRepo: RoadRepository;
   private agentRepo: AgentRepository;
+  private activityService: ActivityService;
 
-  constructor(db: DrizzleDb) {
+  constructor(db: DrizzleDb, fastify?: FastifyInstance) {
     this.parcelRepo = new ParcelRepository(db);
     this.buildingRepo = new BuildingRepository(db);
     this.roadRepo = new RoadRepository(db);
     this.agentRepo = new AgentRepository(db);
+    this.activityService = new ActivityService(db, fastify);
   }
 
   async getParcel(x: number, y: number): Promise<ParcelWithDetails | null> {
@@ -67,6 +72,7 @@ export class ParcelService {
     price: number;
     createAgent?: boolean;
     agentName?: string;
+    role?: UserRole;
   }): Promise<PurchaseResult> {
     // Get parcel
     let parcel: Parcel | null = null;
@@ -90,18 +96,30 @@ export class ParcelService {
 
     if (params.agentId) {
       agent = await this.agentRepo.getAgent(params.agentId);
-    } else if (params.moltbookId) {
+      // Try by moltbookId if not found by direct ID
+      if (!agent) {
+        agent = await this.agentRepo.getAgentByMoltbookId(params.agentId);
+      }
+    }
+    if (!agent && params.moltbookId) {
       agent = await this.agentRepo.getAgentByMoltbookId(params.moltbookId);
     }
 
     if (!agent && params.createAgent) {
       const name = params.agentName || 'New Citizen';
-      agent = await this.agentRepo.createAgent(name, parcel.x, parcel.y, params.moltbookId);
+      agent = await this.agentRepo.createAgent(name, parcel.x, parcel.y, params.moltbookId || params.agentId);
       agentCreated = true;
     }
 
     if (!agent) {
       throw new ValidationError('Agent not found and createAgent is false');
+    }
+
+    // Check parcel limit
+    const maxParcels = getMaxParcels(params.role || 'user');
+    const ownedParcels = await this.parcelRepo.getParcelsByOwner(agent.id);
+    if (ownedParcels.length >= maxParcels) {
+      throw new ForbiddenError(`Parcel limit reached (max ${maxParcels} parcels)`);
     }
 
     // Check balance (if price > 0)
@@ -119,6 +137,14 @@ export class ParcelService {
 
     // Return updated parcel
     const updatedParcel = await this.parcelRepo.getParcelById(parcel.id);
+
+    // Log activity
+    await this.activityService.logParcelPurchase(
+      agent.id,
+      agent.name,
+      parcel.x,
+      parcel.y
+    );
 
     return {
       parcel: updatedParcel!,

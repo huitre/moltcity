@@ -17,6 +17,7 @@ export const users = sqliteTable('users', {
   walletAddress: text('wallet_address'),
   moltbookId: text('moltbook_id'),
   agentId: text('agent_id').references(() => agents.id),
+  role: text('role').notNull().default('user'), // 'user' | 'admin' | 'mayor'
   createdAt: integer('created_at').notNull(),
   lastLoginAt: integer('last_login_at'),
 }, (table) => [

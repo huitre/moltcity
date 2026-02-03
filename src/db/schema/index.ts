@@ -11,3 +11,5 @@ export * from './vehicles.js';
 export * from './infrastructure.js';
 export * from './rentals.js';
 export * from './auth.js';
+export * from './activity.js';
+export * from './election.js';

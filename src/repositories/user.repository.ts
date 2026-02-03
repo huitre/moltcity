@@ -7,6 +7,8 @@ import { BaseRepository } from './base.repository.js';
 import { users, tokenBlacklist, type UserRow, type UserInsert } from '../db/schema/auth.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 
+export type UserRole = 'user' | 'admin' | 'mayor';
+
 export interface User {
   id: string;
   email: string;
@@ -18,6 +20,7 @@ export interface User {
   walletAddress: string | null;
   agentId: string | null;
   moltbookId: string | null;
+  role: UserRole;
   createdAt: number;
   lastLoginAt: number | null;
 }
@@ -124,6 +127,22 @@ export class UserRepository extends BaseRepository<typeof users, UserRow, UserIn
       .where(eq(users.id, userId));
   }
 
+  async updateRole(userId: string, newRole: UserRole): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ role: newRole })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByRole(targetRole: UserRole): Promise<User | null> {
+    const results = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.role, targetRole))
+      .limit(1);
+    return results.length > 0 ? this.rowToUser(results[0]) : null;
+  }
+
   // Token blacklist methods
   async blacklistToken(token: string, expiresAt: number): Promise<void> {
     await this.db.insert(tokenBlacklist).values({
@@ -161,6 +180,7 @@ export class UserRepository extends BaseRepository<typeof users, UserRow, UserIn
       walletAddress: row.walletAddress,
       agentId: row.agentId,
       moltbookId: row.moltbookId,
+      role: (row.role as UserRole) || 'user',
       createdAt: row.createdAt,
       lastLoginAt: row.lastLoginAt,
     };
