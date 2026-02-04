@@ -4,6 +4,7 @@
 
 import { FastifyPluginAsync } from 'fastify';
 import { BuildingService } from '../services/building.service.js';
+import { UserRepository } from '../repositories/user.repository.js';
 import {
   createBuildingSchema,
   updateBuildingSchema,
@@ -40,7 +41,14 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
     await fastify.optionalAuth(request, reply);
 
     const body = createBuildingSchema.parse(request.body);
-    const role = request.user?.role || 'user';
+    
+    // Fetch current role from database (JWT role may be stale after role changes)
+    let role: 'user' | 'admin' | 'mayor' = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
 
     const building = await buildingService.createBuilding({
       parcelId: body.parcelId,

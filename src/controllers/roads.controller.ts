@@ -5,6 +5,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { RoadRepository } from '../repositories/road.repository.js';
 import { ParcelRepository } from '../repositories/parcel.repository.js';
+import { UserRepository } from '../repositories/user.repository.js';
 import { createRoadSchema, roadIdParamSchema } from '../schemas/roads.schema.js';
 import { NotFoundError, ConflictError, ForbiddenError } from '../plugins/error-handler.plugin.js';
 import { hasElevatedPrivileges, type UserRole } from '../config/game.js';
@@ -23,7 +24,13 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/roads', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
-    const role = (request.user?.role || 'user') as UserRole;
+    // Fetch current role from database (JWT role may be stale after role changes)
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
     if (!hasElevatedPrivileges(role)) {
       throw new ForbiddenError('Only mayors and admins can create roads');
     }
@@ -60,7 +67,13 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/api/roads/:id', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = (request.user?.role || 'user') as UserRole;
+    // Fetch current role from database (JWT role may be stale after role changes)
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
     if (!hasElevatedPrivileges(role)) {
       throw new ForbiddenError('Only mayors and admins can delete roads');
     }
