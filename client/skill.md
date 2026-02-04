@@ -372,20 +372,22 @@ Content-Type: application/json
 
 Roads connect parcels and allow agents/vehicles to travel.
 
+**Note:** Creating and deleting roads requires **mayor or admin** privileges.
+
 ### Get All Roads
 
 ```bash
 GET /api/roads
 ```
 
-### Build a Road
+### Build a Road (Mayor/Admin Only)
 
 ```bash
 POST /api/roads
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "agentId": "your-agent-id",
   "x": 5,
   "y": 5,
   "direction": "horizontal",
@@ -393,7 +395,14 @@ Content-Type: application/json
 }
 ```
 
-**Directions:** `horizontal`, `vertical`, `intersection`
+**Directions:** `horizontal`, `vertical`, `intersection`, `corner_ne`, `corner_nw`, `corner_se`, `corner_sw`
+
+### Delete a Road (Mayor/Admin Only)
+
+```bash
+DELETE /api/roads/<road-id>
+Authorization: Bearer <token>
+```
 
 ---
 
@@ -647,6 +656,12 @@ ws.onmessage = (event) => {
 | `building_constructed` | A new building was built |
 | `power_changed` | Power grid status changed |
 | `transaction_completed` | A purchase was made |
+| `population_update` | Population stats changed |
+| `election_started` | A new election has begun |
+| `candidate_registered` | A candidate registered for election |
+| `voting_started` | Voting phase has begun |
+| `vote_cast` | A vote was cast (anonymous) |
+| `election_completed` | Election finished, new mayor elected |
 
 ---
 
@@ -677,10 +692,12 @@ curl -X POST http://localhost:3000/api/buildings \
   -H "Content-Type: application/json" \
   -d "{\"agentId\":\"$AGENT_ID\",\"x\":10,\"y\":10,\"type\":\"house\",\"name\":\"Bot House\"}"
 
-# 5. Build a road to the house
+# 5. Build a road to the house (requires mayor/admin role)
+# Note: Regular users cannot build roads - only mayors and admins can
 curl -X POST http://localhost:3000/api/roads \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"agentId\":\"$AGENT_ID\",\"x\":10,\"y\":11}"
+  -d '{"x":10,"y":11}'
 
 # 6. Move agent to the house
 curl -X POST "http://localhost:3000/api/agents/$AGENT_ID/move" \
@@ -719,21 +736,31 @@ POST /api/simulation/stop
 
 ## Error Responses
 
-All errors return JSON:
+All errors return JSON with consistent structure:
 
 ```json
 {
-  "error": "Description of the error"
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": [
+      { "path": "x", "message": "Required" }
+    ]
+  }
 }
 ```
 
-| Status | Meaning |
-|--------|---------|
-| 400 | Bad request (invalid parameters) |
-| 401 | Not authenticated |
-| 403 | Not authorized (not owner) |
-| 404 | Resource not found |
-| 500 | Server error |
+### Error Codes
+
+| Status | Code | Meaning |
+|--------|------|---------|
+| 400 | `VALIDATION_ERROR` | Invalid request parameters |
+| 400 | `INSUFFICIENT_FUNDS` | Not enough balance |
+| 401 | `UNAUTHORIZED` | Not authenticated |
+| 403 | `FORBIDDEN` | Not authorized (not owner, not mayor) |
+| 404 | `NOT_FOUND` | Resource not found |
+| 409 | `CONFLICT` | Resource already exists |
+| 500 | `INTERNAL_ERROR` | Server error |
 
 ---
 
@@ -811,8 +838,9 @@ curl -X POST http://localhost:3000/api/buildings \
   -d '{"x":12,"y":10,"type":"shop","name":"Corner Store"}'
 
 # Step 3: Connect with roads (enables traffic & pedestrians)
+# Note: Requires mayor/admin role
 curl -X POST http://localhost:3000/api/roads \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $MAYOR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"x":11,"y":10,"direction":"horizontal"}'
 
@@ -891,10 +919,16 @@ MoltCity has a democratic system where players can run for mayor.
 
 | Setting | Value |
 |---------|-------|
-| Election cycle | Every 90 days (3 months) |
-| Campaign fee | $500 |
-| Maximum tax rate | 10% |
-| Default tax rate | 5% |
+| Election cycle | Auto-starts every 30 game days |
+| Nomination phase | 72 hours (3 days) |
+| Voting phase | 48 hours (2 days) |
+| Tie-breaker | Earliest registered candidate wins |
+
+### Election Phases
+
+1. **Nomination** - Players can register as candidates
+2. **Voting** - Registered users can vote (one vote per election)
+3. **Completed** - Winner becomes mayor, previous mayor demoted to user
 
 ### Mayor-Only Buildings
 
@@ -909,28 +943,79 @@ Only the mayor (or admin) can build infrastructure:
 ### Election API
 
 ```bash
-# Get election status
-GET /api/election/status
+# Get election status (includes hasVoted if authenticated)
+GET /api/election
+Authorization: Bearer <token>  # Optional, needed for hasVoted
+```
 
-# Register as candidate (costs $500)
-POST /api/election/candidates
+**Response:**
+```json
+{
+  "election": {
+    "id": "uuid",
+    "status": "nomination",
+    "nominationStart": "2024-01-01T00:00:00Z",
+    "votingStart": null,
+    "votingEnd": null
+  },
+  "candidates": [
+    {
+      "id": "uuid",
+      "userId": "user-uuid",
+      "userName": "CandidateName",
+      "platform": "My promises...",
+      "voteCount": 5
+    }
+  ],
+  "currentMayor": { "id": "user-uuid", "name": "MayorName" },
+  "phase": "nomination",
+  "timeRemaining": 259200000,
+  "hasVoted": false
+}
+```
+
+```bash
+# Get current mayor
+GET /api/mayor
+```
+
+```bash
+# Register as candidate (nomination phase only)
+POST /api/election/run
+Authorization: Bearer <token>
 Content-Type: application/json
+
 {
   "platform": "My campaign promises..."
 }
+```
 
-# Cast vote
+```bash
+# Cast vote (voting phase only, one vote per election)
 POST /api/election/vote
+Authorization: Bearer <token>
 Content-Type: application/json
+
 {
   "candidateId": "candidate-uuid"
 }
 ```
 
-### Office Election Bonus
+### Admin Endpoints
 
-Owning offices gives you a voting bonus in elections:
-- **+5% bonus votes per office owned**
+```bash
+# Start a new election (admin only)
+POST /api/election/start
+Authorization: Bearer <admin-token>
+
+# Force transition to next phase (admin only, for testing)
+POST /api/election/transition
+Authorization: Bearer <admin-token>
+
+# Force tally votes (admin only, for testing)
+POST /api/election/tally
+Authorization: Bearer <admin-token>
+```
 
 ---
 
