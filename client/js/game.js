@@ -97,13 +97,19 @@ export function render() {
     renderContainer.addChild(pipeGraphic);
   }
 
-  // Draw buildings
-  for (const building of buildings) {
-    const parcel = parcels.find((p) => p.id === building.parcelId);
-    if (parcel) {
-      const buildingGraphic = drawBuilding(parcel.x, parcel.y, building);
-      renderContainer.addChild(buildingGraphic);
-    }
+  // Draw buildings - sort by position for correct isometric depth
+  // Buildings with lower (x + y) should render first (behind), higher (x + y) render last (in front)
+  const buildingsWithParcels = buildings
+    .map((building) => {
+      const parcel = parcels.find((p) => p.id === building.parcelId);
+      return parcel ? { building, parcel } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.parcel.x + a.parcel.y) - (b.parcel.x + b.parcel.y));
+
+  for (const { building, parcel } of buildingsWithParcels) {
+    const buildingGraphic = drawBuilding(parcel.x, parcel.y, building);
+    renderContainer.addChild(buildingGraphic);
   }
 
   // Draw agents
@@ -149,7 +155,9 @@ function drawBuilding(x, y, building) {
     sprite.anchor.set(config.anchor.x, config.anchor.y);
     sprite.x = iso.x;
     sprite.y = iso.y + TILE_HEIGHT;
-    sprite.zIndex = x + y + 0.1;
+    // zIndex: use y * 100 + x for proper isometric depth sorting
+    // This ensures buildings further down/right are always rendered on top
+    sprite.zIndex = y * 100 + x + 10;
 
     // Tint if not powered
     if (!powered) {
@@ -186,7 +194,8 @@ function drawBuilding(x, y, building) {
       drawGenericBuilding(g, cx, baseY, powered, wallHeight);
   }
 
-  g.zIndex = x + y + 0.1;
+  // zIndex: use y * 100 + x for proper isometric depth sorting
+  g.zIndex = y * 100 + x + 10;
   return g;
 }
 
@@ -227,7 +236,7 @@ function drawConstruction(x, y, building) {
   g.drawRect(cx - barWidth / 2, baseY - 40, (progress / 100) * barWidth, barHeight);
   g.endFill();
 
-  g.zIndex = x + y + 0.1;
+  g.zIndex = y * 100 + x + 10;
   return g;
 }
 
@@ -371,7 +380,7 @@ function drawPowerLine(from, to) {
   g.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2 - 18);
   g.quadraticCurveTo(midX, midY, isoTo.x, isoTo.y + TILE_HEIGHT / 2 - 18);
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.07; // Above roads, below buildings
+  g.zIndex = Math.max(from.y, to.y) * 100 + Math.max(from.x, to.x) + 7; // Above roads, below buildings
   return g;
 }
 
@@ -393,7 +402,7 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.06; // Above roads, below power lines
+  g.zIndex = Math.max(from.y, to.y) * 100 + Math.max(from.x, to.x) + 6; // Above roads, below power lines
   return g;
 }
 
@@ -414,7 +423,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = x + y + 0.8;
+  g.zIndex = y * 100 + x + 50; // Higher than buildings to always appear on top
   return g;
 }
 
