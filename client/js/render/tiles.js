@@ -43,8 +43,7 @@ export function drawTile(x, y, color, height = 0) {
     graphics.endFill();
   }
 
-  // zIndex: use y * 100 + x for proper isometric depth sorting
-  graphics.zIndex = y * 100 + x;
+  graphics.zIndex = x + y;
   return graphics;
 }
 
@@ -94,7 +93,7 @@ export function drawHighlight(x, y, color = COLORS.highlight, isSelection = fals
   graphics.closePath();
   graphics.endFill();
 
-  graphics.zIndex = y * 100 + x + 10000; // Always on top
+  graphics.zIndex = x + y + 1000; // Always on top
   return graphics;
 }
 
