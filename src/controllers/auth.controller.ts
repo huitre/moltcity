@@ -54,7 +54,11 @@ export const authController: FastifyPluginAsync = async (fastify) => {
     preHandler: authenticate,
   }, async (request) => {
     const user = await authService.getUser(request.user!.userId);
-    return { user };
+    if (!user) return { user: null };
+    
+    // Strip sensitive fields before returning
+    const { passwordHash, ...safeUser } = user;
+    return { user: safeUser };
   });
 
   // Change password
