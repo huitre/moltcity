@@ -43,7 +43,7 @@ export function drawTile(x, y, color, height = 0) {
     graphics.endFill();
   }
 
-  graphics.zIndex = x + y;
+  graphics.zIndex = 0; // Grass is always the base layer
   return graphics;
 }
 
