@@ -111,7 +111,7 @@ export function drawRoad(x, y) {
       sprite.anchor.set(config.anchor.x, config.anchor.y);
       sprite.x = iso.x;
       sprite.y = iso.y + TILE_HEIGHT;
-      sprite.zIndex = x + y;
+      sprite.zIndex = x + y + 0.05; // Slightly above grass tiles
       return sprite;
     }
   }
@@ -203,6 +203,6 @@ function drawProceduralRoad(x, y, iso, conn) {
   graphics.lineTo(left.x, left.y);
   graphics.closePath();
 
-  graphics.zIndex = x + y;
+  graphics.zIndex = x + y + 0.05; // Slightly above grass tiles
   return graphics;
 }

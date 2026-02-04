@@ -112,6 +112,9 @@ export function render() {
     renderContainer.addChild(agentGraphic);
   }
 
+  // Force sort by zIndex to ensure proper rendering order
+  renderContainer.sortChildren();
+
   // Initialize vehicles after roads are loaded
   if (state.animatedVehicles.length === 0 && roads.length > 0) {
     initVehicles();
@@ -368,7 +371,7 @@ function drawPowerLine(from, to) {
   g.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2 - 18);
   g.quadraticCurveTo(midX, midY, isoTo.x, isoTo.y + TILE_HEIGHT / 2 - 18);
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.5;
+  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.07; // Above roads, below buildings
   return g;
 }
 
@@ -390,7 +393,7 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.3;
+  g.zIndex = Math.max(from.x + from.y, to.x + to.y) + 0.06; // Above roads, below power lines
   return g;
 }
 
