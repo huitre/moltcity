@@ -81,6 +81,31 @@ async function loadGameConfig() {
 }
 
 /**
+ * Update user's agent balance display
+ */
+function updateUserBalance() {
+  const balanceDisplay = document.getElementById("balance-display");
+  if (!balanceDisplay) return;
+
+  const { currentUser, agents } = state;
+  if (!currentUser) {
+    balanceDisplay.textContent = "$0";
+    return;
+  }
+
+  // Find user's agent by agentId or moltbookId
+  const userAgent = agents.find(
+    (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id
+  );
+
+  if (userAgent && userAgent.wallet) {
+    balanceDisplay.textContent = `$${userAgent.wallet.balance.toLocaleString()}`;
+  } else {
+    balanceDisplay.textContent = "$0";
+  }
+}
+
+/**
  * Load all city data
  */
 async function loadCityData() {
@@ -113,6 +138,9 @@ async function loadCityData() {
 
     const waterPipesResponse = await api.getWaterPipes();
     state.setWaterPipes(waterPipesResponse.waterPipes || []);
+
+    // Update user's agent balance
+    updateUserBalance();
 
     console.log("[MoltCity] City data loaded");
   } catch (error) {
@@ -163,12 +191,48 @@ async function handleBuild(x, y, buildType) {
       state.setRoads(roadsResponse.roads || []);
       render();
     } else if (buildType === "power_line" || buildType === "water_pipe") {
-      // Infrastructure requires start/end points - skip for now
-      console.log("[MoltCity] Infrastructure building not yet implemented in UI");
+      // Infrastructure requires start/end points - two-click interaction
+      if (!state.infraStartPoint) {
+        // First click: set start point
+        state.setInfraStartPoint({ x, y });
+        console.log(`[MoltCity] Infrastructure start point set: (${x}, ${y}). Click again to set endpoint.`);
+      } else {
+        // Second click: create the infrastructure
+        const start = state.infraStartPoint;
+        state.setInfraStartPoint(null);
+
+        if (buildType === "power_line") {
+          const result = await api.createPowerLine(start.x, start.y, x, y);
+          console.log("[MoltCity] Power line created:", result);
+          const powerLinesResponse = await api.getPowerLines();
+          state.setPowerLines(powerLinesResponse.powerLines || []);
+        } else {
+          const result = await api.createWaterPipe(start.x, start.y, x, y);
+          console.log("[MoltCity] Water pipe created:", result);
+          const waterPipesResponse = await api.getWaterPipes();
+          state.setWaterPipes(waterPipesResponse.waterPipes || []);
+        }
+        render();
+      }
     } else {
-      // Create building
+      // Create building with auto-generated name
+      const buildingNames = {
+        house: "House",
+        apartment: "Apartment",
+        shop: "Shop",
+        office: "Office",
+        factory: "Factory",
+        park: "Park",
+        power_plant: "Power Plant",
+        water_tower: "Water Tower",
+        police_station: "Police Station",
+        jail: "Jail",
+      };
+      const name = buildingNames[buildType] || buildType;
+
       const result = await api.createBuilding({
         type: buildType,
+        name,
         x,
         y,
         floors: 1,
@@ -318,6 +382,11 @@ function setupBuildMenu() {
     option.addEventListener("click", () => {
       const type = option.dataset.type;
 
+      // Clear infrastructure start point when changing build type
+      if (state.infraStartPoint) {
+        state.setInfraStartPoint(null);
+      }
+
       // Toggle selection
       if (state.selectedBuildType === type) {
         // Deselect
@@ -337,10 +406,17 @@ function setupBuildMenu() {
 
   // ESC key to deselect
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && state.selectedBuildType) {
-      state.setSelectedBuildType(null);
-      buildOptions.forEach((opt) => opt.classList.remove("selected"));
-      console.log("[MoltCity] Build type deselected");
+    if (e.key === "Escape") {
+      if (state.infraStartPoint) {
+        // Cancel infrastructure placement
+        state.setInfraStartPoint(null);
+        console.log("[MoltCity] Infrastructure placement cancelled");
+      }
+      if (state.selectedBuildType) {
+        state.setSelectedBuildType(null);
+        buildOptions.forEach((opt) => opt.classList.remove("selected"));
+        console.log("[MoltCity] Build type deselected");
+      }
     }
   });
 }
@@ -398,4 +474,10 @@ window.MoltCity = {
   api,
   render,
   loadCityData,
+  updateUserBalance,
 };
+
+// Periodically update balance (every 30 seconds)
+setInterval(() => {
+  updateUserBalance();
+}, 30000);

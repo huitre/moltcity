@@ -113,37 +113,159 @@ export function animateAmbient(delta) {
 }
 
 /**
- * Update day/night overlay
+ * Draw stars with sparkle effect
+ */
+function drawStars(overlay, width, height, alpha = 1) {
+  for (let i = 0; i < 50; i++) {
+    const x = (i * 137.5) % width;
+    const y = (i * 73.3) % (height * 0.4);
+    const size = 1 + (i % 3);
+    const twinkle = 0.5 + Math.sin(Date.now() * 0.003 + i) * 0.5;
+    const starAlpha = twinkle * 0.8 * alpha;
+
+    // Draw center dot
+    overlay.beginFill(0xffffff, starAlpha);
+    overlay.drawCircle(x, y, size);
+    overlay.endFill();
+
+    // Draw cross rays for sparkle effect
+    const rayLength = size * 3;
+    overlay.lineStyle(size * 0.5, 0xffffff, starAlpha * 0.6);
+
+    // Vertical ray
+    overlay.moveTo(x, y - rayLength);
+    overlay.lineTo(x, y + rayLength);
+
+    // Horizontal ray
+    overlay.moveTo(x - rayLength, y);
+    overlay.lineTo(x + rayLength, y);
+
+    // Diagonal rays for brighter stars
+    if (size > 1) {
+      const diagLength = rayLength * 0.6;
+      overlay.lineStyle(size * 0.3, 0xffffff, starAlpha * 0.4);
+      overlay.moveTo(x - diagLength, y - diagLength);
+      overlay.lineTo(x + diagLength, y + diagLength);
+      overlay.moveTo(x + diagLength, y - diagLength);
+      overlay.lineTo(x - diagLength, y + diagLength);
+    }
+  }
+  overlay.lineStyle(0);
+}
+
+/**
+ * Update day/night overlay with time-based color cycle
  */
 export function updateDayNightOverlay() {
-  const { app, dayNightOverlay, cloudsContainer, birdsContainer, isDaylight } = state;
+  const { app, dayNightOverlay, cloudsContainer, birdsContainer, currentHour } = state;
 
   dayNightOverlay.clear();
 
-  if (!isDaylight) {
-    // Night overlay - dark blue tint
-    dayNightOverlay.beginFill(0x0a1128, 0.4);
-    dayNightOverlay.drawRect(0, 0, app.screen.width, app.screen.height);
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Time-based color cycle
+  // 5-7: Sunrise (orange/gold)
+  // 7-8: Early morning (warm yellow fading)
+  // 8-17: Day (no overlay)
+  // 17-19: Sunset (orange/red)
+  // 19-21: Dusk (purple transition)
+  // 21-5: Night (dark blue)
+
+  if (currentHour >= 5 && currentHour < 7) {
+    // Sunrise - golden/orange gradient
+    const progress = (currentHour - 5) / 2; // 0 to 1
+    const alpha = 0.3 - progress * 0.2; // Fade out as sun rises
+
+    // Orange-gold gradient from bottom
+    dayNightOverlay.beginFill(0xff8c00, alpha * 0.5);
+    dayNightOverlay.drawRect(0, height * 0.5, width, height * 0.5);
     dayNightOverlay.endFill();
 
-    // Draw some stars
-    for (let i = 0; i < 50; i++) {
-      const x = (i * 137.5) % app.screen.width;
-      const y = (i * 73.3) % (app.screen.height * 0.4);
-      const size = 1 + (i % 3);
-      const twinkle = 0.5 + Math.sin(Date.now() * 0.003 + i) * 0.5;
-      dayNightOverlay.beginFill(0xffffff, twinkle * 0.8);
-      dayNightOverlay.drawCircle(x, y, size);
-    }
+    dayNightOverlay.beginFill(0xffd700, alpha * 0.3);
+    dayNightOverlay.drawRect(0, height * 0.3, width, height * 0.4);
     dayNightOverlay.endFill();
+
+    // Fading stars
+    if (currentHour < 6) {
+      drawStars(dayNightOverlay, width, height, 1 - progress);
+    }
+
+    cloudsContainer.alpha = 0.5 + progress * 0.5;
+    birdsContainer.alpha = 0.5 + progress * 0.5;
+
+  } else if (currentHour >= 7 && currentHour < 8) {
+    // Early morning - light golden warmth fading
+    const progress = currentHour - 7; // 0 to 1
+    const alpha = 0.15 * (1 - progress);
+
+    dayNightOverlay.beginFill(0xffecd2, alpha);
+    dayNightOverlay.drawRect(0, 0, width, height);
+    dayNightOverlay.endFill();
+
+    cloudsContainer.alpha = 1;
+    birdsContainer.alpha = 1;
+
+  } else if (currentHour >= 8 && currentHour < 17) {
+    // Daytime - no overlay, full visibility
+    cloudsContainer.alpha = 1;
+    birdsContainer.alpha = 1;
+
+  } else if (currentHour >= 17 && currentHour < 19) {
+    // Sunset - orange/red gradient
+    const progress = (currentHour - 17) / 2; // 0 to 1
+    const alpha = 0.1 + progress * 0.25;
+
+    // Red-orange gradient from bottom
+    dayNightOverlay.beginFill(0xff4500, alpha * 0.4);
+    dayNightOverlay.drawRect(0, height * 0.6, width, height * 0.4);
+    dayNightOverlay.endFill();
+
+    dayNightOverlay.beginFill(0xff8c00, alpha * 0.3);
+    dayNightOverlay.drawRect(0, height * 0.3, width, height * 0.5);
+    dayNightOverlay.endFill();
+
+    dayNightOverlay.beginFill(0xffd700, alpha * 0.15);
+    dayNightOverlay.drawRect(0, 0, width, height * 0.5);
+    dayNightOverlay.endFill();
+
+    cloudsContainer.alpha = 1 - progress * 0.3;
+    birdsContainer.alpha = 1 - progress * 0.3;
+
+  } else if (currentHour >= 19 && currentHour < 21) {
+    // Dusk - purple/blue transition
+    const progress = (currentHour - 19) / 2; // 0 to 1
+    const alpha = 0.25 + progress * 0.15;
+
+    // Purple-blue gradient
+    dayNightOverlay.beginFill(0x4a235a, alpha * 0.5);
+    dayNightOverlay.drawRect(0, 0, width, height);
+    dayNightOverlay.endFill();
+
+    dayNightOverlay.beginFill(0x1a1a4a, alpha * 0.3);
+    dayNightOverlay.drawRect(0, 0, width, height * 0.6);
+    dayNightOverlay.endFill();
+
+    // Fading in stars
+    if (currentHour >= 20) {
+      drawStars(dayNightOverlay, width, height, progress);
+    }
+
+    cloudsContainer.alpha = 0.7 - progress * 0.5;
+    birdsContainer.alpha = 0.7 - progress * 0.5;
+
+  } else {
+    // Night (21-5) - dark blue tint with stars
+    dayNightOverlay.beginFill(0x0a1128, 0.4);
+    dayNightOverlay.drawRect(0, 0, width, height);
+    dayNightOverlay.endFill();
+
+    // Draw stars
+    drawStars(dayNightOverlay, width, height, 1);
 
     // Hide clouds at night, show fewer birds
     cloudsContainer.alpha = 0.2;
     birdsContainer.alpha = 0.3;
-  } else {
-    // Daytime - no overlay, full visibility
-    cloudsContainer.alpha = 1;
-    birdsContainer.alpha = 1;
   }
 }
 

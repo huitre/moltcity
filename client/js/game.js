@@ -2,14 +2,19 @@
 // MOLTCITY - Main Game Loop
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from './config.js';
-import * as state from './state.js';
-import { cartToIso } from './utils.js';
-import { drawGrassTile, drawHighlight } from './render/tiles.js';
-import { drawRoad, hasRoadAt } from './render/roads.js';
-import { animateVehicles, initVehicles } from './render/vehicles.js';
-import { animatePedestrians } from './render/pedestrians.js';
-import { initClouds, initBirds, animateAmbient, updateDayNightOverlay } from './render/ambient.js';
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
+import * as state from "./state.js";
+import { cartToIso } from "./utils.js";
+import { drawGrassTile, drawHighlight } from "./render/tiles.js";
+import { drawRoad, hasRoadAt } from "./render/roads.js";
+import { animateVehicles, initVehicles } from "./render/vehicles.js";
+import { animatePedestrians } from "./render/pedestrians.js";
+import {
+  initClouds,
+  initBirds,
+  animateAmbient,
+  updateDayNightOverlay,
+} from "./render/ambient.js";
 
 let renderContainer = null;
 
@@ -45,7 +50,15 @@ function gameLoop(delta) {
  * Render the entire city
  */
 export function render() {
-  const { worldContainer, parcels, buildings, roads, agents, powerLines, waterPipes } = state;
+  const {
+    worldContainer,
+    parcels,
+    buildings,
+    roads,
+    agents,
+    powerLines,
+    waterPipes,
+  } = state;
 
   // Clear previous render (remove all children except permanent containers)
   const permanentContainers = [
@@ -108,7 +121,10 @@ export function render() {
 
   // Draw agents
   for (const agent of agents) {
-    const agentGraphic = drawAgent(agent.currentLocation.x, agent.currentLocation.y);
+    const agentGraphic = drawAgent(
+      agent.currentLocation.x,
+      agent.currentLocation.y,
+    );
     renderContainer.addChild(agentGraphic);
   }
 
@@ -224,7 +240,12 @@ function drawConstruction(x, y, building) {
   g.endFill();
 
   g.beginFill(0x4ecdc4);
-  g.drawRect(cx - barWidth / 2, baseY - 40, (progress / 100) * barWidth, barHeight);
+  g.drawRect(
+    cx - barWidth / 2,
+    baseY - 40,
+    (progress / 100) * barWidth,
+    barHeight,
+  );
   g.endFill();
 
   g.zIndex = x + y;
@@ -422,7 +443,12 @@ function drawAgent(x, y) {
  * Update UI displays
  */
 function updateUI() {
-  const { cityData, agents, buildings, animatedVehicles, animatedPedestrians, currentPopulation } = state;
+  const {
+    cityData,
+    agents,
+    buildings,
+    currentPopulation,
+  } = state;
 
   if (cityData) {
     const dayDisplay = document.getElementById("day-display");
@@ -438,15 +464,11 @@ function updateUI() {
   const buildingsDisplay = document.getElementById("buildings-display");
   if (buildingsDisplay) buildingsDisplay.textContent = buildings.length;
 
-  const trafficDisplay = document.getElementById("traffic-display");
-  if (trafficDisplay) {
-    trafficDisplay.textContent = animatedVehicles.length + animatedPedestrians.length;
-  }
-
   // Power stats
   const powerPlants = buildings.filter((b) => b.type === "power_plant");
   const totalCapacity = powerPlants.length * 10;
-  const totalDemand = buildings.reduce((sum, b) => sum + (b.powerRequired || 0), 0) / 1000;
+  const totalDemand =
+    buildings.reduce((sum, b) => sum + (b.powerRequired || 0), 0) / 1000;
   const powerDisplay = document.getElementById("power-display");
   if (powerDisplay) {
     powerDisplay.textContent = `${totalDemand.toFixed(1)} / ${totalCapacity} kW`;

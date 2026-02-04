@@ -2,7 +2,7 @@
 // MOLTCITY - Vehicle Rendering & Animation
 // ============================================
 
-import { TILE_HEIGHT, VEHICLE_SPEED, DIR_VECTORS, OPPOSITE_DIR } from '../config.js';
+import { TILE_HEIGHT, VEHICLE_SPEED, DIR_VECTORS, OPPOSITE_DIR, GRID_SIZE } from '../config.js';
 import { cartToIso } from '../utils.js';
 import * as state from '../state.js';
 import { getRoadAt, getValidDirections } from './roads.js';
@@ -150,9 +150,9 @@ export function animateVehicles(delta) {
     // Remove if out of bounds
     if (
       vehicle.x < 0 ||
-      vehicle.x >= state.GRID_SIZE ||
+      vehicle.x >= GRID_SIZE ||
       vehicle.y < 0 ||
-      vehicle.y >= state.GRID_SIZE
+      vehicle.y >= GRID_SIZE
     ) {
       state.worldContainer.removeChild(vehicle.sprite);
       animatedVehicles.splice(i, 1);

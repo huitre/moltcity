@@ -36,14 +36,21 @@ const websocketPluginImpl: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // Helper to broadcast player count
+  const broadcastPlayerCount = () => {
+    fastify.broadcast('players_update', { count: wsClients.size });
+  };
+
   // WebSocket endpoint
   fastify.get('/ws', { websocket: true }, (socket, req) => {
     wsClients.add(socket);
     fastify.log.info(`WebSocket client connected. Total: ${wsClients.size}`);
+    broadcastPlayerCount();
 
     socket.on('close', () => {
       wsClients.delete(socket);
       fastify.log.info(`WebSocket client disconnected. Total: ${wsClients.size}`);
+      broadcastPlayerCount();
     });
 
     socket.on('error', (err) => {

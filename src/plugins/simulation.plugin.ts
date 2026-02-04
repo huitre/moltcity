@@ -51,16 +51,20 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
   engine.on('tick', (data: TickData) => {
     // Only broadcast every 10 ticks to reduce traffic
     if (data.tick % 10 === 0) {
+      const populationStats = engine.getPopulationStats();
+
       fastify.broadcast('tick', {
         tick: data.tick,
         time: data.time,
         eventCount: data.events.length,
+        population: populationStats.total,
+        employed: populationStats.employed,
+        players: fastify.wsClients.size,
       });
 
-      // Broadcast population update every 60 ticks (6 seconds)
+      // Broadcast full population update every 60 ticks (6 seconds)
       if (data.tick - lastPopulationBroadcast >= 60) {
         lastPopulationBroadcast = data.tick;
-        const populationStats = engine.getPopulationStats();
         const targetVehicles = engine.getTargetVehicleCount(data.time);
 
         fastify.broadcast('population_update', {

@@ -77,6 +77,16 @@
         font-weight: 600;
       }
 
+      .player-stat {
+        border-top: 1px solid rgba(78, 205, 196, 0.3);
+        margin-top: 4px;
+        padding-top: 6px;
+      }
+
+      .player-stat .stat-value {
+        color: #ffd700;
+      }
+
       #controls {
         display: flex;
         gap: 8px;
@@ -305,6 +315,15 @@
 
       .build-option.selected small {
         color: #4ecdc4;
+      }
+
+      /* Admin-only build options - hidden by default */
+      .build-option.admin-only {
+        display: none;
+      }
+
+      body.is-admin .build-option.admin-only {
+        display: flex;
       }
 
       /* Floor selector panel */
@@ -1488,7 +1507,11 @@
           <span class="stat-value" id="day-display">1</span>
         </div>
         <div class="stat">
-          <span class="stat-label">Population</span>
+          <span class="stat-label">Players</span>
+          <span class="stat-value" id="players-display">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Citizens</span>
           <span class="stat-value" id="population-display">0</span>
         </div>
         <div class="stat">
@@ -1506,6 +1529,10 @@
         <div class="stat">
           <span class="stat-label">Traffic</span>
           <span class="stat-value" id="traffic-display">0</span>
+        </div>
+        <div class="stat player-stat">
+          <span class="stat-label">Balance</span>
+          <span class="stat-value" id="balance-display">$0</span>
         </div>
       </div>
 
@@ -1529,7 +1556,7 @@
 
     <div id="build-menu">
       <!-- Buildings -->
-      <div class="build-option" data-type="road">
+      <div class="build-option admin-only" data-type="road">
         <span>🛣️</span>
         <small>Road</small>
       </div>
@@ -1549,11 +1576,11 @@
         <span>🏭</span>
         <small>Factory</small>
       </div>
-      <div class="build-option" data-type="power_plant">
+      <div class="build-option admin-only" data-type="power_plant">
         <span>⚡</span>
         <small>Power</small>
       </div>
-      <div class="build-option" data-type="water_tower">
+      <div class="build-option admin-only" data-type="water_tower">
         <span>💧</span>
         <small>Water</small>
       </div>
@@ -1561,20 +1588,20 @@
         <span>🌳</span>
         <small>Park</small>
       </div>
-      <div class="build-option" data-type="police_station">
+      <div class="build-option admin-only" data-type="police_station">
         <span>🚔</span>
         <small>Police</small>
       </div>
-      <div class="build-option" data-type="jail">
+      <div class="build-option admin-only" data-type="jail">
         <span>🔒</span>
         <small>Jail</small>
       </div>
       <!-- Infrastructure -->
-      <div class="build-option infra-option" data-type="power_line">
+      <div class="build-option admin-only infra-option" data-type="power_line">
         <span>⚡</span>
         <small>P.Line</small>
       </div>
-      <div class="build-option infra-option" data-type="water_pipe">
+      <div class="build-option admin-only infra-option" data-type="water_pipe">
         <span>💧</span>
         <small>Pipe</small>
       </div>

@@ -222,38 +222,126 @@ export class PowerGridSimulator {
   constructor(private db: DatabaseManager) {}
 
   /**
-   * Distribute power from plants to buildings
+   * Check if a tile is adjacent to any tile in the powered set (including diagonals)
+   */
+  private isAdjacentToPoweredTile(x: number, y: number, poweredTiles: Set<string>): boolean {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (poweredTiles.has(`${x + dx},${y + dy}`)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Distribute power from plants to buildings via power lines
    * Returns map of buildingId -> hasPower
    */
   simulate(): Map<string, boolean> {
     const buildings = this.db.buildings.getAllBuildings();
+    const powerLines = this.db.powerLines.getAllPowerLines();
     const powerStatus = new Map<string, boolean>();
 
-    // Calculate total power capacity (from power plants)
-    let totalCapacity = 0;
-    const powerPlants = buildings.filter(b => b.type === 'power_plant');
-    for (const plant of powerPlants) {
-      // Each power plant produces 10000 watts
-      totalCapacity += 10000;
+    // Build adjacency graph from power lines
+    // Key: "x,y" -> Set of connected "x,y" coordinates
+    const powerGrid = new Map<string, Set<string>>();
+
+    const addConnection = (x1: number, y1: number, x2: number, y2: number) => {
+      const key1 = `${x1},${y1}`;
+      const key2 = `${x2},${y2}`;
+      if (!powerGrid.has(key1)) powerGrid.set(key1, new Set());
+      if (!powerGrid.has(key2)) powerGrid.set(key2, new Set());
+      powerGrid.get(key1)!.add(key2);
+      powerGrid.get(key2)!.add(key1);
+    };
+
+    // Add all power line connections
+    for (const line of powerLines) {
+      addConnection(line.from.x, line.from.y, line.to.x, line.to.y);
     }
 
-    // Calculate total power demand
-    let totalDemand = 0;
+    // Find all power plant locations and their adjacent tiles
+    const powerPlantTiles = new Set<string>();
     for (const building of buildings) {
-      if (building.type !== 'power_plant') {
-        totalDemand += building.powerRequired;
+      if (building.type === 'power_plant') {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel) {
+          powerPlantTiles.add(`${parcel.x},${parcel.y}`);
+        }
       }
     }
 
-    // If we have enough power, everyone gets power
-    // Otherwise, we ration (could implement priority-based distribution later)
-    const hasEnoughPower = totalCapacity >= totalDemand;
+    // BFS to find all tiles connected to power plants via power lines
+    const poweredTiles = new Set<string>();
+    const queue: string[] = [];
 
+    // Start from power plants and any power line endpoints adjacent to them
+    for (const plantTile of powerPlantTiles) {
+      poweredTiles.add(plantTile);
+      const [px, py] = plantTile.split(',').map(Number);
+
+      // Check all power grid tiles - if adjacent to power plant, add to queue
+      for (const gridTile of powerGrid.keys()) {
+        const [gx, gy] = gridTile.split(',').map(Number);
+        if (Math.abs(gx - px) <= 1 && Math.abs(gy - py) <= 1) {
+          if (!poweredTiles.has(gridTile)) {
+            poweredTiles.add(gridTile);
+            queue.push(gridTile);
+          }
+        }
+      }
+    }
+
+    // BFS through power line network
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const neighbors = powerGrid.get(current);
+      if (neighbors) {
+        for (const neighbor of neighbors) {
+          if (!poweredTiles.has(neighbor)) {
+            poweredTiles.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      }
+    }
+
+    // Calculate total power capacity from connected plants
+    let totalCapacity = 0;
     for (const building of buildings) {
       if (building.type === 'power_plant') {
-        powerStatus.set(building.id, true); // Plants are always "powered"
+        totalCapacity += 10000; // Each plant produces 10000 watts
+      }
+    }
+
+    // Calculate total demand from connected buildings (adjacent to powered tiles)
+    let totalDemand = 0;
+    for (const building of buildings) {
+      if (building.type !== 'power_plant') {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel && this.isAdjacentToPoweredTile(parcel.x, parcel.y, poweredTiles)) {
+          totalDemand += building.powerRequired;
+        }
+      }
+    }
+
+    const hasEnoughPower = totalCapacity >= totalDemand;
+
+    // Set power status for each building
+    for (const building of buildings) {
+      if (building.type === 'power_plant') {
+        powerStatus.set(building.id, true); // Plants always powered
       } else {
-        powerStatus.set(building.id, hasEnoughPower);
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel) {
+          // Building is powered if adjacent to any powered tile
+          const isConnected = this.isAdjacentToPoweredTile(parcel.x, parcel.y, poweredTiles);
+          powerStatus.set(building.id, isConnected && hasEnoughPower);
+        } else {
+          powerStatus.set(building.id, false);
+        }
       }
     }
 

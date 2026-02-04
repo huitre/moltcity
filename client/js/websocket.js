@@ -54,13 +54,20 @@ export function connectWebSocket(onMessage) {
  * Handle incoming WebSocket messages
  */
 function handleMessage(msg, onMessage) {
-  switch (msg.type) {
+  // Handle both msg.type and msg.event formats
+  const eventType = msg.type || msg.event;
+
+  switch (eventType) {
     case "tick":
       handleTick(msg.data);
       break;
 
     case "population_update":
       handlePopulationUpdate(msg.data);
+      break;
+
+    case "players_update":
+      handlePlayersUpdate(msg.data);
       break;
 
     case "day_started":
@@ -106,26 +113,51 @@ function handleMessage(msg, onMessage) {
  * Handle tick message
  */
 function handleTick(data) {
-  const { time, events } = data;
+  if (!data) return;
 
-  state.setIsDaylight(time.isDaylight);
-  state.setCurrentHour(time.hour);
+  const { time, events, population, employed, players } = data;
 
-  // Update time display
-  const timeDisplay = document.getElementById("time-display");
-  const dayDisplay = document.getElementById("day-display");
-  if (timeDisplay) {
-    timeDisplay.textContent = `${String(time.hour).padStart(2, "0")}:00`;
+  if (time) {
+    state.setIsDaylight(time.isDaylight);
+    state.setCurrentHour(time.hour);
+
+    // Update time display
+    const timeDisplay = document.getElementById("time-display");
+    const dayDisplay = document.getElementById("day-display");
+    if (timeDisplay) {
+      timeDisplay.textContent = `${String(time.hour).padStart(2, "0")}:00`;
+    }
+    if (dayDisplay) {
+      dayDisplay.textContent = time.day;
+    }
   }
-  if (dayDisplay) {
-    dayDisplay.textContent = time.day;
+
+  // Update population/citizens display
+  if (population !== undefined) {
+    state.setCurrentPopulation(population);
+    const popDisplay = document.getElementById("population-display");
+    if (popDisplay) popDisplay.textContent = population;
   }
 
-  // Process events
-  for (const evt of events) {
-    if (evt.type === "agent_moved") {
-      const agent = state.agents.find((a) => a.id === evt.data.agentId);
-      if (agent) agent.currentLocation = evt.data.to;
+  // Update employed display
+  if (employed !== undefined) {
+    const empDisplay = document.getElementById("employed-display");
+    if (empDisplay) empDisplay.textContent = employed;
+  }
+
+  // Update players display
+  if (players !== undefined) {
+    const playersDisplay = document.getElementById("players-display");
+    if (playersDisplay) playersDisplay.textContent = players;
+  }
+
+  // Process events (if present)
+  if (events && Array.isArray(events)) {
+    for (const evt of events) {
+      if (evt.type === "agent_moved") {
+        const agent = state.agents.find((a) => a.id === evt.data.agentId);
+        if (agent) agent.currentLocation = evt.data.to;
+      }
     }
   }
 
@@ -137,7 +169,7 @@ function handleTick(data) {
  * Handle population update message
  */
 function handlePopulationUpdate(data) {
-  const { total, employed } = data;
+  const { total, employed, traffic } = data;
 
   state.setCurrentPopulation(total || 0);
 
@@ -148,11 +180,20 @@ function handlePopulationUpdate(data) {
 
   if (popDisplay) popDisplay.textContent = total || 0;
   if (empDisplay) empDisplay.textContent = employed || 0;
-  if (trafficDisplay) {
-    trafficDisplay.textContent = state.animatedVehicles.length + state.animatedPedestrians.length;
+  if (trafficDisplay && traffic !== undefined) {
+    trafficDisplay.textContent = traffic;
   }
 
   updateTrafficLimits();
+}
+
+/**
+ * Handle players update message
+ */
+function handlePlayersUpdate(data) {
+  const { count } = data;
+  const playersDisplay = document.getElementById("players-display");
+  if (playersDisplay) playersDisplay.textContent = count || 0;
 }
 
 /**

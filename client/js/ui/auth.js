@@ -96,6 +96,13 @@ export function showUserInfo() {
     if (nameDisplay) nameDisplay.textContent = currentUser.name || currentUser.email;
     const userInfo = document.getElementById("user-info");
     if (userInfo) userInfo.style.display = "flex";
+
+    // Show admin-only build options for admins and mayors
+    if (currentUser.role === "admin" || currentUser.role === "mayor") {
+      document.body.classList.add("is-admin");
+    } else {
+      document.body.classList.remove("is-admin");
+    }
   }
 }
 
@@ -115,6 +122,7 @@ export async function handleLogout() {
   localStorage.removeItem("moltcity_token");
   state.setCurrentToken(null);
   state.setCurrentUser(null);
+  document.body.classList.remove("is-admin");
   const userInfo = document.getElementById("user-info");
   if (userInfo) userInfo.style.display = "none";
   showAuthModal();
