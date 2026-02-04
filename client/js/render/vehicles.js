@@ -69,9 +69,10 @@ export function spawnVehicle(vehicleTypes) {
   const iso = cartToIso(vehicle.x, vehicle.y);
   sprite.x = iso.x;
   sprite.y = iso.y + TILE_HEIGHT / 2;
-  sprite.zIndex = vehicle.x + vehicle.y + 0.6;
+  sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
 
-  vehiclesContainer.addChild(sprite);
+  // Add directly to worldContainer for proper z-sorting with buildings
+  state.worldContainer.addChild(sprite);
   animatedVehicles.push(vehicle);
 }
 
@@ -104,7 +105,7 @@ export function animateVehicles(delta) {
 
       const targetRoad = getRoadAt(currentX, currentY);
       if (!targetRoad) {
-        vehiclesContainer.removeChild(vehicle.sprite);
+        state.worldContainer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
       }
@@ -114,7 +115,7 @@ export function animateVehicles(delta) {
       );
 
       if (validDirs.length === 0) {
-        vehiclesContainer.removeChild(vehicle.sprite);
+        state.worldContainer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
       }
@@ -144,7 +145,7 @@ export function animateVehicles(delta) {
     const iso = cartToIso(vehicle.x, vehicle.y);
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
-    vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.6;
+    vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
 
     // Remove if out of bounds
     if (
@@ -153,7 +154,7 @@ export function animateVehicles(delta) {
       vehicle.y < 0 ||
       vehicle.y >= state.GRID_SIZE
     ) {
-      vehiclesContainer.removeChild(vehicle.sprite);
+      state.worldContainer.removeChild(vehicle.sprite);
       animatedVehicles.splice(i, 1);
     }
   }
@@ -175,6 +176,6 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = x + y + 0.5;
+  g.zIndex = x + y;
   return g;
 }

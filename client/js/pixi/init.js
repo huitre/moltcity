@@ -45,17 +45,17 @@ export async function initPixi() {
   worldContainer.addChild(birdsContainer);
   state.setBirdsContainer(birdsContainer);
 
-  // Vehicles container (in world space)
+  // Vehicles container - no fixed zIndex, vehicles added directly to worldContainer
   const vehiclesContainer = new PIXI.Container();
   vehiclesContainer.sortableChildren = true;
-  vehiclesContainer.zIndex = 500;
+  // No zIndex set - vehicles added directly to worldContainer for proper sorting
   worldContainer.addChild(vehiclesContainer);
   state.setVehiclesContainer(vehiclesContainer);
 
-  // Pedestrians container (in world space, below vehicles)
+  // Pedestrians container - no fixed zIndex, children sorted with world
   const pedestriansContainer = new PIXI.Container();
   pedestriansContainer.sortableChildren = true;
-  pedestriansContainer.zIndex = 450;
+  // No zIndex set - pedestrians will use their individual x+y zIndex
   worldContainer.addChild(pedestriansContainer);
   state.setPedestriansContainer(pedestriansContainer);
 

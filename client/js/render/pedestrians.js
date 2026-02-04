@@ -99,9 +99,10 @@ export function spawnPedestrian() {
   const iso = cartToIso(pedestrian.x, pedestrian.y);
   sprite.x = iso.x;
   sprite.y = iso.y;
-  sprite.zIndex = pedestrian.x + pedestrian.y + 0.5;
+  sprite.zIndex = Math.floor(pedestrian.x) + Math.floor(pedestrian.y);
 
-  pedestriansContainer.addChild(sprite);
+  // Add directly to worldContainer for proper z-sorting with buildings
+  state.worldContainer.addChild(sprite);
   animatedPedestrians.push(pedestrian);
 }
 
@@ -122,7 +123,7 @@ export function animatePedestrians(delta) {
 
     // Remove if exceeded lifetime
     if (ped.lifetime > ped.maxLifetime) {
-      pedestriansContainer.removeChild(ped.sprite);
+      state.worldContainer.removeChild(ped.sprite);
       animatedPedestrians.splice(i, 1);
       continue;
     }
@@ -138,7 +139,7 @@ export function animatePedestrians(delta) {
 
       const targetRoad = getRoadAt(currentX, currentY);
       if (!targetRoad) {
-        pedestriansContainer.removeChild(ped.sprite);
+        state.worldContainer.removeChild(ped.sprite);
         animatedPedestrians.splice(i, 1);
         continue;
       }
@@ -150,7 +151,7 @@ export function animatePedestrians(delta) {
 
       const validDirs = getValidDirections(currentX, currentY);
       if (validDirs.length === 0) {
-        pedestriansContainer.removeChild(ped.sprite);
+        state.worldContainer.removeChild(ped.sprite);
         animatedPedestrians.splice(i, 1);
         continue;
       }
@@ -175,11 +176,11 @@ export function animatePedestrians(delta) {
     const iso = cartToIso(ped.x, ped.y);
     ped.sprite.x = iso.x;
     ped.sprite.y = iso.y;
-    ped.sprite.zIndex = Math.floor(ped.x) + Math.floor(ped.y) + 0.5;
+    ped.sprite.zIndex = Math.floor(ped.x) + Math.floor(ped.y);
 
     // Remove if out of bounds
     if (ped.x < 0 || ped.x >= GRID_SIZE || ped.y < 0 || ped.y >= GRID_SIZE) {
-      pedestriansContainer.removeChild(ped.sprite);
+      state.worldContainer.removeChild(ped.sprite);
       animatedPedestrians.splice(i, 1);
     }
   }
