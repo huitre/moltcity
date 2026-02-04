@@ -11,8 +11,17 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
   const electionService = new ElectionService(fastify.db, fastify);
 
   // Get current election status
-  fastify.get('/api/election', async () => {
+  fastify.get('/api/election', async (request, reply) => {
+    // Optional auth to check if user has voted
+    await fastify.optionalAuth(request, reply);
+
     const status = await electionService.getElectionStatus();
+
+    // Check if authenticated user has voted
+    let hasVoted = false;
+    if (request.user && status.election) {
+      hasVoted = await electionService.checkHasVoted(status.election.id, request.user.userId);
+    }
 
     return {
       election: status.election ? {
@@ -32,6 +41,7 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
       currentMayor: status.currentMayor,
       phase: status.phase,
       timeRemaining: status.timeRemaining,
+      hasVoted,
     };
   });
 

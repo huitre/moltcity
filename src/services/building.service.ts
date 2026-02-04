@@ -7,6 +7,7 @@ import { ParcelRepository } from '../repositories/parcel.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { RentalUnitRepository } from '../repositories/rental.repository.js';
 import { CityRepository } from '../repositories/city.repository.js';
+import { RoadRepository } from '../repositories/road.repository.js';
 import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, ValidationError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
 import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, getBuildingCost, BUILDING_COSTS, type UserRole } from '../config/game.js';
@@ -32,6 +33,7 @@ export class BuildingService {
   private agentRepo: AgentRepository;
   private rentalRepo: RentalUnitRepository;
   private cityRepo: CityRepository;
+  private roadRepo: RoadRepository;
   private activityService: ActivityService;
 
   constructor(db: DrizzleDb, fastify?: FastifyInstance) {
@@ -40,6 +42,7 @@ export class BuildingService {
     this.agentRepo = new AgentRepository(db);
     this.rentalRepo = new RentalUnitRepository(db);
     this.cityRepo = new CityRepository(db);
+    this.roadRepo = new RoadRepository(db);
     this.activityService = new ActivityService(db, fastify);
   }
 
@@ -158,6 +161,12 @@ export class BuildingService {
     const existingBuilding = await this.buildingRepo.getBuildingAtParcel(parcel.id);
     if (existingBuilding) {
       throw new ConflictError('Parcel already has a building');
+    }
+
+    // Check for existing road (cannot build on roads)
+    const existingRoad = await this.roadRepo.getRoad(parcel.id);
+    if (existingRoad) {
+      throw new ConflictError('Cannot build on a road');
     }
 
     // Get building cost and check agent wallet (unless admin/mayor)

@@ -125,6 +125,9 @@ export class ElectionService {
 
     await this.electionRepo.castVote(election.id, voterId, candidateId);
 
+    // Log activity (anonymous)
+    await this.activityService.logVoteCast(election.id);
+
     // Broadcast vote cast (anonymous)
     if (this.fastify?.broadcast) {
       this.fastify.broadcast('vote_cast', {
@@ -170,10 +173,14 @@ export class ElectionService {
       return null;
     }
 
-    // Find winner (highest votes)
-    const winner = candidatesWithVotes.reduce((prev, curr) =>
-      (curr.voteCount || 0) > (prev.voteCount || 0) ? curr : prev
-    );
+    // Find winner (highest votes, with tie-breaking by earliest registration)
+    const sortedCandidates = [...candidatesWithVotes].sort((a, b) => {
+      const voteDiff = (b.voteCount || 0) - (a.voteCount || 0);
+      if (voteDiff !== 0) return voteDiff;
+      // Tie-breaker: earliest registration wins
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    const winner = sortedCandidates[0];
 
     // Update election with winner
     await this.electionRepo.updateElectionStatus(election.id, 'completed', {
@@ -275,5 +282,9 @@ export class ElectionService {
         await this.tallyVotes();
       }
     }
+  }
+
+  async checkHasVoted(electionId: string, voterId: string): Promise<boolean> {
+    return this.electionRepo.hasVoted(electionId, voterId);
   }
 }

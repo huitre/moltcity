@@ -121,4 +121,14 @@ export class ActivityService {
       { voteCount }
     );
   }
+
+  async logVoteCast(electionId: string): Promise<Activity> {
+    return this.logActivity(
+      'vote_cast',
+      undefined,
+      'Anonymous',
+      'A vote has been cast in the mayoral election',
+      { electionId }
+    );
+  }
 }

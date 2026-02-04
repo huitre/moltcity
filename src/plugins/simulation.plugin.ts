@@ -6,6 +6,7 @@ import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import { SimulationEngine } from '../simulation/engine.js';
 import { DatabaseManager } from '../models/database.js';
+import { ElectionService } from '../services/election.service.js';
 import type { CityTime, CityEvent } from '../models/types.js';
 
 // Default grid size
@@ -44,8 +45,12 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
   const engine = new SimulationEngine(legacyDb, gridWidth, gridHeight);
   fastify.decorate('simulationEngine', engine);
 
-  // Track last population broadcast to avoid spam
+  // Track last broadcasts to avoid spam
   let lastPopulationBroadcast = 0;
+  let lastElectionCheck = 0;
+
+  // Create election service for automatic phase transitions
+  const electionService = new ElectionService(fastify.db, fastify);
 
   // Connect simulation events to WebSocket broadcasts
   engine.on('tick', (data: TickData) => {
@@ -75,6 +80,14 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
           traffic: targetVehicles,
         });
       }
+
+      // Check and transition elections every 100 ticks (10 seconds)
+      if (data.tick - lastElectionCheck >= 100) {
+        lastElectionCheck = data.tick;
+        electionService.checkAndTransitionElection().catch((err) => {
+          fastify.log.error({ err }, 'Election transition check failed');
+        });
+      }
     }
 
     // Broadcast significant events immediately
@@ -85,9 +98,23 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
     }
   });
 
-  engine.on('day_started', (time: CityTime) => {
+  engine.on('day_started', async (time: CityTime) => {
     fastify.broadcast('day_started', { time });
     fastify.log.info(`Day ${time.day} started (Year ${time.year})`);
+
+    // Auto-start election every 30 days if none is active
+    if (time.day % 30 === 1) {
+      try {
+        const status = await electionService.getElectionStatus();
+        if (status.phase === 'none') {
+          await electionService.startElection();
+          fastify.log.info('New election automatically started');
+        }
+      } catch (err) {
+        // Election already in progress or other error - ignore
+        fastify.log.debug({ err }, 'Auto-start election skipped');
+      }
+    }
   });
 
   engine.on('night_started', (time: CityTime) => {

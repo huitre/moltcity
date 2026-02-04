@@ -5,16 +5,41 @@
 import { API_URL } from '../config.js';
 import * as state from '../state.js';
 
+// Track if user has voted in current election
+let hasVotedInCurrentElection = false;
+let isLoading = false;
+
+/**
+ * Show a toast notification
+ */
+function showToast(message, type = 'info') {
+  // Remove existing toast
+  const existingToast = document.getElementById('election-toast');
+  if (existingToast) existingToast.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'election-toast';
+  toast.className = `election-toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Auto-remove after 3 seconds
+  setTimeout(() => toast.remove(), 3000);
+}
+
 /**
  * Load election status from the server
  */
 export async function loadElectionStatus() {
   try {
-    const res = await fetch(`${API_URL}/api/election`);
+    const res = await fetch(`${API_URL}/api/election`, {
+      headers: state.currentToken ? { 'Authorization': `Bearer ${state.currentToken}` } : {},
+    });
     const data = await res.json();
     state.setCurrentElection(data.election);
     state.setElectionCandidates(data.candidates || []);
     state.setCurrentMayor(data.currentMayor);
+    hasVotedInCurrentElection = data.hasVoted || false;
     renderElectionUI();
     renderMayorBanner();
   } catch (error) {
@@ -84,14 +109,19 @@ export function renderElectionUI() {
 
   // Candidates list
   if (candidateList) {
+    const isVotingPhase = currentElection.status === 'voting';
+    const canVote = isVotingPhase && currentUser && !hasVotedInCurrentElection;
+
     candidateList.innerHTML = electionCandidates.map(candidate => `
       <div class="candidate-item">
         <div>
           <div class="candidate-name">${candidate.userName || 'Unknown'}</div>
           ${candidate.platform ? `<div class="candidate-platform">${candidate.platform}</div>` : ''}
         </div>
-        ${currentElection.status === 'voting'
-          ? `<button class="vote-btn" data-candidate-id="${candidate.id}">Vote</button>`
+        ${isVotingPhase
+          ? canVote
+            ? `<button class="vote-btn" data-candidate-id="${candidate.id}">Vote</button>`
+            : `<span class="vote-count">${hasVotedInCurrentElection ? 'Voted' : `${candidate.voteCount || 0} votes`}</span>`
           : `<span class="vote-count">${candidate.voteCount || 0} votes</span>`
         }
       </div>
@@ -128,8 +158,17 @@ export function runForMayor() {
  * Submit candidacy
  */
 export async function submitCandidacy() {
+  if (isLoading) return;
+
   const platformInput = document.getElementById('campaign-platform');
+  const submitBtn = document.getElementById('btn-submit-candidacy');
   const platform = platformInput?.value.trim();
+
+  isLoading = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Registering...';
+  }
 
   try {
     const res = await fetch(`${API_URL}/api/election/run`, {
@@ -143,7 +182,7 @@ export async function submitCandidacy() {
 
     if (!res.ok) {
       const error = await res.json();
-      alert(error.message || 'Failed to register as candidate');
+      showToast(error.error || error.message || 'Failed to register as candidate', 'error');
       return;
     }
 
@@ -154,10 +193,17 @@ export async function submitCandidacy() {
     if (overlay) overlay.style.display = 'none';
     if (platformInput) platformInput.value = '';
 
+    showToast('You are now a candidate for Mayor!', 'success');
     await loadElectionStatus();
   } catch (error) {
     console.error('Failed to run for mayor:', error);
-    alert('Failed to register as candidate');
+    showToast('Failed to register as candidate', 'error');
+  } finally {
+    isLoading = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Register';
+    }
   }
 }
 
@@ -165,14 +211,34 @@ export async function submitCandidacy() {
  * Vote for a candidate
  */
 export async function voteForCandidate(candidateId) {
+  if (isLoading) return;
+
   if (!state.currentToken) {
-    alert('You must be logged in to vote');
+    showToast('You must be logged in to vote', 'error');
     return;
   }
 
-  if (!confirm('Are you sure you want to vote for this candidate? You can only vote once.')) {
+  if (hasVotedInCurrentElection) {
+    showToast('You have already voted in this election', 'error');
     return;
   }
+
+  // Find candidate name for confirmation
+  const candidate = state.electionCandidates.find(c => c.id === candidateId);
+  const candidateName = candidate?.userName || 'this candidate';
+
+  if (!confirm(`Vote for ${candidateName}? You can only vote once per election.`)) {
+    return;
+  }
+
+  // Find and disable the button
+  const btn = document.querySelector(`.vote-btn[data-candidate-id="${candidateId}"]`);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Voting...';
+  }
+
+  isLoading = true;
 
   try {
     const res = await fetch(`${API_URL}/api/election/vote`, {
@@ -186,15 +252,26 @@ export async function voteForCandidate(candidateId) {
 
     if (!res.ok) {
       const error = await res.json();
-      alert(error.message || 'Failed to vote');
+      showToast(error.error || error.message || 'Failed to vote', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Vote';
+      }
       return;
     }
 
-    alert('Your vote has been cast!');
+    hasVotedInCurrentElection = true;
+    showToast(`Your vote for ${candidateName} has been cast!`, 'success');
     await loadElectionStatus();
   } catch (error) {
     console.error('Failed to vote:', error);
-    alert('Failed to vote');
+    showToast('Failed to vote', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Vote';
+    }
+  } finally {
+    isLoading = false;
   }
 }
 

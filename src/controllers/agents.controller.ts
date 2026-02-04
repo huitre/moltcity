@@ -68,8 +68,8 @@ export const agentsController: FastifyPluginAsync = async (fastify) => {
   // Move agent
   fastify.post('/api/agents/:id/move', async (request) => {
     const params = agentIdParamSchema.parse(request.params);
-    const body = moveAgentSchema.parse(request.body);
-    const agent = await agentService.moveAgent(params.id, body.destination);
+    const destination = moveAgentSchema.parse(request.body);
+    const agent = await agentService.moveAgent(params.id, destination);
     return { success: true, agent };
   });
 

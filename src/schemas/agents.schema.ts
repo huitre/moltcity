@@ -20,10 +20,8 @@ export const agentIdParamSchema = z.object({
   id: z.string(),
 });
 
-// Move agent schema
-export const moveAgentSchema = z.object({
-  destination: coordinateSchema,
-});
+// Move agent schema (accepts {x, y} directly)
+export const moveAgentSchema = coordinateSchema;
 
 // Update agent schema
 export const updateAgentSchema = z.object({

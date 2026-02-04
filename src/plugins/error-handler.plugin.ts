@@ -94,7 +94,7 @@ export const errorHandlerPlugin: FastifyPluginAsync = async (fastify) => {
       statusCode = 400;
       response.error.code = 'VALIDATION_ERROR';
       response.error.message = 'Validation failed';
-      response.error.details = (error as any).errors?.map((e: any) => ({
+      response.error.details = error.issues?.map((e) => ({
         path: e.path.join('.'),
         message: e.message,
       })) || error.message;
