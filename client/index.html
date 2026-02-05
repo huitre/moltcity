@@ -1328,6 +1328,152 @@
       #run-for-mayor-modal button {
         flex: 1;
       }
+
+      /* Leaderboard Styles */
+      #leaderboard-panel {
+        display: none;
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        width: 380px;
+        max-height: 500px;
+        background: rgba(26, 26, 46, 0.95);
+        border: 1px solid #4a4a6a;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        overflow: hidden;
+      }
+
+      .leaderboard-header {
+        padding: 16px;
+        border-bottom: 1px solid #4a4a6a;
+      }
+
+      .leaderboard-header h3 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        color: #e0e0e0;
+      }
+
+      .leaderboard-tabs {
+        display: flex;
+        gap: 8px;
+      }
+
+      .lb-tab {
+        flex: 1;
+        padding: 8px 12px;
+        background: #2a2a4e;
+        border: 1px solid #4a4a6a;
+        border-radius: 6px;
+        color: #888;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .lb-tab:hover {
+        background: #3a3a5e;
+        color: #e0e0e0;
+      }
+
+      .lb-tab.active {
+        background: #7c7cff;
+        border-color: #7c7cff;
+        color: white;
+      }
+
+      .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .leaderboard-table th,
+      .leaderboard-table td {
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 13px;
+      }
+
+      .leaderboard-table th {
+        background: #2a2a4e;
+        color: #888;
+        font-weight: 500;
+        border-bottom: 1px solid #4a4a6a;
+      }
+
+      .leaderboard-table td {
+        color: #e0e0e0;
+        border-bottom: 1px solid #3a3a5a;
+      }
+
+      .leaderboard-table tr:hover td {
+        background: rgba(124, 124, 255, 0.1);
+      }
+
+      .leaderboard-table tr.current-user td {
+        background: rgba(124, 124, 255, 0.2);
+      }
+
+      .leaderboard-table .rank {
+        width: 30px;
+        color: #7c7cff;
+        font-weight: 600;
+      }
+
+      .leaderboard-table .name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .leaderboard-table .avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+      }
+
+      .leaderboard-table .avatar-placeholder {
+        font-size: 18px;
+      }
+
+      .leaderboard-table .net-worth {
+        color: #4ade80;
+        font-family: monospace;
+      }
+
+      .leaderboard-table .buildings,
+      .leaderboard-table .population {
+        text-align: center;
+        color: #888;
+      }
+
+      .leaderboard-footer {
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        background: #2a2a4e;
+        border-top: 1px solid #4a4a6a;
+        font-size: 11px;
+        color: #888;
+      }
+
+      #leaderboard-content .loading,
+      #leaderboard-content .error {
+        padding: 40px;
+        text-align: center;
+        color: #888;
+      }
+
+      #btn-leaderboard {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+      }
+
+      #btn-leaderboard:hover {
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      }
     </style>
   </head>
   <body>
@@ -1348,6 +1494,13 @@
       <h3>Activity Feed</h3>
       <div id="activity-list">
         <!-- Activities loaded dynamically -->
+      </div>
+    </div>
+
+    <!-- Leaderboard Panel -->
+    <div id="leaderboard-panel">
+      <div id="leaderboard-content">
+        <!-- Leaderboard loaded dynamically -->
       </div>
     </div>
 
@@ -1589,6 +1742,7 @@
           <span class="user-name" id="user-name-display">User</span>
           <button class="logout-btn" id="btn-logout">Logout</button>
         </div>
+        <button id="btn-leaderboard">🏆 Leaderboard</button>
         <button id="btn-wallet" class="wallet">Connect Wallet</button>
         <button id="btn-start" class="success">Start Sim</button>
         <button id="btn-stop">Stop Sim</button>

@@ -18,6 +18,7 @@ import { spritesController } from './sprites.controller.js';
 import { paymentsController } from './payments.controller.js';
 import { activityController } from './activity.controller.js';
 import { electionController } from './election.controller.js';
+import { leaderboardController } from './leaderboard.controller.js';
 
 export async function registerControllers(fastify: FastifyInstance): Promise<void> {
   // Register all controllers
@@ -36,6 +37,7 @@ export async function registerControllers(fastify: FastifyInstance): Promise<voi
   await fastify.register(paymentsController);
   await fastify.register(activityController);
   await fastify.register(electionController);
+  await fastify.register(leaderboardController);
 }
 
 // Export individual controllers for testing
@@ -55,4 +57,5 @@ export {
   paymentsController,
   activityController,
   electionController,
+  leaderboardController,
 };

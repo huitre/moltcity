@@ -11,6 +11,7 @@ import { loadSprites } from './sprites.js';
 import { setupAuthUI, checkAuth, setOnAuthSuccess } from './ui/auth.js';
 import { loadActivities, addActivity } from './ui/activity.js';
 import { loadElectionStatus, setupElectionUI } from './ui/election.js';
+import { setupLeaderboard } from './ui/leaderboard.js';
 
 let appInitialized = false;
 
@@ -58,6 +59,7 @@ async function initializeApp() {
     await loadActivities();
     await loadElectionStatus();
     setupElectionUI();
+    setupLeaderboard();
 
     // Setup build menu
     setupBuildMenu();
