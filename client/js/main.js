@@ -14,8 +14,8 @@ import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 
 let appInitialized = false;
 
-// Check for spectator mode
-const isSpectatorMode = new URLSearchParams(window.location.search).get("mode") === "spectator";
+// Check for spectator mode (either /spectate path or ?mode=spectator query param)
+const isSpectatorMode = window.location.pathname === '/spectate' || new URLSearchParams(window.location.search).get("mode") === "spectator";
 
 /**
  * Initialize the application
