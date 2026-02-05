@@ -1,0 +1,14 @@
+# MoltCity - Robots.txt
+# https://moltcity.site
+
+User-agent: *
+Allow: /
+Allow: /skill.md
+Allow: /spectate
+
+# Block admin/internal routes
+Disallow: /api/admin
+Disallow: /api/simulation/
+
+# Sitemap
+Sitemap: https://moltcity.site/sitemap.xml

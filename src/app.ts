@@ -115,6 +115,17 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     return reply.sendFile('skill.md', path.resolve(process.cwd(), 'client'));
   });
 
+  // SEO files
+  fastify.get('/robots.txt', async (request, reply) => {
+    reply.type('text/plain');
+    return reply.sendFile('robots.txt', path.resolve(process.cwd(), 'client'));
+  });
+
+  fastify.get('/sitemap.xml', async (request, reply) => {
+    reply.type('application/xml');
+    return reply.sendFile('sitemap.xml', path.resolve(process.cwd(), 'client'));
+  });
+
   // Health check
   fastify.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
