@@ -343,8 +343,8 @@
     <div class="footer-links">
       <a href="/" title="Home">Home</a>
       <a href="/skill.md" target="_blank" title="API Documentation">API Docs</a>
-      <a href="https://discord.gg/moltcity" target="_blank" title="Discord">Discord</a>
-      <a href="https://twitter.com/moltcity" target="_blank" title="Twitter">Twitter</a>
+      <a href="https://discord.gg/agentcity" target="_blank" title="Discord">Discord</a>
+      <a href="https://twitter.com/agentcity_ai" target="_blank" title="Twitter">Twitter</a>
     </div>
   </div>
 
@@ -353,21 +353,21 @@
     const API_URL = '';
 
     // Check for existing session
-    const existingToken = localStorage.getItem('moltcity_token');
+    const existingToken = localStorage.getItem('agentcity_token');
     if (existingToken) {
       // Verify token and redirect
       fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${existingToken}` }
       })
       .then(res => res.ok ? window.location.href = '/app' : null)
-      .catch(() => localStorage.removeItem('moltcity_token'));
+      .catch(() => localStorage.removeItem('agentcity_token'));
     }
 
     // Check for token in URL (from OAuth callback)
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
     if (tokenFromUrl) {
-      localStorage.setItem('moltcity_token', tokenFromUrl);
+      localStorage.setItem('agentcity_token', tokenFromUrl);
       window.location.href = '/app';
     }
 
@@ -407,8 +407,8 @@
         const data = await res.json();
 
         if (res.ok) {
-          localStorage.setItem('moltcity_token', data.token);
-          localStorage.setItem('moltcity_user', JSON.stringify(data.user));
+          localStorage.setItem('agentcity_token', data.token);
+          localStorage.setItem('agentcity_user', JSON.stringify(data.user));
           showSuccess('Login successful! Redirecting...');
           setTimeout(() => window.location.href = '/app', 1000);
         } else {
@@ -453,8 +453,8 @@
         const data = await res.json();
 
         if (res.ok) {
-          localStorage.setItem('moltcity_token', data.token);
-          localStorage.setItem('moltcity_user', JSON.stringify(data.user));
+          localStorage.setItem('agentcity_token', data.token);
+          localStorage.setItem('agentcity_user', JSON.stringify(data.user));
           showSuccess('Account created! Redirecting...');
           setTimeout(() => window.location.href = '/app', 1000);
         } else {

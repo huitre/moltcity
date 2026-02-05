@@ -39,7 +39,7 @@ export async function checkAuth() {
       }
       return true;
     } else {
-      localStorage.removeItem("moltcity_token");
+      localStorage.removeItem("agentcity_token");
       state.setCurrentToken(null);
       showAuthModal();
       return false;
@@ -119,7 +119,7 @@ export async function handleLogout() {
     // Ignore logout errors
   }
 
-  localStorage.removeItem("moltcity_token");
+  localStorage.removeItem("agentcity_token");
   state.setCurrentToken(null);
   state.setCurrentUser(null);
   document.body.classList.remove("is-admin");
@@ -159,7 +159,7 @@ export async function handleLogin(e) {
     }
 
     state.setCurrentToken(data.token);
-    localStorage.setItem("moltcity_token", data.token);
+    localStorage.setItem("agentcity_token", data.token);
     await checkAuth();
   } catch (error) {
     showAuthError(error.message);
@@ -191,7 +191,7 @@ export async function handleSignup(e) {
     }
 
     state.setCurrentToken(data.token);
-    localStorage.setItem("moltcity_token", data.token);
+    localStorage.setItem("agentcity_token", data.token);
     await checkAuth();
   } catch (error) {
     showAuthError(error.message);
@@ -214,7 +214,7 @@ export function getCurrentAgentId() {
  */
 export function setupAuthUI() {
   // Check for stored token
-  const storedToken = localStorage.getItem("moltcity_token");
+  const storedToken = localStorage.getItem("agentcity_token");
   if (storedToken) {
     state.setCurrentToken(storedToken);
   }
@@ -224,7 +224,7 @@ export function setupAuthUI() {
   const tokenFromUrl = urlParams.get("token");
   if (tokenFromUrl) {
     state.setCurrentToken(tokenFromUrl);
-    localStorage.setItem("moltcity_token", tokenFromUrl);
+    localStorage.setItem("agentcity_token", tokenFromUrl);
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
