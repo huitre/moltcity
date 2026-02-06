@@ -14,3 +14,4 @@ export * from './auth.js';
 export * from './activity.js';
 export * from './election.js';
 export * from './population.js';
+export * from './crime.js';

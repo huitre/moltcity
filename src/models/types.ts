@@ -38,7 +38,20 @@ export type BuildingType =
   | 'city_hall'
   | 'police_station'
   | 'courthouse'
-  | 'jail';
+  | 'jail'
+  // New service buildings
+  | 'fire_station'
+  | 'school'
+  | 'high_school'
+  | 'university'
+  | 'hospital'
+  | 'garbage_depot'
+  // Landmarks
+  | 'stadium'
+  | 'theater'
+  | 'library'
+  | 'monument'
+  | 'amusement_park';
 
 export interface Building {
   id: string;
@@ -145,7 +158,15 @@ export interface Agent {
 }
 
 // === Vehicles ===
-export type VehicleType = 'car' | 'bus' | 'truck' | 'taxi';
+export type VehicleType = 
+  | 'car'          // Civilian commute
+  | 'bus'          // Public transit
+  | 'truck'        // Delivery/logistics
+  | 'taxi'         // For-hire transport
+  | 'police_car'   // Crime response
+  | 'ambulance'    // Health emergencies
+  | 'fire_truck'   // Fire response
+  | 'garbage_truck'; // Sanitation
 
 export interface Vehicle {
   id: string;
@@ -156,6 +177,7 @@ export interface Vehicle {
   path: Coordinate[];
   speed: number; // parcels per tick
   sprite: string;
+  assignedTo?: string; // For service vehicles: crimeId, fireId, etc.
 }
 
 // === City State ===
@@ -299,4 +321,140 @@ export interface SignLeaseRequest {
 export interface PayRentRequest {
   agentId: string;
   unitId: string;
+}
+
+// === Crime & Public Safety ===
+export type CrimeType = 
+  | 'theft'        // Steals from shops/homes (small loss)
+  | 'robbery'      // Armed theft (larger loss)
+  | 'vandalism'    // Damages buildings (repair cost)
+  | 'arson';       // Can start fires!
+
+export type CrimeStatus = 'active' | 'responding' | 'resolved' | 'unsolved';
+
+export interface Crime {
+  id: string;
+  type: CrimeType;
+  location: Coordinate;
+  parcelId: string;
+  victimId: string | null;      // Agent or building owner affected
+  buildingId: string | null;    // Target building
+  damageAmount: number;         // Economic damage
+  reportedAt: number;           // Tick when crime occurred
+  resolvedAt: number | null;    // Tick when resolved
+  respondingOfficerId: string | null;
+  status: CrimeStatus;
+}
+
+export type OfficerStatus = 'available' | 'patrolling' | 'responding' | 'arresting';
+
+export interface PoliceOfficer {
+  id: string;
+  stationId: string;           // Police station building id
+  name: string;
+  currentLocation: Coordinate;
+  status: OfficerStatus;
+  assignedCrimeId: string | null;
+  patrolRoute: Coordinate[];   // Patrol path
+}
+
+// === Fire System ===
+export type FireIntensity = 1 | 2 | 3 | 4 | 5;
+export type FireStatus = 'burning' | 'contained' | 'extinguished';
+
+export interface Fire {
+  id: string;
+  buildingId: string;
+  parcelId: string;
+  intensity: FireIntensity;
+  spreadChance: number;        // 0-100, affected by wind, materials
+  startedAt: number;           // Tick when fire started
+  containedAt: number | null;
+  extinguishedAt: number | null;
+  status: FireStatus;
+  cause: 'arson' | 'electrical' | 'accident' | 'spread';
+}
+
+export type FirefighterStatus = 'available' | 'responding' | 'fighting' | 'returning';
+
+export interface Firefighter {
+  id: string;
+  stationId: string;
+  name: string;
+  currentLocation: Coordinate;
+  status: FirefighterStatus;
+  assignedFireId: string | null;
+  truckId: string | null;      // Vehicle id
+}
+
+// === Education ===
+export type SchoolType = 'elementary' | 'high_school' | 'university';
+
+export interface School {
+  id: string;
+  buildingId: string;
+  schoolType: SchoolType;
+  capacity: number;
+  enrolledCount: number;
+  educationBonus: number;      // +education per day of attendance
+}
+
+// === Sanitation ===
+export interface GarbageDepot {
+  id: string;
+  buildingId: string;
+  truckCount: number;
+  collectionRoutes: Coordinate[][];
+}
+
+// === Agent Needs (Sims-style) ===
+export interface AgentNeeds {
+  hunger: number;      // 0-100, decays over time
+  energy: number;      // 0-100, restored by sleep
+  social: number;      // 0-100, restored by visiting public places
+  fun: number;         // 0-100, restored by parks/entertainment
+  comfort: number;     // 0-100, based on housing quality
+  safety: number;      // 0-100, based on crime in area
+}
+
+// === Life Events ===
+export type LifeEventType = 
+  | 'got_raise'
+  | 'got_fired'
+  | 'had_baby'
+  | 'got_married'
+  | 'won_lottery'
+  | 'got_robbed'
+  | 'car_broke_down'
+  | 'promotion'
+  | 'moved_in'
+  | 'moved_out';
+
+export interface LifeEvent {
+  id: string;
+  agentId: string;
+  type: LifeEventType;
+  description: string;
+  effectAmount: number;       // Economic or stat change
+  occurredAt: number;         // Tick
+}
+
+// === City Services Coverage ===
+export interface ServiceCoverage {
+  police: Map<string, number>;    // parcelId -> coverage level (0-100)
+  fire: Map<string, number>;
+  education: Map<string, number>;
+  sanitation: Map<string, number>;
+}
+
+// === Happiness ===
+export interface HappinessFactors {
+  employment: number;      // 0-100
+  housing: number;         // 0-100
+  safety: number;          // 0-100
+  services: number;        // 0-100
+  education: number;       // 0-100
+  entertainment: number;   // 0-100
+  commute: number;         // 0-100
+  overall: number;         // Weighted average
 }

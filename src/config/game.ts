@@ -32,6 +32,20 @@ export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   'power_plant',
   'water_tower',
   'jail',
+  // City services
+  'fire_station',
+  'police_station',
+  'school',
+  'high_school',
+  'university',
+  'hospital',
+  'garbage_depot',
+  // Landmarks
+  'stadium',
+  'theater',
+  'library',
+  'monument',
+  'amusement_park',
 ];
 
 // Infrastructure that mayor can build
@@ -87,6 +101,19 @@ export const BUILDING_COSTS: Record<string, number> = {
   city_hall: 5000,
   police_station: 1500,
   courthouse: 2500,
+  // City services (new)
+  fire_station: 2000,
+  school: 800,
+  high_school: 1500,
+  university: 5000,
+  hospital: 8000,
+  garbage_depot: 1000,
+  // Landmarks (new)
+  stadium: 10000,
+  theater: 5000,
+  library: 2000,
+  monument: 50000,
+  amusement_park: 15000,
 };
 
 // ============================================
@@ -278,3 +305,150 @@ export function getBuildingCost(type: BuildingType, floors: number = 1): number 
   // Other buildings use flat cost from config
   return BUILDING_COSTS[type] ?? 500;
 }
+
+// ============================================
+// Crime & Public Safety Configuration
+// ============================================
+export const CRIME = {
+  // Base crime rate per tick (affected by factors below)
+  BASE_RATE_PER_TICK: 0.0001, // ~0.01% chance per tick per parcel
+  
+  // Multipliers
+  UNEMPLOYMENT_MULTIPLIER: 2.0, // High unemployment = 2x crime
+  NO_POLICE_MULTIPLIER: 3.0,   // No police coverage = 3x crime
+  NIGHT_MULTIPLIER: 1.5,       // Night time = 1.5x crime
+  
+  // Damage amounts by crime type
+  DAMAGE: {
+    theft: { min: 10, max: 50 },
+    robbery: { min: 50, max: 200 },
+    vandalism: { min: 25, max: 100 },
+    arson: { min: 0, max: 0 }, // Arson damage is fire damage
+  },
+  
+  // Police response
+  RESPONSE_SPEED: 1.5, // parcels per tick
+  ARREST_CHANCE: 0.7, // 70% chance to catch criminal on arrival
+  PATROL_RADIUS: 5, // parcels from station
+  
+  // Crime spread (nearby tiles get higher crime)
+  SPREAD_RADIUS: 3,
+  SPREAD_INCREASE: 0.2, // +20% crime rate in adjacent tiles
+};
+
+// ============================================
+// Fire Configuration
+// ============================================
+export const FIRE = {
+  // Starting intensity
+  STARTING_INTENSITY: 1,
+  
+  // Intensity growth per tick (1-5 scale)
+  INTENSITY_GROWTH_RATE: 0.01, // Grows ~1 level per 100 ticks
+  
+  // Spread chance per intensity level (0-100)
+  BASE_SPREAD_CHANCE: 5,
+  SPREAD_CHANCE_PER_INTENSITY: 10,
+  
+  // Firefighter response
+  RESPONSE_SPEED: 2.0, // faster than police
+  SUPPRESS_RATE: 0.5, // -0.5 intensity per tick when fighting
+  
+  // Building damage
+  DAMAGE_PER_INTENSITY: 100, // $100 damage per intensity level per tick
+  TOTAL_DESTRUCTION_INTENSITY: 5, // At intensity 5, building is destroyed
+};
+
+// ============================================
+// City Services Configuration
+// ============================================
+export const CITY_SERVICES = {
+  // Coverage radius (in parcels)
+  COVERAGE_RADIUS: {
+    police_station: 15,
+    fire_station: 12,
+    school: 10,
+    high_school: 15,
+    university: 20,
+    hospital: 20,
+    garbage_depot: 15,
+  },
+  
+  // Staff per building
+  STAFF: {
+    police_station: 5, // officers
+    fire_station: 4, // firefighters (incl. truck crews)
+    garbage_depot: 2, // trucks
+  },
+  
+  // School configuration
+  SCHOOL_CAPACITY: {
+    school: 30,
+    high_school: 50,
+    university: 100,
+  },
+  EDUCATION_BONUS: {
+    school: 20,
+    high_school: 30,
+    university: 50,
+  },
+  
+  // Garbage accumulation
+  GARBAGE_PER_DAY: {
+    house: 2,
+    apartment: 5,
+    shop: 3,
+    office: 2,
+    factory: 10,
+  },
+  MAX_GARBAGE_LEVEL: 100,
+  GARBAGE_HAPPINESS_PENALTY: 0.5, // -0.5 happiness per garbage level
+};
+
+// ============================================
+// Happiness Configuration (SimCity-style)
+// ============================================
+export const HAPPINESS = {
+  // Weights for happiness factors (must sum to 1.0)
+  WEIGHTS: {
+    employment: 0.25,
+    housing: 0.20,
+    safety: 0.15,
+    services: 0.15,
+    education: 0.10,
+    entertainment: 0.10,
+    commute: 0.05,
+  },
+  
+  // Bonuses from nearby buildings
+  ADJACENCY_BONUS: {
+    park: { happiness: 10, landValue: 5 },
+    plaza: { happiness: 5, landValue: 3 },
+    library: { education: 5 },
+    theater: { entertainment: 10, landValue: 10 },
+    stadium: { entertainment: 20 },
+    amusement_park: { entertainment: 30, happiness: 10 },
+  },
+  
+  // Penalties
+  CRIME_PENALTY: 2, // -2 safety per active crime nearby
+  POLLUTION_RADIUS: 5, // factory pollution radius
+  POLLUTION_PENALTY: 10, // -10 happiness if within factory pollution
+};
+
+// ============================================
+// Landmark Configuration
+// ============================================
+export const LANDMARKS = {
+  // One-per-city buildings
+  UNIQUE: ['stadium', 'monument'] as const,
+  
+  // City-wide effects
+  EFFECTS: {
+    stadium: { happiness: 20, tourism: 50 },
+    theater: { landValue: 10, entertainment: 10 },
+    library: { education: 5 },
+    monument: { prestige: 10, tourism: 100 },
+    amusement_park: { happiness: 30, tourism: 80 },
+  },
+};
