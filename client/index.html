@@ -1475,6 +1475,249 @@
       #btn-leaderboard:hover {
         box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
       }
+
+      /* ============================================
+         TOOLBAR - Right Side Icon Bar
+         ============================================ */
+      #toolbar {
+        position: fixed;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 200;
+      }
+
+      .toolbar-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(26, 26, 46, 0.95);
+        border: 1px solid rgba(124, 124, 255, 0.3);
+        color: #e0e0e0;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .toolbar-btn:hover {
+        background: rgba(42, 42, 78, 0.95);
+        border-color: rgba(124, 124, 255, 0.6);
+        transform: scale(1.05);
+      }
+
+      .toolbar-btn.active {
+        background: linear-gradient(135deg, #7c7cff, #5a5aee);
+        border-color: #7c7cff;
+        box-shadow: 0 0 20px rgba(124, 124, 255, 0.4);
+      }
+
+      .toolbar-btn .badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        background: #ff6b6b;
+        border-radius: 9px;
+        font-size: 10px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+
+      .toolbar-btn .tooltip-text {
+        position: absolute;
+        right: 60px;
+        background: rgba(26, 26, 46, 0.95);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        border: 1px solid rgba(124, 124, 255, 0.3);
+      }
+
+      .toolbar-btn:hover .tooltip-text {
+        opacity: 1;
+      }
+
+      /* Toolbar Popup Panels */
+      .toolbar-popup {
+        position: fixed;
+        right: 80px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 320px;
+        max-height: 500px;
+        background: rgba(20, 20, 35, 0.98);
+        border: 1px solid rgba(124, 124, 255, 0.4);
+        border-radius: 12px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        z-index: 190;
+        display: none;
+        overflow: hidden;
+        animation: popupSlideIn 0.2s ease-out;
+      }
+
+      @keyframes popupSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-50%) translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(-50%) translateX(0);
+        }
+      }
+
+      .toolbar-popup.visible {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .popup-header {
+        padding: 16px;
+        border-bottom: 1px solid rgba(124, 124, 255, 0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .popup-header h3 {
+        margin: 0;
+        color: #7c7cff;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .popup-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .popup-close:hover {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+      }
+
+      .popup-content {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      /* Activity Popup specific */
+      #popup-activity .activity-item {
+        padding: 10px 12px;
+        margin: 6px 0;
+        background: rgba(42, 42, 78, 0.6);
+        border-radius: 8px;
+        font-size: 12px;
+        border-left: 3px solid #4ecdc4;
+      }
+
+      /* Stats Popup specific */
+      #popup-stats .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      #popup-stats .stat-card {
+        background: rgba(42, 42, 78, 0.6);
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+      }
+
+      #popup-stats .stat-card .value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #4ecdc4;
+        font-family: 'IBM Plex Mono', monospace;
+      }
+
+      #popup-stats .stat-card .label {
+        font-size: 11px;
+        color: #888;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      /* Services Popup specific */
+      #popup-services .service-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      #popup-services .service-row:last-child {
+        border-bottom: none;
+      }
+
+      #popup-services .service-icon {
+        font-size: 20px;
+        margin-right: 10px;
+      }
+
+      #popup-services .service-name {
+        flex: 1;
+        color: #e0e0e0;
+      }
+
+      #popup-services .service-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+      }
+
+      #popup-services .service-status.good {
+        background: rgba(78, 205, 196, 0.2);
+        color: #4ecdc4;
+      }
+
+      #popup-services .service-status.warning {
+        background: rgba(247, 147, 26, 0.2);
+        color: #f7931a;
+      }
+
+      #popup-services .service-status.bad {
+        background: rgba(255, 107, 107, 0.2);
+        color: #ff6b6b;
+      }
+
+      /* Hide old activity panel by default (replaced by toolbar popup) */
+      #activity-feed-panel {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
@@ -1482,6 +1725,231 @@
     <div id="spectator-banner">
       Spectator Mode - View Only
       <a href="/login">Sign in to interact</a>
+    </div>
+
+    <!-- ============================================
+         TOOLBAR - Right Side Icon Bar
+         ============================================ -->
+    <div id="toolbar">
+      <button class="toolbar-btn" id="tb-activity" data-popup="popup-activity">
+        📜
+        <span class="badge" id="activity-badge" style="display: none">0</span>
+        <span class="tooltip-text">Activity Feed</span>
+      </button>
+      <button class="toolbar-btn" id="tb-leaderboard" data-popup="popup-leaderboard">
+        🏆
+        <span class="tooltip-text">Leaderboard</span>
+      </button>
+      <button class="toolbar-btn" id="tb-election" data-popup="popup-election">
+        🗳️
+        <span class="tooltip-text">Mayor Election</span>
+      </button>
+      <button class="toolbar-btn" id="tb-services" data-popup="popup-services">
+        🏛️
+        <span class="tooltip-text">City Services</span>
+      </button>
+      <button class="toolbar-btn" id="tb-stats" data-popup="popup-stats">
+        📊
+        <span class="tooltip-text">City Stats</span>
+      </button>
+      <button class="toolbar-btn" id="tb-help" data-popup="popup-help">
+        ❓
+        <span class="tooltip-text">Help & API</span>
+      </button>
+    </div>
+
+    <!-- ============================================
+         TOOLBAR POPUPS
+         ============================================ -->
+    
+    <!-- Activity Feed Popup -->
+    <div class="toolbar-popup" id="popup-activity">
+      <div class="popup-header">
+        <h3>📜 Activity Feed</h3>
+        <button class="popup-close" onclick="closePopup('popup-activity')">&times;</button>
+      </div>
+      <div class="popup-content" id="toolbar-activity-list">
+        <div style="color: #666; text-align: center; padding: 20px;">Loading activities...</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Popup -->
+    <div class="toolbar-popup" id="popup-leaderboard">
+      <div class="popup-header">
+        <h3>🏆 Leaderboard</h3>
+        <button class="popup-close" onclick="closePopup('popup-leaderboard')">&times;</button>
+      </div>
+      <div class="popup-content" id="toolbar-leaderboard-content">
+        <div style="color: #666; text-align: center; padding: 20px;">Loading leaderboard...</div>
+      </div>
+    </div>
+
+    <!-- Election Popup -->
+    <div class="toolbar-popup" id="popup-election">
+      <div class="popup-header">
+        <h3>🗳️ Mayor Election</h3>
+        <button class="popup-close" onclick="closePopup('popup-election')">&times;</button>
+      </div>
+      <div class="popup-content" id="toolbar-election-content">
+        <div id="toolbar-mayor-info" style="margin-bottom: 16px; padding: 12px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 24px;">👑</span>
+            <div>
+              <div style="color: #ffd700; font-size: 11px; text-transform: uppercase;">Current Mayor</div>
+              <div style="color: #e0e0e0; font-weight: bold;" id="toolbar-mayor-name">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div id="toolbar-election-status" style="text-align: center; margin-bottom: 16px;">
+          <span class="phase-badge nomination" id="toolbar-election-badge">-</span>
+          <div style="color: #888; font-size: 12px; margin-top: 8px;" id="toolbar-election-time">-</div>
+        </div>
+        <div id="toolbar-candidates" style="max-height: 200px; overflow-y: auto;">
+          <!-- Candidates loaded dynamically -->
+        </div>
+        <button class="run-btn" id="toolbar-run-btn" style="width: 100%; margin-top: 12px; display: none;">
+          Run for Mayor
+        </button>
+      </div>
+    </div>
+
+    <!-- City Services Popup -->
+    <div class="toolbar-popup" id="popup-services">
+      <div class="popup-header">
+        <h3>🏛️ City Services</h3>
+        <button class="popup-close" onclick="closePopup('popup-services')">&times;</button>
+      </div>
+      <div class="popup-content">
+        <div class="service-row">
+          <span class="service-icon">🚔</span>
+          <span class="service-name">Police</span>
+          <span class="service-status" id="svc-police">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">🚒</span>
+          <span class="service-name">Fire Dept</span>
+          <span class="service-status" id="svc-fire">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">🎓</span>
+          <span class="service-name">Education</span>
+          <span class="service-status" id="svc-education">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">🏥</span>
+          <span class="service-name">Health</span>
+          <span class="service-status" id="svc-health">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">🗑️</span>
+          <span class="service-name">Sanitation</span>
+          <span class="service-status" id="svc-sanitation">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">⚡</span>
+          <span class="service-name">Power Grid</span>
+          <span class="service-status" id="svc-power">-</span>
+        </div>
+        <div class="service-row">
+          <span class="service-icon">💧</span>
+          <span class="service-name">Water</span>
+          <span class="service-status" id="svc-water">-</span>
+        </div>
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #888; font-size: 12px;">Overall Happiness</span>
+            <span style="color: #4ecdc4; font-weight: bold; font-size: 18px;" id="svc-happiness">-%</span>
+          </div>
+          <div style="height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; margin-top: 8px; overflow: hidden;">
+            <div id="svc-happiness-bar" style="height: 100%; background: linear-gradient(90deg, #ff6b6b, #ffd700, #4ecdc4); width: 0%; transition: width 0.5s;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- City Stats Popup -->
+    <div class="toolbar-popup" id="popup-stats">
+      <div class="popup-header">
+        <h3>📊 City Statistics</h3>
+        <button class="popup-close" onclick="closePopup('popup-stats')">&times;</button>
+      </div>
+      <div class="popup-content">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="value" id="stat-population">0</div>
+            <div class="label">Population</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-employment">0%</div>
+            <div class="label">Employment</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-buildings">0</div>
+            <div class="label">Buildings</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-players">0</div>
+            <div class="label">Players</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-crimes">0</div>
+            <div class="label">Active Crimes</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-fires">0</div>
+            <div class="label">Active Fires</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px; padding: 12px; background: rgba(42, 42, 78, 0.6); border-radius: 8px;">
+          <div style="color: #888; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">Economy</div>
+          <div style="display: flex; justify-content: space-between; margin: 6px 0;">
+            <span style="color: #888;">Total Jobs</span>
+            <span style="color: #4ecdc4;" id="stat-jobs">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin: 6px 0;">
+            <span style="color: #888;">Avg Salary</span>
+            <span style="color: #4ecdc4;" id="stat-salary">$0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin: 6px 0;">
+            <span style="color: #888;">City Treasury</span>
+            <span style="color: #ffd700;" id="stat-treasury">$0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Popup -->
+    <div class="toolbar-popup" id="popup-help">
+      <div class="popup-header">
+        <h3>❓ Help & Resources</h3>
+        <button class="popup-close" onclick="closePopup('popup-help')">&times;</button>
+      </div>
+      <div class="popup-content">
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: bold; color: #e0e0e0; margin-bottom: 8px;">🎮 Controls</div>
+          <div style="font-size: 12px; color: #888; line-height: 1.8;">
+            • <strong>Click</strong> - Select parcel/building<br>
+            • <strong>Drag</strong> - Pan camera<br>
+            • <strong>Scroll</strong> - Zoom in/out<br>
+            • <strong>Build Menu</strong> - Bottom bar
+          </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: bold; color: #e0e0e0; margin-bottom: 8px;">🏗️ Getting Started</div>
+          <div style="font-size: 12px; color: #888; line-height: 1.8;">
+            1. First 5 parcels are FREE<br>
+            2. Build a house ($250)<br>
+            3. Add a shop for income ($500)<br>
+            4. Watch residents move in!
+          </div>
+        </div>
+        <a href="/skill.md" target="_blank" style="display: block; padding: 12px; background: linear-gradient(135deg, #7c7cff, #5a5aee); border-radius: 8px; color: white; text-decoration: none; text-align: center; font-weight: bold; margin-bottom: 12px;">
+          📚 API Documentation
+        </a>
+        <a href="/" target="_blank" style="display: block; padding: 12px; background: rgba(42, 42, 78, 0.8); border: 1px solid rgba(124, 124, 255, 0.3); border-radius: 8px; color: #e0e0e0; text-decoration: none; text-align: center;">
+          🏠 Landing Page
+        </a>
+      </div>
     </div>
 
     <!-- Mayor Banner -->
@@ -1743,11 +2211,10 @@
           <span class="user-name" id="user-name-display">User</span>
           <button class="logout-btn" id="btn-logout">Logout</button>
         </div>
-        <button id="btn-leaderboard">🏆 Leaderboard</button>
         <button id="btn-wallet" class="wallet">Connect Wallet</button>
         <button id="btn-start" class="success">Start Sim</button>
         <button id="btn-stop">Stop Sim</button>
-        <button id="btn-init">Init City</button>
+        <button id="btn-init" style="display: none;">Init City</button>
       </div>
     </div>
 
@@ -1915,6 +2382,270 @@
         const panel = document.getElementById("building-info-panel");
         if (panel) panel.style.display = "none";
       }
+
+      // ============================================
+      // TOOLBAR FUNCTIONALITY
+      // ============================================
+      
+      let activePopup = null;
+      
+      function closePopup(popupId) {
+        const popup = document.getElementById(popupId);
+        if (popup) {
+          popup.classList.remove('visible');
+          const btn = document.querySelector(`[data-popup="${popupId}"]`);
+          if (btn) btn.classList.remove('active');
+          if (activePopup === popupId) activePopup = null;
+        }
+      }
+      
+      function openPopup(popupId) {
+        // Close any open popup first
+        if (activePopup && activePopup !== popupId) {
+          closePopup(activePopup);
+        }
+        
+        const popup = document.getElementById(popupId);
+        const btn = document.querySelector(`[data-popup="${popupId}"]`);
+        
+        if (popup.classList.contains('visible')) {
+          closePopup(popupId);
+        } else {
+          popup.classList.add('visible');
+          if (btn) btn.classList.add('active');
+          activePopup = popupId;
+          
+          // Load data for specific popups
+          if (popupId === 'popup-leaderboard') loadToolbarLeaderboard();
+          if (popupId === 'popup-election') loadToolbarElection();
+          if (popupId === 'popup-activity') loadToolbarActivity();
+        }
+      }
+      
+      // Toolbar button click handlers
+      document.querySelectorAll('.toolbar-btn[data-popup]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const popupId = btn.getAttribute('data-popup');
+          openPopup(popupId);
+        });
+      });
+      
+      // Close popups when clicking outside
+      document.addEventListener('click', (e) => {
+        if (activePopup && 
+            !e.target.closest('.toolbar-popup') && 
+            !e.target.closest('.toolbar-btn')) {
+          closePopup(activePopup);
+        }
+      });
+      
+      // Load Leaderboard data
+      async function loadToolbarLeaderboard() {
+        const container = document.getElementById('toolbar-leaderboard-content');
+        try {
+          const res = await fetch('/api/leaderboard?sort=netWorth&limit=10');
+          if (!res.ok) throw new Error('Failed to load');
+          const data = await res.json();
+          
+          if (!data.leaderboard || data.leaderboard.length === 0) {
+            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No players yet</div>';
+            return;
+          }
+          
+          let html = '<div style="max-height: 300px; overflow-y: auto;">';
+          data.leaderboard.forEach((player, i) => {
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+            html += `
+              <div style="display: flex; align-items: center; padding: 10px; background: rgba(42, 42, 78, 0.6); border-radius: 8px; margin: 6px 0;">
+                <span style="width: 32px; font-size: ${i < 3 ? '18px' : '12px'}; text-align: center;">${medal}</span>
+                <span style="flex: 1; color: #e0e0e0; font-weight: ${i < 3 ? 'bold' : 'normal'};">${player.name || 'Anonymous'}</span>
+                <span style="color: #4ecdc4; font-family: monospace;">$${(player.netWorth || 0).toLocaleString()}</span>
+              </div>
+            `;
+          });
+          html += '</div>';
+          container.innerHTML = html;
+        } catch (err) {
+          container.innerHTML = '<div style="color: #ff6b6b; text-align: center; padding: 20px;">Failed to load leaderboard</div>';
+        }
+      }
+      
+      // Load Election data
+      async function loadToolbarElection() {
+        try {
+          const token = localStorage.getItem('authToken');
+          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+          const res = await fetch('/api/election', { headers });
+          
+          if (!res.ok) throw new Error('Failed to load');
+          const data = await res.json();
+          
+          // Update mayor name
+          const mayorName = document.getElementById('toolbar-mayor-name');
+          mayorName.textContent = data.currentMayor?.name || 'No Mayor';
+          
+          // Update phase badge
+          const badge = document.getElementById('toolbar-election-badge');
+          badge.textContent = data.phase || 'No Election';
+          badge.className = 'phase-badge ' + (data.phase || 'nomination');
+          
+          // Update time remaining
+          const timeEl = document.getElementById('toolbar-election-time');
+          if (data.timeRemaining) {
+            const hours = Math.floor(data.timeRemaining / 3600000);
+            const mins = Math.floor((data.timeRemaining % 3600000) / 60000);
+            timeEl.textContent = `${hours}h ${mins}m remaining`;
+          } else {
+            timeEl.textContent = '-';
+          }
+          
+          // Update candidates
+          const candidatesEl = document.getElementById('toolbar-candidates');
+          if (data.candidates && data.candidates.length > 0) {
+            let html = '';
+            data.candidates.forEach(c => {
+              html += `
+                <div style="padding: 10px; background: rgba(42, 42, 78, 0.6); border-radius: 8px; margin: 6px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #e0e0e0; font-weight: bold;">${c.userName || 'Anonymous'}</span>
+                    <span style="color: #4ecdc4;">${c.voteCount || 0} votes</span>
+                  </div>
+                  ${c.platform ? `<div style="color: #888; font-size: 11px; margin-top: 4px;">${c.platform}</div>` : ''}
+                </div>
+              `;
+            });
+            candidatesEl.innerHTML = html;
+          } else {
+            candidatesEl.innerHTML = '<div style="color: #666; text-align: center; padding: 16px;">No candidates yet</div>';
+          }
+          
+          // Show/hide run button
+          const runBtn = document.getElementById('toolbar-run-btn');
+          if (data.phase === 'nomination' && token) {
+            runBtn.style.display = 'block';
+            runBtn.onclick = () => {
+              closePopup('popup-election');
+              document.getElementById('run-for-mayor-modal').style.display = 'block';
+              document.getElementById('modal-overlay').style.display = 'block';
+            };
+          } else {
+            runBtn.style.display = 'none';
+          }
+        } catch (err) {
+          console.error('Failed to load election:', err);
+        }
+      }
+      
+      // Load Activity data
+      async function loadToolbarActivity() {
+        const container = document.getElementById('toolbar-activity-list');
+        try {
+          const res = await fetch('/api/activity?limit=20');
+          if (!res.ok) throw new Error('Failed to load');
+          const data = await res.json();
+          
+          if (!data.activities || data.activities.length === 0) {
+            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No recent activity</div>';
+            return;
+          }
+          
+          let html = '';
+          data.activities.forEach(activity => {
+            const time = new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const colors = {
+              parcel_purchase: '#4ecdc4',
+              building_created: '#7c7cff',
+              building_demolished: '#ff6b6b',
+              election_started: '#f7931a',
+              candidate_registered: '#ff6b6b',
+              mayor_elected: '#ffd700',
+              crime_reported: '#ff6b6b',
+              fire_started: '#ff6b6b'
+            };
+            const color = colors[activity.type] || '#4ecdc4';
+            html += `
+              <div class="activity-item" style="border-left-color: ${color};">
+                <div class="activity-message">${activity.message || activity.type}</div>
+                <div style="color: #666; font-size: 10px; margin-top: 4px;">${time}</div>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        } catch (err) {
+          container.innerHTML = '<div style="color: #ff6b6b; text-align: center; padding: 20px;">Failed to load activity</div>';
+        }
+      }
+      
+      // Update city services display
+      function updateServicesPopup(data) {
+        const setStatus = (id, count, threshold) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (count >= threshold) {
+            el.textContent = count + ' active';
+            el.className = 'service-status good';
+          } else if (count > 0) {
+            el.textContent = count + ' active';
+            el.className = 'service-status warning';
+          } else {
+            el.textContent = 'None';
+            el.className = 'service-status bad';
+          }
+        };
+        
+        // These will be updated when we wire up the actual data
+        // For now, show placeholder based on building counts
+        setStatus('svc-police', data?.policeStations || 0, 1);
+        setStatus('svc-fire', data?.fireStations || 0, 1);
+        setStatus('svc-education', data?.schools || 0, 1);
+        setStatus('svc-health', data?.hospitals || 0, 1);
+        setStatus('svc-sanitation', data?.garbageDepots || 0, 1);
+        
+        // Power and water from existing stats
+        const powerEl = document.getElementById('svc-power');
+        const waterEl = document.getElementById('svc-water');
+        if (powerEl && data?.powerCapacity !== undefined) {
+          const pct = data.powerDemand > 0 ? Math.round((data.powerCapacity / data.powerDemand) * 100) : 100;
+          powerEl.textContent = pct >= 100 ? 'OK' : pct + '%';
+          powerEl.className = 'service-status ' + (pct >= 100 ? 'good' : pct >= 50 ? 'warning' : 'bad');
+        }
+        if (waterEl) {
+          waterEl.textContent = 'OK';
+          waterEl.className = 'service-status good';
+        }
+        
+        // Happiness
+        const happinessEl = document.getElementById('svc-happiness');
+        const happinessBar = document.getElementById('svc-happiness-bar');
+        const happiness = data?.happiness || 75;
+        if (happinessEl) happinessEl.textContent = happiness + '%';
+        if (happinessBar) happinessBar.style.width = happiness + '%';
+      }
+      
+      // Update stats popup
+      function updateStatsPopup(data) {
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val;
+        };
+        
+        setVal('stat-population', data?.population?.total || 0);
+        setVal('stat-employment', (data?.population?.employmentRate || 0).toFixed(0) + '%');
+        setVal('stat-buildings', data?.buildingCount || 0);
+        setVal('stat-players', data?.agentCount || 0);
+        setVal('stat-crimes', data?.activeCrimes || 0);
+        setVal('stat-fires', data?.activeFires || 0);
+        setVal('stat-jobs', data?.employment?.totalJobs || 0);
+        setVal('stat-salary', '$' + (data?.employment?.averageSalary || 0).toFixed(0));
+        setVal('stat-treasury', '$' + (data?.city?.stats?.treasury || 0).toLocaleString());
+      }
+      
+      // Hook into WebSocket messages to update toolbar data
+      // This will be called from main.js when data is received
+      window.updateToolbarData = function(data) {
+        updateStatsPopup(data);
+        updateServicesPopup(data);
+      };
     </script>
   </body>
 </html>
