@@ -682,7 +682,7 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
       if (path === '/api/buildings/quote' && method === 'GET') {
         const type = url.searchParams.get('type') || 'house';
         const floors = parseInt(url.searchParams.get('floors') || '1');
-        const clampedFloors = Math.min(Math.max(floors, 1), 5);
+        const clampedFloors = Math.min(Math.max(floors, 1), 10);
 
         const FLOOR_COST = 0.0001; // ETH per floor
         let cost = 0;
@@ -756,8 +756,8 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           }
         }
 
-        // Determine number of floors (default 1, max 5 for offices)
-        let buildingFloors = Math.min(Math.max(parseInt(floors) || 1, 1), 5);
+        // Determine number of floors (default 1, max 10)
+        let buildingFloors = Math.min(Math.max(parseInt(floors) || 1, 1), 10);
 
         // Apply zoning max floors restriction
         if (parcel.zoning && ZONING_RESTRICTIONS[parcel.zoning]) {

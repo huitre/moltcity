@@ -67,11 +67,11 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
 export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[]; maxFloors: number }> = {
   residential: {
     allowedTypes: ['house', 'apartment'],
-    maxFloors: 3,
+    maxFloors: 10,
   },
   commercial: {
     allowedTypes: ['shop', 'office'],
-    maxFloors: 5,
+    maxFloors: 10,
   },
   industrial: {
     allowedTypes: ['factory'],
@@ -100,13 +100,20 @@ export const HOUSING = {
     1: 250,
     2: 600,
     3: 900,
+    4: 1200,
+    5: 1600,
+    6: 2000,
+    7: 2500,
+    8: 3000,
+    9: 3600,
+    10: 4200,
   } as Record<number, number>,
   // Upgrade costs are the same as construction
   UPGRADE_COST_MULTIPLIER: 1,
-  // Flats per floor
-  FLATS_PER_FLOOR: 3,
-  // Max floors for houses
-  MAX_FLOORS: 3,
+  // Flats per floor (apartments)
+  FLATS_PER_FLOOR: 10,
+  // Max floors for apartments
+  MAX_FLOORS: 10,
 };
 
 // ============================================
