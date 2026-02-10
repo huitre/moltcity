@@ -39,7 +39,7 @@ export const idParamSchema = z.object({
 export const terrainTypeSchema = z.enum(['land', 'water', 'hill']);
 
 // Zoning types
-export const zoningTypeSchema = z.enum(['residential', 'commercial', 'industrial', 'municipal', 'park']);
+export const zoningTypeSchema = z.enum(['residential', 'commercial', 'industrial', 'municipal', 'park', 'suburban']);
 
 // Building types
 export const buildingTypeSchema = z.enum([

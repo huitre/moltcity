@@ -2,6 +2,9 @@
 // MOLTCITY - Main Entry Point
 // ============================================
 
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import { startServer } from './api/server.js';
 
 console.log(`

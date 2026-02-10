@@ -9,7 +9,7 @@ export interface Coordinate {
 }
 
 export type TerrainType = 'land' | 'water' | 'hill';
-export type ZoningType = 'residential' | 'commercial' | 'industrial' | 'municipal' | 'park';
+export type ZoningType = 'residential' | 'commercial' | 'industrial' | 'municipal' | 'park' | 'suburban';
 
 // === Parcel (Land Unit) ===
 export interface Parcel {

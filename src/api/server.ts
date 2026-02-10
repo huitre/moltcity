@@ -12,6 +12,7 @@ import { PaymentService } from '../services/payments.js';
 import { SpriteService } from '../services/sprites.js';
 import { AuthService } from '../services/auth.js';
 import type { BuildingType, ZoningType, RoadDirection, VehicleType, Coordinate } from '../models/types.js';
+import { ZONING_RESTRICTIONS } from '../config/game.js';
 
 // MIME types for static files
 const MIME_TYPES: Record<string, string> = {
@@ -746,8 +747,25 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           return;
         }
 
+        // Check zoning restrictions
+        if (parcel.zoning && ZONING_RESTRICTIONS[parcel.zoning]) {
+          const restrictions = ZONING_RESTRICTIONS[parcel.zoning];
+          if (restrictions.allowedTypes.length > 0 && !restrictions.allowedTypes.includes(type as BuildingType)) {
+            sendError(res, `Building type '${type}' is not allowed in ${parcel.zoning} zone. Allowed: ${restrictions.allowedTypes.join(', ')}`, 400);
+            return;
+          }
+        }
+
         // Determine number of floors (default 1, max 5 for offices)
         let buildingFloors = Math.min(Math.max(parseInt(floors) || 1, 1), 5);
+
+        // Apply zoning max floors restriction
+        if (parcel.zoning && ZONING_RESTRICTIONS[parcel.zoning]) {
+          const maxAllowed = ZONING_RESTRICTIONS[parcel.zoning].maxFloors;
+          if (buildingFloors > maxAllowed) {
+            buildingFloors = maxAllowed;
+          }
+        }
 
         // Calculate building cost
         // Multi-floor buildings are premium (not free)
@@ -1256,6 +1274,21 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
           return;
         } catch (e) {
           sendError(res, 'Skill documentation not found', 404);
+          return;
+        }
+      }
+
+      // Serve landing page
+      if (path === '/landing' || path === '/landing.html') {
+        const landingPath = new URL('../../client/landing.html', import.meta.url).pathname;
+        try {
+          const content = fs.readFileSync(landingPath, 'utf-8');
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(content);
+          return;
+        } catch (e) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Landing page not found');
           return;
         }
       }

@@ -61,6 +61,37 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
 ];
 
 // ============================================
+// Zoning Restrictions
+// ============================================
+// Defines which building types and max floors are allowed per zone
+export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[]; maxFloors: number }> = {
+  residential: {
+    allowedTypes: ['house', 'apartment'],
+    maxFloors: 3,
+  },
+  commercial: {
+    allowedTypes: ['shop', 'office'],
+    maxFloors: 5,
+  },
+  industrial: {
+    allowedTypes: ['factory'],
+    maxFloors: 2,
+  },
+  municipal: {
+    allowedTypes: [], // Mayor-only buildings, no user restrictions
+    maxFloors: 3,
+  },
+  park: {
+    allowedTypes: ['park', 'plaza'],
+    maxFloors: 1,
+  },
+  suburban: {
+    allowedTypes: ['house'], // Only small houses
+    maxFloors: 1, // Single floor only
+  },
+};
+
+// ============================================
 // Housing Configuration
 // ============================================
 export const HOUSING = {
