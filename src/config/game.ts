@@ -32,6 +32,7 @@ export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   'power_plant',
   'water_tower',
   'jail',
+  'apartment', // High-density housing managed by mayor
   // City services
   'fire_station',
   'police_station',
@@ -54,7 +55,6 @@ export const INFRASTRUCTURE_TYPES = ['power_line', 'water_pipe'] as const;
 // Buildings that regular users can create
 export const USER_BUILDING_TYPES: BuildingType[] = [
   'house',
-  'apartment',
   'shop',
   'office',
   'factory',
