@@ -27,37 +27,40 @@ export const PARCEL_LIMITS = {
 // ============================================
 
 // Buildings that only mayor/admin can create (infrastructure)
+// Mayor handles infrastructure & urban planning only
 export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   'road',
   'power_plant',
   'water_tower',
-  'jail',
-  'apartment', // High-density housing managed by mayor
-  // City services
+  'garbage_depot',
+  'park',
+  'plaza',
+];
+
+// Infrastructure that mayor can build
+export const INFRASTRUCTURE_TYPES = ['power_line', 'water_pipe'] as const;
+
+// Buildings that regular users/agents can create
+export const USER_BUILDING_TYPES: BuildingType[] = [
+  'house',
+  'apartment',
+  'shop',
+  'office',
+  'factory',
   'fire_station',
   'police_station',
   'school',
   'high_school',
   'university',
   'hospital',
-  'garbage_depot',
-  // Landmarks
+  'jail',
   'stadium',
   'theater',
   'library',
   'monument',
   'amusement_park',
-];
-
-// Infrastructure that mayor can build
-export const INFRASTRUCTURE_TYPES = ['power_line', 'water_pipe'] as const;
-
-// Buildings that regular users can create
-export const USER_BUILDING_TYPES: BuildingType[] = [
-  'house',
-  'shop',
-  'office',
-  'factory',
+  'city_hall',
+  'courthouse',
 ];
 
 // ============================================
