@@ -263,6 +263,12 @@ export class CityRepository {
       UPDATE city SET tick = ?, hour = ?, day = ?, year = ?
     `).run(tick, hour, day, year);
   }
+
+  updateTreasury(amount: number): void {
+    this.db.prepare(`
+      UPDATE city SET treasury = ?
+    `).run(amount);
+  }
 }
 
 export class ParcelRepository {

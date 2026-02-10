@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
 import { DatabaseManager } from '../models/database.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
-import { BUILDING_JOBS, TRAFFIC } from '../config/game.js';
+import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS } from '../config/game.js';
 
 // ============================================
 // Configuration
@@ -833,6 +833,90 @@ export class EmploymentSimulator {
 }
 
 // ============================================
+// Taxation Simulator
+// ============================================
+
+export class TaxationSimulator {
+  private lastProcessedDay: number = 0;
+
+  constructor(private db: DatabaseManager) {}
+
+  /**
+   * Process daily taxation - runs once per day at midnight
+   */
+  simulate(currentTick: number, time: CityTime): CityEvent[] {
+    const events: CityEvent[] = [];
+
+    // Only run once per day (at hour 0)
+    if (time.hour !== 0 || time.day === this.lastProcessedDay) {
+      return events;
+    }
+    this.lastProcessedDay = time.day;
+
+    console.log(`[Taxation] Processing daily taxes for day ${time.day}`);
+
+    const buildings = this.db.buildings.getAllBuildings();
+    const city = this.db.city.getCity();
+    let totalTaxCollected = 0;
+
+    for (const building of buildings) {
+      // Skip buildings under construction
+      if (building.constructionProgress < 100) continue;
+
+      // Skip infrastructure (owned by city)
+      if (['road', 'power_plant', 'water_tower', 'garbage_depot', 'park', 'plaza', 'power_line', 'water_pipe'].includes(building.type)) {
+        continue;
+      }
+
+      const owner = this.db.agents.findAgent(building.ownerId);
+      if (!owner) continue;
+
+      // Calculate daily fees
+      let totalFee = 0;
+
+      // Power fee (based on powerRequired)
+      const powerFee = Math.ceil((building.powerRequired / 1000) * INFRASTRUCTURE_FEES.POWER_RATE);
+      totalFee += powerFee;
+
+      // Water fee (based on waterRequired)
+      const waterFee = Math.ceil((building.waterRequired / 100) * INFRASTRUCTURE_FEES.WATER_RATE);
+      totalFee += waterFee;
+
+      // Garbage fee (based on building type)
+      const garbageFee = INFRASTRUCTURE_FEES.GARBAGE_FEE[building.type] || 1;
+      totalFee += garbageFee;
+
+      // Property tax (monthly, so divide by 30 for daily)
+      const buildingValue = BUILDING_COSTS[building.type] || 500;
+      const dailyPropertyTax = Math.ceil((buildingValue * INFRASTRUCTURE_FEES.PROPERTY_TAX_RATE / 100) / 30);
+      totalFee += dailyPropertyTax;
+
+      // Deduct from owner's wallet
+      if (owner.wallet.balance >= totalFee) {
+        const newBalance = owner.wallet.balance - totalFee;
+        this.db.agents.updateWalletBalance(owner.id, newBalance);
+        totalTaxCollected += totalFee;
+        
+        console.log(`[Taxation] ${owner.name} paid $${totalFee} for ${building.name} (power:$${powerFee} water:$${waterFee} garbage:$${garbageFee} tax:$${dailyPropertyTax})`);
+      } else {
+        // Owner can't afford - building becomes non-operational?
+        console.log(`[Taxation] ${owner.name} cannot afford $${totalFee} for ${building.name} (balance: $${owner.wallet.balance})`);
+        // TODO: Add debt system or building seizure
+      }
+    }
+
+    // Add to city treasury
+    if (totalTaxCollected > 0 && city) {
+      const newTreasury = city.stats.treasury + totalTaxCollected;
+      this.db.city.updateTreasury(newTreasury);
+      console.log(`[Taxation] City treasury received $${totalTaxCollected} (new total: $${newTreasury})`);
+    }
+
+    return events;
+  }
+}
+
+// ============================================
 // Main Simulation Engine
 // ============================================
 
@@ -845,6 +929,7 @@ export class SimulationEngine extends EventEmitter {
   private rentEnforcementSimulator: RentEnforcementSimulator;
   private populationSimulator: PopulationSimulator;
   private employmentSimulator: EmploymentSimulator;
+  private taxationSimulator: TaxationSimulator;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
@@ -859,6 +944,7 @@ export class SimulationEngine extends EventEmitter {
     this.rentEnforcementSimulator = new RentEnforcementSimulator(db);
     this.populationSimulator = new PopulationSimulator(db);
     this.employmentSimulator = new EmploymentSimulator(db);
+    this.taxationSimulator = new TaxationSimulator(db);
   }
 
   getCurrentTick(): number {
@@ -932,6 +1018,10 @@ export class SimulationEngine extends EventEmitter {
 
     // Simulate rent enforcement (runs daily at midnight)
     this.rentEnforcementSimulator.simulate(this.currentTick, time);
+
+    // Simulate taxation (infrastructure fees, runs daily at midnight)
+    const taxEvents = this.taxationSimulator.simulate(this.currentTick, time);
+    events.push(...taxEvents);
 
     // Simulate agents
     const agentEvents = this.agentSimulator.simulate(time);
