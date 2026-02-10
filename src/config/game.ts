@@ -221,6 +221,26 @@ export const MAYOR = {
 };
 
 // ============================================
+// Infrastructure Fees (paid by building owners)
+// ============================================
+export const INFRASTRUCTURE_FEES = {
+  // Power cost per 1000 watts consumed per day
+  POWER_RATE: 5, // $5 per 1000W/day
+  // Water cost per 100 units consumed per day
+  WATER_RATE: 3, // $3 per 100 units/day
+  // Garbage collection fee per building per day
+  GARBAGE_FEE: {
+    house: 1,
+    apartment: 3,
+    shop: 2,
+    office: 2,
+    factory: 5,
+  } as Record<string, number>,
+  // Property tax (% of building value per month)
+  PROPERTY_TAX_RATE: 2, // 2% of building cost per month
+};
+
+// ============================================
 // Traffic Configuration
 // ============================================
 export const TRAFFIC = {
