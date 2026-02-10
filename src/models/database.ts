@@ -1295,4 +1295,21 @@ export class DatabaseManager {
   getRawDb(): Database.Database {
     return this.db;
   }
+
+  getRecentEvents(limit: number = 20): Array<{ id: string; type: string; data: string; timestamp: number }> {
+    const rows = this.db.prepare(`
+      SELECT id, type, data, timestamp FROM events
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `).all(limit) as Array<{ id: string; type: string; data: string; timestamp: number }>;
+    return rows;
+  }
+
+  logEvent(type: string, data: Record<string, unknown>): void {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO events (id, type, data, timestamp)
+      VALUES (?, ?, ?, ?)
+    `).run(id, type, JSON.stringify(data), Date.now());
+  }
 }

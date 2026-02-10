@@ -377,6 +377,33 @@ export function createServer(db: DatabaseManager, engine: SimulationEngine) {
         return;
       }
 
+      if (path === '/api/activity' && method === 'GET') {
+        const limit = parseInt(url.searchParams.get('limit') || '20');
+        const events = db.getRecentEvents(Math.min(limit, 100));
+        sendJson(res, { events });
+        return;
+      }
+
+      if (path === '/api/leaderboard' && method === 'GET') {
+        const agents = db.agents.getAllAgents();
+        const buildings = db.buildings.getAllBuildings();
+        
+        // Calculate stats per agent
+        const leaderboard = agents.map(agent => {
+          const agentBuildings = buildings.filter(b => b.ownerId === agent.id);
+          return {
+            id: agent.id,
+            name: agent.name,
+            balance: agent.wallet.balance,
+            buildingCount: agentBuildings.length,
+            totalValue: agentBuildings.reduce((sum, b) => sum + (b.floors * 250), 0),
+          };
+        }).sort((a, b) => (b.balance + b.totalValue) - (a.balance + a.totalValue));
+        
+        sendJson(res, { leaderboard });
+        return;
+      }
+
       if (path === '/api/city/init' && method === 'POST') {
         // Only allow initialization once
         const existingCity = db.city.getCity();
