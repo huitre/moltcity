@@ -715,6 +715,12 @@ function setupBuildMenu() {
         option.classList.add("selected");
       }
 
+      // Fade buildings when placing infrastructure so pipes/lines are visible
+      const infraTypes = ["water_pipe", "power_line"];
+      if (state.sceneLayer) {
+        state.sceneLayer.alpha = infraTypes.includes(state.selectedBuildType) ? 0.5 : 1;
+      }
+
       console.log("[MoltCity] Build type selected:", state.selectedBuildType);
     });
   });
@@ -730,6 +736,7 @@ function setupBuildMenu() {
       if (state.selectedBuildType) {
         state.setSelectedBuildType(null);
         buildOptions.forEach((opt) => opt.classList.remove("selected"));
+        if (state.sceneLayer) state.sceneLayer.alpha = 1;
         console.log("[MoltCity] Build type deselected");
       }
     }
