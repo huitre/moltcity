@@ -4,7 +4,8 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
-import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType, RentalUnit, RentWarning, CourtCase, JailInmate, RentalUnitType, RentalUnitStatus, RentWarningStatus, CourtCaseStatus, CourtVerdict, CourtSentence, JailStatus, Crime, CrimeType, CrimeStatus, PoliceOfficer, OfficerStatus, Fire, FireStatus, FireIntensity, Firefighter, FirefighterStatus } from './types.js';
+import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType, RentalUnit, RentWarning, CourtCase, JailInmate, RentalUnitType, RentalUnitStatus, RentWarningStatus, CourtCaseStatus, CourtVerdict, CourtSentence, JailStatus, Crime, CrimeType, CrimeStatus, PoliceOfficer, OfficerStatus, Fire, FireStatus, FireIntensity, Firefighter, FirefighterStatus, Bond, DepartmentFunding, BudgetYtd } from './types.js';
+import { SC2K_ECONOMY } from '../config/game.js';
 
 const DEFAULT_DB_PATH = path.join(process.cwd(), 'moltcity.db');
 
@@ -269,6 +270,15 @@ export function createDatabase(): Database.Database {
   // Migrations: add new columns (safe to retry - fails silently if column exists)
   try { db.exec(`ALTER TABLE parcels ADD COLUMN land_value REAL NOT NULL DEFAULT 50`); } catch (_) {}
   try { db.exec(`ALTER TABLE buildings ADD COLUMN density INTEGER NOT NULL DEFAULT 1`); } catch (_) {}
+  // Economy migrations
+  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_r REAL NOT NULL DEFAULT 7`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_c REAL NOT NULL DEFAULT 7`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_i REAL NOT NULL DEFAULT 7`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN ordinances TEXT NOT NULL DEFAULT '[]'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN bonds TEXT NOT NULL DEFAULT '[]'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN department_funding TEXT NOT NULL DEFAULT '{"police":100,"fire":100,"health":100,"education":100,"transit":100}'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN budget_ytd TEXT NOT NULL DEFAULT '{"revenues":{"propertyTaxR":0,"propertyTaxC":0,"propertyTaxI":0,"ordinances":0},"expenses":{"police":0,"fire":0,"health":0,"education":0,"transit":0,"bondInterest":0}}'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE city ADD COLUMN credit_rating TEXT NOT NULL DEFAULT 'A'`); } catch (_) {}
 
   return db;
 }
@@ -279,6 +289,18 @@ export function createDatabase(): Database.Database {
 
 export class CityRepository {
   constructor(private db: Database.Database) {}
+
+  private parseJson<T>(str: string | null | undefined, fallback: T): T {
+    if (!str) return fallback;
+    try { return JSON.parse(str); } catch { return fallback; }
+  }
+
+  private defaultBudgetYtd(): BudgetYtd {
+    return {
+      revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0 },
+      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 },
+    };
+  }
 
   getCity(): City | null {
     const row = this.db.prepare('SELECT * FROM city LIMIT 1').get() as any;
@@ -306,6 +328,16 @@ export class CityRepository {
         waterDemand: 0,
         treasury: row.treasury,
       },
+      economy: {
+        taxRateR: row.tax_rate_r ?? 7,
+        taxRateC: row.tax_rate_c ?? 7,
+        taxRateI: row.tax_rate_i ?? 7,
+        ordinances: this.parseJson<string[]>(row.ordinances, []),
+        bonds: this.parseJson<Bond[]>(row.bonds, []),
+        departmentFunding: this.parseJson<DepartmentFunding>(row.department_funding, SC2K_ECONOMY.DEFAULT_DEPARTMENT_FUNDING),
+        budgetYtd: this.parseJson<BudgetYtd>(row.budget_ytd, this.defaultBudgetYtd()),
+        creditRating: row.credit_rating ?? 'A',
+      },
       mayor: row.mayor_id,
     };
   }
@@ -330,6 +362,36 @@ export class CityRepository {
     this.db.prepare(`
       UPDATE city SET treasury = ?
     `).run(amount);
+  }
+
+  updateTaxRates(rateR: number, rateC: number, rateI: number): void {
+    this.db.prepare(`
+      UPDATE city SET tax_rate_r = ?, tax_rate_c = ?, tax_rate_i = ?
+    `).run(rateR, rateC, rateI);
+  }
+
+  updateOrdinances(ordinances: string[]): void {
+    this.db.prepare(`UPDATE city SET ordinances = ?`).run(JSON.stringify(ordinances));
+  }
+
+  updateBonds(bonds: Bond[]): void {
+    this.db.prepare(`UPDATE city SET bonds = ?`).run(JSON.stringify(bonds));
+  }
+
+  updateDepartmentFunding(funding: DepartmentFunding): void {
+    this.db.prepare(`UPDATE city SET department_funding = ?`).run(JSON.stringify(funding));
+  }
+
+  updateBudgetYtd(budget: BudgetYtd): void {
+    this.db.prepare(`UPDATE city SET budget_ytd = ?`).run(JSON.stringify(budget));
+  }
+
+  updateCreditRating(rating: string): void {
+    this.db.prepare(`UPDATE city SET credit_rating = ?`).run(rating);
+  }
+
+  resetBudgetYtd(): void {
+    this.updateBudgetYtd(this.defaultBudgetYtd());
   }
 }
 

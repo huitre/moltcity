@@ -91,6 +91,20 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
           traffic: targetVehicles,
           water: waterStats,
         });
+
+        // Broadcast economy snapshot
+        const city = legacyDb.city.getCity();
+        if (city?.economy) {
+          fastify.broadcast('economy_update', {
+            treasury: city.stats.treasury,
+            taxRateR: city.economy.taxRateR,
+            taxRateC: city.economy.taxRateC,
+            taxRateI: city.economy.taxRateI,
+            creditRating: city.economy.creditRating,
+            bondsCount: city.economy.bonds.length,
+            ordinancesCount: city.economy.ordinances.length,
+          });
+        }
       }
 
       // Check and transition elections every 100 ticks (10 seconds)

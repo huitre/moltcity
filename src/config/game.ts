@@ -235,9 +235,9 @@ export const MAYOR = {
   // Campaign fee to run for mayor
   CAMPAIGN_FEE: 500,
   // Tax limits
-  MAX_TAX_RATE: 10, // 10% maximum
+  MAX_TAX_RATE: 20, // 20% maximum (SC2k style)
   MIN_TAX_RATE: 0,
-  DEFAULT_TAX_RATE: 5,
+  DEFAULT_TAX_RATE: 7,
 };
 
 // ============================================
@@ -567,4 +567,58 @@ export const ZONE_EVOLUTION = {
 export const DEMAND_BALANCE = {
   IDEAL_RATIO: { residential: 0.45, office: 0.35, industrial: 0.20 },
   IMBALANCE_MULTIPLIER: 2.0,
+};
+
+// ============================================
+// SC2K Economy Configuration
+// ============================================
+export const SC2K_ECONOMY = {
+  TAX: {
+    DEFAULT_RATE_R: 7,
+    DEFAULT_RATE_C: 7,
+    DEFAULT_RATE_I: 7,
+    MIN_RATE: 0,
+    MAX_RATE: 20,
+    SC2K_MULTIPLIER: 1.29, // SC2k empirical valuation constant
+    NEUTRAL_RATE: 7, // Demand neutral point - above hurts, below helps
+    DEMAND_SENSITIVITY: 0.02, // Demand shift per % away from neutral
+  },
+
+  ORDINANCES: {
+    sales_tax: { name: '1% Sales Tax', revenuePerCapita: 0.5, costPerCapita: 0, demandEffect: { commercial: -0.05 }, crimeMultiplier: 1.0 },
+    income_tax: { name: '1% Income Tax', revenuePerCapita: 0.4, costPerCapita: 0, demandEffect: { residential: -0.05 }, crimeMultiplier: 1.0 },
+    legalized_gambling: { name: 'Legalized Gambling', revenuePerCapita: 0.3, costPerCapita: 0, demandEffect: {}, crimeMultiplier: 1.2 },
+    parking_fines: { name: 'Parking Fines', revenuePerCapita: 0.1, costPerCapita: 0, demandEffect: { commercial: -0.02 }, crimeMultiplier: 1.0 },
+    tourist_advertising: { name: 'Tourist Advertising', revenuePerCapita: 0, costPerCapita: 0.2, demandEffect: { commercial: 0.05 }, crimeMultiplier: 1.0 },
+    business_advertising: { name: 'Business Advertising', revenuePerCapita: 0, costPerCapita: 0.15, demandEffect: { industrial: 0.05 }, crimeMultiplier: 1.0 },
+  } as Record<string, { name: string; revenuePerCapita: number; costPerCapita: number; demandEffect: Partial<Record<'residential' | 'commercial' | 'industrial', number>>; crimeMultiplier: number }>,
+
+  BONDS: {
+    CHUNK_SIZE: 10000, // $10k per bond
+    MAX_BONDS: 50,
+    BASE_INTEREST_RATE: 5, // %
+    RATING_PREMIUM: { AAA: 1, AA: 2, A: 3, BBB: 4, BB: 5, B: 6, F: 7 } as Record<string, number>,
+  },
+
+  DEPARTMENTS: {
+    police: { costPerBuilding: 100, buildingType: 'police_station' as BuildingType },
+    fire: { costPerBuilding: 100, buildingType: 'fire_station' as BuildingType },
+    health: { costPerBuilding: 75, buildingType: 'hospital' as BuildingType },
+    education_school: { costPerBuilding: 25, buildingType: 'school' as BuildingType },
+    education_university: { costPerBuilding: 100, buildingType: 'university' as BuildingType },
+  },
+
+  TRANSIT_MAINTENANCE: {
+    road: 0.10, // per tile per year
+    power_line: 0.20,
+    water_pipe: 0.40,
+  } as Record<string, number>,
+
+  DEFAULT_DEPARTMENT_FUNDING: {
+    police: 100,
+    fire: 100,
+    health: 100,
+    education: 100,
+    transit: 100,
+  },
 };

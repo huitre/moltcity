@@ -338,6 +338,49 @@ export async function getSimulationState() {
 }
 
 // ============================================
+// Economy API
+// ============================================
+
+export async function getBudget() {
+  return fetchApi('/api/economy/budget');
+}
+
+export async function setTaxRates(taxRateR, taxRateC, taxRateI) {
+  return fetchApi('/api/economy/tax-rates', {
+    method: 'PUT',
+    body: JSON.stringify({ taxRateR, taxRateC, taxRateI }),
+  });
+}
+
+export async function toggleOrdinance(ordinanceId, enabled) {
+  return fetchApi('/api/economy/ordinances', {
+    method: 'POST',
+    body: JSON.stringify({ ordinanceId, enabled }),
+  });
+}
+
+export async function issueBond() {
+  return fetchApi('/api/economy/bonds/issue', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+export async function repayBond(bondId) {
+  return fetchApi('/api/economy/bonds/repay', {
+    method: 'POST',
+    body: JSON.stringify({ bondId }),
+  });
+}
+
+export async function setDepartmentFunding(funding) {
+  return fetchApi('/api/economy/department-funding', {
+    method: 'PUT',
+    body: JSON.stringify(funding),
+  });
+}
+
+// ============================================
 // Sprites Config API
 // ============================================
 

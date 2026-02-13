@@ -91,6 +91,9 @@ export let currentElection = null;
 export let currentMayor = null;
 export let electionCandidates = [];
 
+// Economy
+export let economyData = null;
+
 // State setters
 export function setCurrentUser(user) { currentUser = user; }
 export function setCurrentToken(token) { currentToken = token; }
@@ -131,3 +134,4 @@ export function setWalletAddress(addr) { walletAddress = addr; }
 export function setCurrentElection(election) { currentElection = election; }
 export function setCurrentMayor(mayor) { currentMayor = mayor; }
 export function setElectionCandidates(candidates) { electionCandidates = candidates; }
+export function setEconomyData(data) { economyData = data; }

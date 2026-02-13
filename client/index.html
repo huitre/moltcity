@@ -1958,6 +1958,160 @@
       #activity-feed-panel {
         display: none !important;
       }
+
+      /* Budget Popup specific */
+      #popup-budget { width: 380px; max-height: 600px; }
+
+      #popup-budget .budget-section {
+        margin-bottom: 14px;
+      }
+
+      #popup-budget .budget-section-title {
+        font-size: 11px;
+        color: #7c7cff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(124, 124, 255, 0.15);
+      }
+
+      #popup-budget .budget-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        font-size: 12px;
+      }
+
+      #popup-budget .budget-row .label { color: #999; }
+      #popup-budget .budget-row .value { color: #4ecdc4; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+      #popup-budget .budget-row .value.negative { color: #ff6b6b; }
+      #popup-budget .budget-row .value.gold { color: #ffd700; }
+
+      #popup-budget .budget-row.total {
+        border-top: 1px solid rgba(124, 124, 255, 0.2);
+        padding-top: 8px;
+        margin-top: 4px;
+        font-weight: 600;
+      }
+
+      #popup-budget .tax-slider-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 12px;
+      }
+
+      #popup-budget .tax-slider-row .tax-label { color: #999; width: 24px; }
+      #popup-budget .tax-slider-row input[type="range"] {
+        flex: 1;
+        height: 4px;
+        accent-color: #7c7cff;
+        cursor: pointer;
+      }
+      #popup-budget .tax-slider-row .tax-val {
+        color: #4ecdc4;
+        font-family: 'IBM Plex Mono', monospace;
+        width: 36px;
+        text-align: right;
+        font-size: 11px;
+      }
+
+      #popup-budget .dept-slider-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 0;
+        font-size: 11px;
+      }
+
+      #popup-budget .dept-slider-row .dept-label { color: #999; width: 60px; }
+      #popup-budget .dept-slider-row input[type="range"] {
+        flex: 1;
+        height: 3px;
+        accent-color: #4ecdc4;
+        cursor: pointer;
+      }
+      #popup-budget .dept-slider-row .dept-val {
+        color: #4ecdc4;
+        font-family: 'IBM Plex Mono', monospace;
+        width: 32px;
+        text-align: right;
+        font-size: 10px;
+      }
+
+      #popup-budget .ordinance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        font-size: 11px;
+      }
+
+      #popup-budget .ordinance-row .ord-name { color: #e0e0e0; flex: 1; }
+      #popup-budget .ordinance-row .ord-toggle {
+        width: 36px; height: 18px;
+        border-radius: 9px;
+        background: rgba(60,60,90,0.8);
+        border: 1px solid #4a4a6a;
+        cursor: pointer;
+        position: relative;
+        transition: background 0.2s;
+      }
+      #popup-budget .ordinance-row .ord-toggle.on {
+        background: rgba(78, 205, 196, 0.4);
+        border-color: #4ecdc4;
+      }
+      #popup-budget .ordinance-row .ord-toggle::after {
+        content: '';
+        position: absolute;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: #888;
+        top: 1px; left: 1px;
+        transition: transform 0.2s, background 0.2s;
+      }
+      #popup-budget .ordinance-row .ord-toggle.on::after {
+        transform: translateX(18px);
+        background: #4ecdc4;
+      }
+
+      #popup-budget .bond-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        font-size: 11px;
+      }
+
+      #popup-budget .bond-actions { display: flex; gap: 6px; margin-top: 8px; }
+      #popup-budget .bond-actions button {
+        font-size: 10px;
+        padding: 4px 10px;
+        border-radius: 4px;
+      }
+
+      #popup-budget .credit-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: 'IBM Plex Mono', monospace;
+      }
+
+      #popup-budget .net-flow {
+        text-align: center;
+        padding: 10px;
+        background: rgba(42, 42, 78, 0.6);
+        border-radius: 8px;
+        margin-top: 8px;
+      }
+
+      #popup-budget .net-flow .net-label { font-size: 10px; color: #888; text-transform: uppercase; }
+      #popup-budget .net-flow .net-value { font-size: 20px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
     </style>
   </head>
   <body>
@@ -1995,6 +2149,10 @@
       <button class="toolbar-btn" id="tb-stats" data-popup="popup-stats">
         📊
         <span class="tooltip-text">City Stats</span>
+      </button>
+      <button class="toolbar-btn" id="tb-budget" data-popup="popup-budget">
+        💰
+        <span class="tooltip-text">Budget</span>
       </button>
       <button class="toolbar-btn" id="tb-help" data-popup="popup-help">
         ❓
@@ -2270,6 +2428,120 @@
     </div>
 
     <!-- Help Popup -->
+    <!-- Budget Popup -->
+    <div class="toolbar-popup" id="popup-budget">
+      <div class="popup-header">
+        <h3>💰 City Budget</h3>
+        <button class="popup-close" onclick="closePopup('popup-budget')">&times;</button>
+      </div>
+      <div class="popup-content" id="budget-content">
+        <!-- Treasury -->
+        <div class="budget-section">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #888; font-size: 11px;">TREASURY</span>
+            <span id="budget-treasury" style="color: #ffd700; font-size: 18px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;">$0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <span style="color: #888; font-size: 10px;">Credit Rating</span>
+            <span class="credit-badge" id="budget-credit" style="background: rgba(78,205,196,0.2); color: #4ecdc4;">AAA</span>
+          </div>
+        </div>
+
+        <!-- Tax Rates -->
+        <div class="budget-section">
+          <div class="budget-section-title">Tax Rates</div>
+          <div class="tax-slider-row">
+            <span class="tax-label">R</span>
+            <input type="range" id="tax-r" min="0" max="20" step="1" value="7">
+            <span class="tax-val" id="tax-r-val">7%</span>
+          </div>
+          <div class="tax-slider-row">
+            <span class="tax-label">C</span>
+            <input type="range" id="tax-c" min="0" max="20" step="1" value="7">
+            <span class="tax-val" id="tax-c-val">7%</span>
+          </div>
+          <div class="tax-slider-row">
+            <span class="tax-label">I</span>
+            <input type="range" id="tax-i" min="0" max="20" step="1" value="7">
+            <span class="tax-val" id="tax-i-val">7%</span>
+          </div>
+        </div>
+
+        <!-- Daily Projection -->
+        <div class="budget-section">
+          <div class="budget-section-title">Daily Projection</div>
+          <div class="budget-row"><span class="label">Property Tax (R)</span><span class="value" id="proj-tax-r">$0</span></div>
+          <div class="budget-row"><span class="label">Property Tax (C)</span><span class="value" id="proj-tax-c">$0</span></div>
+          <div class="budget-row"><span class="label">Property Tax (I)</span><span class="value" id="proj-tax-i">$0</span></div>
+          <div class="budget-row"><span class="label">Ordinances</span><span class="value" id="proj-ord-rev">$0</span></div>
+          <div class="budget-row total"><span class="label">Revenue</span><span class="value" id="proj-rev-total">$0</span></div>
+          <div class="budget-row" style="margin-top: 6px;"><span class="label">Police</span><span class="value negative" id="proj-police">-$0</span></div>
+          <div class="budget-row"><span class="label">Fire</span><span class="value negative" id="proj-fire">-$0</span></div>
+          <div class="budget-row"><span class="label">Health</span><span class="value negative" id="proj-health">-$0</span></div>
+          <div class="budget-row"><span class="label">Education</span><span class="value negative" id="proj-edu">-$0</span></div>
+          <div class="budget-row"><span class="label">Transit</span><span class="value negative" id="proj-transit">-$0</span></div>
+          <div class="budget-row"><span class="label">Bond Interest</span><span class="value negative" id="proj-bond-int">-$0</span></div>
+          <div class="budget-row"><span class="label">Ordinance Costs</span><span class="value negative" id="proj-ord-cost">-$0</span></div>
+          <div class="budget-row total"><span class="label">Expenses</span><span class="value negative" id="proj-exp-total">-$0</span></div>
+
+          <div class="net-flow">
+            <div class="net-label">Net Daily Cash Flow</div>
+            <div class="net-value" id="proj-net">$0</div>
+          </div>
+        </div>
+
+        <!-- Department Funding -->
+        <div class="budget-section">
+          <div class="budget-section-title">Department Funding</div>
+          <div class="dept-slider-row">
+            <span class="dept-label">Police</span>
+            <input type="range" id="dept-police" min="0" max="100" step="5" value="100">
+            <span class="dept-val" id="dept-police-val">100%</span>
+          </div>
+          <div class="dept-slider-row">
+            <span class="dept-label">Fire</span>
+            <input type="range" id="dept-fire" min="0" max="100" step="5" value="100">
+            <span class="dept-val" id="dept-fire-val">100%</span>
+          </div>
+          <div class="dept-slider-row">
+            <span class="dept-label">Health</span>
+            <input type="range" id="dept-health" min="0" max="100" step="5" value="100">
+            <span class="dept-val" id="dept-health-val">100%</span>
+          </div>
+          <div class="dept-slider-row">
+            <span class="dept-label">Education</span>
+            <input type="range" id="dept-education" min="0" max="100" step="5" value="100">
+            <span class="dept-val" id="dept-education-val">100%</span>
+          </div>
+          <div class="dept-slider-row">
+            <span class="dept-label">Transit</span>
+            <input type="range" id="dept-transit" min="0" max="100" step="5" value="100">
+            <span class="dept-val" id="dept-transit-val">100%</span>
+          </div>
+        </div>
+
+        <!-- Ordinances -->
+        <div class="budget-section">
+          <div class="budget-section-title">Ordinances</div>
+          <div id="budget-ordinances">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Bonds -->
+        <div class="budget-section">
+          <div class="budget-section-title">Bonds</div>
+          <div id="budget-bonds-list">
+            <div style="color: #666; font-size: 11px;">No active bonds</div>
+          </div>
+          <div class="bond-actions">
+            <button class="success" id="btn-issue-bond">Issue $10,000 Bond</button>
+            <button id="btn-repay-bond" style="display: none;">Repay Oldest</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="toolbar-popup" id="popup-help">
       <div class="popup-header">
         <h3>❓ Help & Resources</h3>
@@ -2884,6 +3156,7 @@
           if (popupId === "popup-leaderboard") loadToolbarLeaderboard();
           if (popupId === "popup-election") loadToolbarElection();
           if (popupId === "popup-activity") loadToolbarActivity();
+          if (popupId === "popup-budget") loadToolbarBudget();
         }
       }
 
@@ -3139,6 +3412,254 @@
         updateStatsPopup(data);
         updateServicesPopup(data);
       };
+
+      // ============================================
+      // BUDGET POPUP
+      // ============================================
+
+      let budgetData = null;
+      let budgetTaxDebounce = null;
+      let budgetDeptDebounce = null;
+
+      async function loadToolbarBudget() {
+        const token = localStorage.getItem("authToken");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        try {
+          const res = await fetch("/api/economy/budget", { headers });
+          if (!res.ok) throw new Error("Failed to load");
+          budgetData = await res.json();
+          renderBudget(budgetData);
+        } catch (err) {
+          console.error("Failed to load budget:", err);
+        }
+      }
+
+      function renderBudget(data) {
+        if (!data) return;
+        const fmt = (v) => "$" + Math.abs(v).toFixed(2);
+        const fmtInt = (v) => "$" + Math.floor(Math.abs(v)).toLocaleString();
+
+        // Treasury & credit
+        const treasuryEl = document.getElementById("budget-treasury");
+        if (treasuryEl) {
+          treasuryEl.textContent = fmtInt(data.treasury);
+          treasuryEl.style.color = data.treasury < 0 ? "#ff6b6b" : "#ffd700";
+        }
+        const creditEl = document.getElementById("budget-credit");
+        if (creditEl) {
+          const rating = data.economy?.creditRating || "AAA";
+          creditEl.textContent = rating;
+          const ratingColors = { AAA: "#4ecdc4", AA: "#4ecdc4", A: "#7c7cff", BBB: "#f7931a", BB: "#ff6b6b", B: "#ff6b6b", F: "#ff0000" };
+          creditEl.style.color = ratingColors[rating] || "#888";
+          creditEl.style.background = (ratingColors[rating] || "#888") + "33";
+        }
+
+        // Tax sliders (only update if not actively dragging)
+        if (data.economy && !budgetTaxDebounce) {
+          setSlider("tax-r", data.economy.taxRateR);
+          setSlider("tax-c", data.economy.taxRateC);
+          setSlider("tax-i", data.economy.taxRateI);
+        }
+
+        // Daily projections
+        const dp = data.dailyProjection;
+        if (dp) {
+          setText("proj-tax-r", fmt(dp.revenue.propertyTaxR));
+          setText("proj-tax-c", fmt(dp.revenue.propertyTaxC));
+          setText("proj-tax-i", fmt(dp.revenue.propertyTaxI));
+          setText("proj-ord-rev", fmt(dp.revenue.ordinances));
+          setText("proj-rev-total", fmt(dp.revenue.total));
+          setText("proj-police", "-" + fmt(dp.expenses.police));
+          setText("proj-fire", "-" + fmt(dp.expenses.fire));
+          setText("proj-health", "-" + fmt(dp.expenses.health));
+          setText("proj-edu", "-" + fmt(dp.expenses.education));
+          setText("proj-transit", "-" + fmt(dp.expenses.transit));
+          setText("proj-bond-int", "-" + fmt(dp.expenses.bondInterest));
+          setText("proj-ord-cost", "-" + fmt(dp.expenses.ordinances));
+          setText("proj-exp-total", "-" + fmt(dp.expenses.total));
+
+          const net = dp.revenue.total - dp.expenses.total;
+          const netEl = document.getElementById("proj-net");
+          if (netEl) {
+            netEl.textContent = (net >= 0 ? "+" : "-") + fmt(Math.abs(net));
+            netEl.style.color = net >= 0 ? "#4ecdc4" : "#ff6b6b";
+          }
+        }
+
+        // Department funding
+        if (data.economy?.departmentFunding && !budgetDeptDebounce) {
+          const f = data.economy.departmentFunding;
+          setDeptSlider("dept-police", f.police);
+          setDeptSlider("dept-fire", f.fire);
+          setDeptSlider("dept-health", f.health);
+          setDeptSlider("dept-education", f.education);
+          setDeptSlider("dept-transit", f.transit);
+        }
+
+        // Ordinances
+        const ordContainer = document.getElementById("budget-ordinances");
+        if (ordContainer && data.ordinanceDefinitions) {
+          const activeOrds = new Set(data.economy?.ordinances || []);
+          let html = "";
+          for (const [id, ord] of Object.entries(data.ordinanceDefinitions)) {
+            const isOn = activeOrds.has(id);
+            html += `<div class="ordinance-row">
+              <span class="ord-name">${ord.name}</span>
+              <div class="ord-toggle ${isOn ? "on" : ""}" data-ord-id="${id}" onclick="toggleOrdinance(this, '${id}')"></div>
+            </div>`;
+          }
+          ordContainer.innerHTML = html;
+        }
+
+        // Bonds
+        const bondsContainer = document.getElementById("budget-bonds-list");
+        const repayBtn = document.getElementById("btn-repay-bond");
+        if (bondsContainer && data.economy) {
+          const bonds = data.economy.bonds || [];
+          if (bonds.length === 0) {
+            bondsContainer.innerHTML = '<div style="color: #666; font-size: 11px;">No active bonds</div>';
+            if (repayBtn) repayBtn.style.display = "none";
+          } else {
+            let html = "";
+            bonds.forEach((b) => {
+              html += `<div class="bond-row">
+                <span style="color: #e0e0e0;">$${b.amount.toLocaleString()} @ ${b.rate}%</span>
+                <span style="color: #888; font-size: 10px;">Day ${b.issuedDay}, Y${b.issuedYear}</span>
+              </div>`;
+            });
+            bondsContainer.innerHTML = html;
+            if (repayBtn) repayBtn.style.display = "inline-block";
+          }
+        }
+
+        // Disable controls for non-mayors
+        const isMayor = data.isMayor;
+        document.querySelectorAll("#popup-budget input[type='range']").forEach((el) => {
+          el.disabled = !isMayor;
+          el.style.opacity = isMayor ? 1 : 0.5;
+        });
+        document.querySelectorAll("#popup-budget .ord-toggle").forEach((el) => {
+          el.style.pointerEvents = isMayor ? "auto" : "none";
+          el.style.opacity = isMayor ? 1 : 0.5;
+        });
+        const issueBtn = document.getElementById("btn-issue-bond");
+        if (issueBtn) issueBtn.style.display = isMayor ? "inline-block" : "none";
+        if (repayBtn && !isMayor) repayBtn.style.display = "none";
+      }
+
+      function setText(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      }
+
+      function setSlider(id, val) {
+        const slider = document.getElementById(id);
+        const label = document.getElementById(id + "-val");
+        if (slider) slider.value = val;
+        if (label) label.textContent = val + "%";
+      }
+
+      function setDeptSlider(id, val) {
+        const slider = document.getElementById(id);
+        const label = document.getElementById(id + "-val");
+        if (slider) slider.value = val;
+        if (label) label.textContent = val + "%";
+      }
+
+      // Tax slider interaction
+      ["tax-r", "tax-c", "tax-i"].forEach((id) => {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+        slider.addEventListener("input", () => {
+          const label = document.getElementById(id + "-val");
+          if (label) label.textContent = slider.value + "%";
+        });
+        slider.addEventListener("change", () => {
+          const token = localStorage.getItem("authToken");
+          if (!token) return;
+          budgetTaxDebounce = true;
+          fetch("/api/economy/tax-rates", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              taxRateR: parseInt(document.getElementById("tax-r").value),
+              taxRateC: parseInt(document.getElementById("tax-c").value),
+              taxRateI: parseInt(document.getElementById("tax-i").value),
+            }),
+          }).then(() => {
+            setTimeout(() => { budgetTaxDebounce = null; }, 2000);
+            loadToolbarBudget();
+          }).catch(() => { budgetTaxDebounce = null; });
+        });
+      });
+
+      // Department funding slider interaction
+      ["dept-police", "dept-fire", "dept-health", "dept-education", "dept-transit"].forEach((id) => {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+        slider.addEventListener("input", () => {
+          const label = document.getElementById(id + "-val");
+          if (label) label.textContent = slider.value + "%";
+        });
+        slider.addEventListener("change", () => {
+          const token = localStorage.getItem("authToken");
+          if (!token) return;
+          const dept = id.replace("dept-", "");
+          budgetDeptDebounce = true;
+          fetch("/api/economy/department-funding", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ [dept]: parseInt(slider.value) }),
+          }).then(() => {
+            setTimeout(() => { budgetDeptDebounce = null; }, 2000);
+            loadToolbarBudget();
+          }).catch(() => { budgetDeptDebounce = null; });
+        });
+      });
+
+      // Ordinance toggle
+      function toggleOrdinance(el, ordId) {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        const isOn = el.classList.contains("on");
+        el.classList.toggle("on");
+        fetch("/api/economy/ordinances", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ordinanceId: ordId, enabled: !isOn }),
+        }).then(() => loadToolbarBudget())
+          .catch(() => el.classList.toggle("on"));
+      }
+
+      // Issue bond
+      document.getElementById("btn-issue-bond")?.addEventListener("click", () => {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        fetch("/api/economy/bonds/issue", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: "{}",
+        }).then((r) => r.json()).then((data) => {
+          if (data.error) alert(data.error);
+          else loadToolbarBudget();
+        }).catch((err) => alert("Failed to issue bond: " + err.message));
+      });
+
+      // Repay bond
+      document.getElementById("btn-repay-bond")?.addEventListener("click", () => {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        if (!budgetData?.economy?.bonds?.length) return;
+        const bondId = budgetData.economy.bonds[0].id;
+        fetch("/api/economy/bonds/repay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ bondId }),
+        }).then((r) => r.json()).then((data) => {
+          if (data.error) alert(data.error);
+          else loadToolbarBudget();
+        }).catch((err) => alert("Failed to repay bond: " + err.message));
+      });
     </script>
   </body>
 </html>

@@ -207,6 +207,51 @@ export interface CityStats {
   treasury: number;
 }
 
+// === Economy Types ===
+export interface Bond {
+  id: string;
+  amount: number;
+  rate: number; // annual interest %
+  issuedDay: number;
+  issuedYear: number;
+}
+
+export interface DepartmentFunding {
+  police: number;   // 0-100%
+  fire: number;
+  health: number;
+  education: number;
+  transit: number;
+}
+
+export interface BudgetYtd {
+  revenues: {
+    propertyTaxR: number;
+    propertyTaxC: number;
+    propertyTaxI: number;
+    ordinances: number;
+  };
+  expenses: {
+    police: number;
+    fire: number;
+    health: number;
+    education: number;
+    transit: number;
+    bondInterest: number;
+  };
+}
+
+export interface CityEconomy {
+  taxRateR: number;
+  taxRateC: number;
+  taxRateI: number;
+  ordinances: string[];
+  bonds: Bond[];
+  departmentFunding: DepartmentFunding;
+  budgetYtd: BudgetYtd;
+  creditRating: string;
+}
+
 export interface City {
   id: string;
   name: string;
@@ -214,6 +259,7 @@ export interface City {
   gridHeight: number;
   time: CityTime;
   stats: CityStats;
+  economy: CityEconomy;
   mayor: string | null; // agentId
 }
 

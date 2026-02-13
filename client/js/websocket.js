@@ -87,6 +87,10 @@ function handleMessage(msg, onMessage) {
       console.log("[Simulation] Stopped");
       break;
 
+    case "economy_update":
+      handleEconomyUpdate(msg.data);
+      break;
+
     case "infrastructure_update":
       handleInfrastructureUpdate(data, onMessage);
       break;
@@ -235,6 +239,20 @@ function handleInfrastructureUpdate(data, onMessage) {
       console.error("[WebSocket] Failed to refresh buildings after infrastructure update:", e);
     }
   }, 1500);
+}
+
+/**
+ * Handle economy update message
+ */
+function handleEconomyUpdate(data) {
+  if (!data) return;
+  state.setEconomyData(data);
+
+  const balanceDisplay = document.getElementById("balance-display");
+  if (balanceDisplay && data.treasury !== undefined) {
+    balanceDisplay.textContent = `$${Math.floor(data.treasury).toLocaleString()}`;
+    balanceDisplay.style.color = data.treasury < 0 ? '#ff6b6b' : '#ffd700';
+  }
 }
 
 /**

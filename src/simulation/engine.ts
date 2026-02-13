@@ -6,7 +6,8 @@ import { EventEmitter } from 'events';
 import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
 import { DatabaseManager } from '../models/database.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
-import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS } from '../config/game.js';
+import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY } from '../config/game.js';
+import type { Bond, DepartmentFunding, BudgetYtd } from '../models/types.js';
 import { LandValueSimulator } from './landvalue.simulator.js';
 import { ZoneEvolutionSimulator } from './zone-evolution.simulator.js';
 import { DemandCalculator } from './demand.calculator.js';
@@ -996,8 +997,21 @@ export class EmploymentSimulator {
 }
 
 // ============================================
-// Taxation Simulator
+// Taxation Simulator (SC2K-style)
 // ============================================
+
+export function calculateCreditRating(treasury: number, bonds: Bond[], buildings: Building[]): string {
+  const totalDebt = bonds.reduce((sum, b) => sum + b.amount, 0);
+  const cityValue = buildings.reduce((sum, b) => sum + (BUILDING_COSTS[b.type] || 500), 0) + treasury;
+  const ratio = totalDebt / Math.max(cityValue, 1);
+  if (ratio < 0.05) return 'AAA';
+  if (ratio < 0.1) return 'AA';
+  if (ratio < 0.2) return 'A';
+  if (ratio < 0.35) return 'BBB';
+  if (ratio < 0.5) return 'BB';
+  if (ratio < 0.7) return 'B';
+  return 'F';
+}
 
 export class TaxationSimulator {
   private lastProcessedDay: number = 0;
@@ -1005,76 +1019,157 @@ export class TaxationSimulator {
   constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
 
   /**
-   * Process daily taxation - runs once per day at midnight
+   * Process daily taxation - SC2k style with separate R/C/I rates
+   * Runs once per day at midnight
    */
   simulate(currentTick: number, time: CityTime): CityEvent[] {
     const events: CityEvent[] = [];
 
-    // Only run once per day (at hour 0)
     if (time.hour !== 0 || time.day === this.lastProcessedDay) {
       return events;
     }
     this.lastProcessedDay = time.day;
 
-    console.log(`[Taxation] Processing daily taxes for day ${time.day}`);
+    const city = this.db.city.getCity();
+    if (!city) return events;
 
     const buildings = this.db.buildings.getAllBuildings();
-    const city = this.db.city.getCity();
-    let totalTaxCollected = 0;
+    const completedBuildings = buildings.filter(b => b.constructionProgress >= 100);
 
-    for (const building of buildings) {
-      // Skip buildings under construction
-      if (building.constructionProgress < 100) continue;
-
-      // Skip infrastructure (owned by city)
+    // ── 1. Per-building infrastructure fees (deducted from owners) ──
+    let infraFeesCollected = 0;
+    for (const building of completedBuildings) {
       if (['road', 'power_plant', 'water_tower', 'garbage_depot', 'park', 'plaza', 'power_line', 'water_pipe'].includes(building.type)) {
         continue;
       }
-
       const owner = this.db.agents.findAgent(building.ownerId);
       if (!owner) continue;
 
-      // Calculate daily fees
-      let totalFee = 0;
-
-      // Power fee (based on powerRequired)
       const powerFee = Math.ceil((building.powerRequired / 1000) * INFRASTRUCTURE_FEES.POWER_RATE);
-      totalFee += powerFee;
-
-      // Water fee (based on waterRequired)
       const waterFee = Math.ceil((building.waterRequired / 100) * INFRASTRUCTURE_FEES.WATER_RATE);
-      totalFee += waterFee;
-
-      // Garbage fee (based on building type)
       const garbageFee = INFRASTRUCTURE_FEES.GARBAGE_FEE[building.type] || 1;
-      totalFee += garbageFee;
+      const totalFee = powerFee + waterFee + garbageFee;
 
-      // Property tax (monthly, so divide by 30 for daily)
-      const buildingValue = BUILDING_COSTS[building.type] || 500;
-      const dailyPropertyTax = Math.ceil((buildingValue * INFRASTRUCTURE_FEES.PROPERTY_TAX_RATE / 100) / 30);
-      totalFee += dailyPropertyTax;
-
-      // Deduct from owner's wallet
       if (owner.wallet.balance >= totalFee) {
-        const newBalance = owner.wallet.balance - totalFee;
-        this.db.agents.updateWalletBalance(owner.id, newBalance);
-        totalTaxCollected += totalFee;
-        
-        console.log(`[Taxation] ${owner.name} paid $${totalFee} for ${building.name} (power:$${powerFee} water:$${waterFee} garbage:$${garbageFee} tax:$${dailyPropertyTax})`);
-      } else {
-        // Owner can't afford - building becomes non-operational?
-        console.log(`[Taxation] ${owner.name} cannot afford $${totalFee} for ${building.name} (balance: $${owner.wallet.balance})`);
-        // TODO: Add debt system or building seizure
+        this.db.agents.updateWalletBalance(owner.id, owner.wallet.balance - totalFee);
+        infraFeesCollected += totalFee;
       }
     }
 
-    // Add to city treasury
-    if (totalTaxCollected > 0 && city) {
-      const newTreasury = city.stats.treasury + totalTaxCollected;
-      this.db.city.updateTreasury(newTreasury);
-      console.log(`[Taxation] City treasury received $${totalTaxCollected} (new total: $${newTreasury})`);
-      this.log?.('tax_collected', `City treasury received $${totalTaxCollected} in daily taxes`, {
-        amount: totalTaxCollected, day: time.day,
+    // ── 2. SC2k property tax revenue (population-based) ──
+    // Count populations by zone type
+    const residents = this.db.population.getAllResidents();
+    let rPop = 0, cPop = 0, iPop = 0;
+
+    // Build lookup for building types
+    const buildingMap = new Map<string, Building>();
+    for (const b of completedBuildings) buildingMap.set(b.id, b);
+
+    for (const r of residents) {
+      // Count by home building type for R population
+      const home = r.homeBuildingId ? buildingMap.get(r.homeBuildingId) : null;
+      if (home) {
+        if (['residential', 'suburban', 'house', 'apartment'].includes(home.type)) {
+          rPop++;
+        }
+      }
+      // Count by work building type for C/I population
+      const work = r.workBuildingId ? buildingMap.get(r.workBuildingId) : null;
+      if (work) {
+        if (['offices', 'office', 'shop'].includes(work.type)) {
+          cPop++;
+        } else if (['industrial', 'factory'].includes(work.type)) {
+          iPop++;
+        }
+      }
+    }
+
+    const { taxRateR, taxRateC, taxRateI } = city.economy;
+    const mult = SC2K_ECONOMY.TAX.SC2K_MULTIPLIER;
+
+    // SC2k formula: annual revenue = Pop * Rate/100 * 1.29, divide by 365 for daily
+    const dailyTaxR = (rPop * (taxRateR / 100) * mult) / 365;
+    const dailyTaxC = (cPop * (taxRateC / 100) * mult) / 365;
+    const dailyTaxI = (iPop * (taxRateI / 100) * mult) / 365;
+    const totalPropertyTax = dailyTaxR + dailyTaxC + dailyTaxI;
+
+    // ── 3. Ordinance revenue & costs ──
+    const totalPop = rPop + cPop + iPop;
+    let ordinanceRevenue = 0;
+    let ordinanceCost = 0;
+    for (const ordId of city.economy.ordinances) {
+      const ord = SC2K_ECONOMY.ORDINANCES[ordId];
+      if (!ord) continue;
+      ordinanceRevenue += (totalPop * ord.revenuePerCapita) / 365;
+      ordinanceCost += (totalPop * ord.costPerCapita) / 365;
+    }
+
+    // ── 4. Department expenses ──
+    const funding = city.economy.departmentFunding;
+    const countType = (type: string) => completedBuildings.filter(b => b.type === type).length;
+
+    const policeExp = countType('police_station') * SC2K_ECONOMY.DEPARTMENTS.police.costPerBuilding * (funding.police / 100) / 365;
+    const fireExp = countType('fire_station') * SC2K_ECONOMY.DEPARTMENTS.fire.costPerBuilding * (funding.fire / 100) / 365;
+    const healthExp = countType('hospital') * SC2K_ECONOMY.DEPARTMENTS.health.costPerBuilding * (funding.health / 100) / 365;
+    const eduExp = (
+      countType('school') * SC2K_ECONOMY.DEPARTMENTS.education_school.costPerBuilding +
+      countType('university') * SC2K_ECONOMY.DEPARTMENTS.education_university.costPerBuilding
+    ) * (funding.education / 100) / 365;
+
+    // ── 5. Transit maintenance ──
+    const roads = this.db.roads.getAllRoads();
+    const powerLines = this.db.powerLines.getAllPowerLines();
+    const waterPipes = this.db.waterPipes.getAllWaterPipes();
+    const transitExp = (
+      roads.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.road +
+      powerLines.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.power_line +
+      waterPipes.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.water_pipe
+    ) * (funding.transit / 100) / 365;
+
+    // ── 6. Bond interest ──
+    let bondInterest = 0;
+    for (const bond of city.economy.bonds) {
+      bondInterest += (bond.amount * (bond.rate / 100)) / 365;
+    }
+
+    // ── 7. Net cash flow ──
+    const totalRevenue = totalPropertyTax + ordinanceRevenue + infraFeesCollected;
+    const totalExpense = policeExp + fireExp + healthExp + eduExp + transitExp + bondInterest + ordinanceCost;
+    const netCashFlow = totalRevenue - totalExpense;
+
+    const newTreasury = city.stats.treasury + netCashFlow;
+    this.db.city.updateTreasury(newTreasury);
+
+    // ── 8. Update YTD budget tracking ──
+    const ytd = city.economy.budgetYtd;
+    ytd.revenues.propertyTaxR += dailyTaxR;
+    ytd.revenues.propertyTaxC += dailyTaxC;
+    ytd.revenues.propertyTaxI += dailyTaxI;
+    ytd.revenues.ordinances += ordinanceRevenue;
+    ytd.expenses.police += policeExp;
+    ytd.expenses.fire += fireExp;
+    ytd.expenses.health += healthExp;
+    ytd.expenses.education += eduExp;
+    ytd.expenses.transit += transitExp;
+    ytd.expenses.bondInterest += bondInterest;
+    this.db.city.updateBudgetYtd(ytd);
+
+    // ── 9. Update credit rating ──
+    const rating = calculateCreditRating(newTreasury, city.economy.bonds, completedBuildings);
+    if (rating !== city.economy.creditRating) {
+      this.db.city.updateCreditRating(rating);
+    }
+
+    // ── 10. Reset YTD on new year (day 1) ──
+    if (time.day === 1) {
+      this.db.city.resetBudgetYtd();
+    }
+
+    if (Math.abs(netCashFlow) > 0.01) {
+      console.log(`[Taxation] Day ${time.day}: Revenue $${totalRevenue.toFixed(2)} - Expenses $${totalExpense.toFixed(2)} = Net $${netCashFlow.toFixed(2)} (Treasury: $${newTreasury.toFixed(2)})`);
+      this.log?.('tax_collected', `Daily budget: +$${totalRevenue.toFixed(0)} -$${totalExpense.toFixed(0)} = $${netCashFlow.toFixed(0)}`, {
+        revenue: totalRevenue, expense: totalExpense, net: netCashFlow, day: time.day,
+        rPop, cPop, iPop, taxRateR, taxRateC, taxRateI,
       });
     }
 

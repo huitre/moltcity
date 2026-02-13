@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { city, type CityRow, type CityInsert } from '../db/schema/city.js';
 import type { DrizzleDb } from '../db/drizzle.js';
-import type { City } from '../models/types.js';
+import type { City, DepartmentFunding, BudgetYtd, Bond } from '../models/types.js';
 
 export class CityRepository extends BaseRepository<typeof city, CityRow, CityInsert> {
   constructor(db: DrizzleDb) {
@@ -69,6 +69,20 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
         treasury: row.treasury,
       },
       mayor: row.mayorId,
+      economy: {
+        taxRateR: row.taxRateR,
+        taxRateC: row.taxRateC,
+        taxRateI: row.taxRateI,
+        ordinances: this.parseJson<string[]>(row.ordinances, []),
+        bonds: this.parseJson<Bond[]>(row.bonds, []),
+        departmentFunding: this.parseJson<DepartmentFunding>(row.departmentFunding, { police: 100, fire: 100, health: 100, education: 100, transit: 100 }),
+        budgetYtd: this.parseJson<BudgetYtd>(row.budgetYtd, { revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0 }, expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 } }),
+        creditRating: row.creditRating,
+      },
     };
+  }
+
+  private parseJson<T>(value: string, fallback: T): T {
+    try { return JSON.parse(value) as T; } catch { return fallback; }
   }
 }
