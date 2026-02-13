@@ -68,8 +68,9 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
 // ============================================
 export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: number }>> = {
   hospital: { w: 2, h: 2 },
-  police_station: { w: 2, h: 2 },
+  police_station: { w: 1, h: 1 },
   fire_station: { w: 2, h: 2 },
+  power_plant: { w: 2, h: 2 },
 };
 
 // ============================================

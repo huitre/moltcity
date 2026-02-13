@@ -311,6 +311,16 @@ async function handleDemolish(x, y) {
       return;
     }
 
+    // 5. Check for zoning
+    const parcel = state.parcels.find((p) => p.x === x && p.y === y);
+    if (parcel && parcel.zoning) {
+      await api.setZoning(parcel.id, null);
+      parcel.zoning = null;
+      render();
+      showToast(`Zoning removed at (${x}, ${y})`);
+      return;
+    }
+
     showToast("Nothing to demolish here", true);
   } catch (error) {
     console.error("[MoltCity] Demolish failed:", error.message);
@@ -358,58 +368,87 @@ async function handleBuild(x, y, buildType) {
         render();
       }
     } else {
-      // Create building with auto-generated name
-      const buildingNames = {
-        residential: "Residence",
-        offices: "Office",
-        suburban: "Suburban Home",
-        industrial: "Industrial Zone",
-        house: "House",
-        apartment: "Apartment",
-        shop: "Shop",
-        office: "Office",
-        factory: "Factory",
-        park: "Park",
-        power_plant: "Power Plant",
-        water_tower: "Water Tower",
-        police_station: "Police Station",
-        fire_station: "Fire Station",
-        hospital: "Hospital",
-        jail: "Jail",
+      // Zone types: paint zoning instead of creating buildings directly
+      const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
+      const ZONE_MAPPING = {
+        residential: "residential",
+        offices: "office",
+        industrial: "industrial",
+        suburban: "suburban",
       };
-      const name = buildingNames[buildType] || buildType;
 
-      // Check multi-tile footprint fits and is available
-      const footprint = BUILDING_FOOTPRINTS[buildType] || { w: 1, h: 1 };
-      for (let dy = 0; dy < footprint.h; dy++) {
-        for (let dx = 0; dx < footprint.w; dx++) {
-          const tx = x + dx;
-          const ty = y + dy;
-          if (tx >= GRID_SIZE || ty >= GRID_SIZE) {
-            showToast(`${name} doesn't fit here (out of bounds)`, true);
-            return;
-          }
-          if (isTileOccupied(tx, ty)) {
-            showToast(`Tile (${tx}, ${ty}) is already occupied`, true);
-            return;
+      if (ZONE_TYPES.includes(buildType)) {
+        // Check tile is not occupied
+        if (isTileOccupied(x, y)) {
+          showToast(`Tile (${x}, ${y}) is already occupied`, true);
+          return;
+        }
+
+        // Find or create parcel
+        const parcel = state.parcels.find((p) => p.x === x && p.y === y);
+        if (!parcel) {
+          showToast(`No parcel at (${x}, ${y})`, true);
+          return;
+        }
+
+        const zoning = ZONE_MAPPING[buildType];
+        await api.setZoning(parcel.id, zoning);
+        console.log("[MoltCity] Zoning set:", zoning, "at", x, y);
+
+        // Update local parcel zoning
+        parcel.zoning = zoning;
+        render();
+        showToast(`${buildType} zone placed at (${x}, ${y})`);
+      } else {
+        // Non-zone buildings: create directly
+        const buildingNames = {
+          house: "House",
+          apartment: "Apartment",
+          shop: "Shop",
+          office: "Office",
+          factory: "Factory",
+          park: "Park",
+          power_plant: "Power Plant",
+          water_tower: "Water Tower",
+          police_station: "Police Station",
+          fire_station: "Fire Station",
+          hospital: "Hospital",
+          jail: "Jail",
+        };
+        const name = buildingNames[buildType] || buildType;
+
+        // Check multi-tile footprint fits and is available
+        const footprint = BUILDING_FOOTPRINTS[buildType] || { w: 1, h: 1 };
+        for (let dy = 0; dy < footprint.h; dy++) {
+          for (let dx = 0; dx < footprint.w; dx++) {
+            const tx = x + dx;
+            const ty = y + dy;
+            if (tx >= GRID_SIZE || ty >= GRID_SIZE) {
+              showToast(`${name} doesn't fit here (out of bounds)`, true);
+              return;
+            }
+            if (isTileOccupied(tx, ty)) {
+              showToast(`Tile (${tx}, ${ty}) is already occupied`, true);
+              return;
+            }
           }
         }
+
+        const result = await api.createBuilding({
+          type: buildType,
+          name,
+          x,
+          y,
+          floors: 1,
+        });
+        console.log("[MoltCity] Building created:", result);
+
+        // Reload buildings and re-render
+        const buildingsResponse = await api.getBuildings();
+        state.setBuildings(buildingsResponse.buildings || []);
+        render();
+        showToast(`${name} placed at (${x}, ${y})`);
       }
-
-      const result = await api.createBuilding({
-        type: buildType,
-        name,
-        x,
-        y,
-        floors: 1,
-      });
-      console.log("[MoltCity] Building created:", result);
-
-      // Reload buildings and re-render
-      const buildingsResponse = await api.getBuildings();
-      state.setBuildings(buildingsResponse.buildings || []);
-      render();
-      showToast(`${name} placed at (${x}, ${y})`);
     }
   } catch (error) {
     console.error("[MoltCity] Build failed:", error.message);
@@ -523,25 +562,12 @@ function showBuildingInfo(building) {
   const floorsEl = document.getElementById("building-floors");
   const powerEl = document.getElementById("building-power");
   const ownerEl = document.getElementById("building-owner");
-  const constructionInfo = document.getElementById("construction-info");
-  const progressFill = document.getElementById("construction-progress-fill");
-  const progressText = document.getElementById("construction-progress-text");
-
   if (iconEl) iconEl.textContent = BUILDING_ICONS[building.type] || "🏠";
   if (nameEl) nameEl.textContent = building.name || building.type;
   if (typeEl) typeEl.textContent = building.type;
   if (floorsEl) floorsEl.textContent = building.floors || 1;
   if (powerEl) powerEl.textContent = building.powered ? "Connected" : "No Power";
   if (ownerEl) ownerEl.textContent = building.ownerId ? building.ownerId.slice(0, 8) + "..." : "Unknown";
-
-  // Construction progress
-  if (building.constructionProgress < 100) {
-    if (constructionInfo) constructionInfo.style.display = "block";
-    if (progressFill) progressFill.style.width = `${building.constructionProgress}%`;
-    if (progressText) progressText.textContent = `${building.constructionProgress}% complete`;
-  } else {
-    if (constructionInfo) constructionInfo.style.display = "none";
-  }
 
   panel.style.display = "block";
 }
@@ -581,8 +607,14 @@ function updateTooltip(x, y, globalPos) {
         tooltip.innerHTML = `<strong style="color:#e74c3c">Remove water pipe</strong>`;
         tooltip.style.display = "block";
       } else {
-        tooltip.innerHTML = `<strong>(${x}, ${y})</strong><br>Nothing to demolish`;
-        tooltip.style.display = "block";
+        const zParcel = state.parcels.find((p) => p.x === x && p.y === y);
+        if (zParcel && zParcel.zoning) {
+          tooltip.innerHTML = `<strong style="color:#e74c3c">Remove ${zParcel.zoning} zoning</strong>`;
+          tooltip.style.display = "block";
+        } else {
+          tooltip.innerHTML = `<strong>(${x}, ${y})</strong><br>Nothing to demolish`;
+          tooltip.style.display = "block";
+        }
       }
     }
     if (tooltip.style.display === "block" && globalPos) {
@@ -601,14 +633,14 @@ function updateTooltip(x, y, globalPos) {
   if (building) {
     tooltip.innerHTML = `
       <strong>${building.name}</strong><br>
-      Type: ${building.type}<br>
-      ${building.constructionProgress < 100 ? `Building: ${building.constructionProgress}%` : ""}
+      Type: ${building.type}
     `;
     tooltip.style.display = "block";
   } else if (parcel) {
+    const zoningLabel = parcel.zoning ? `<br>Zone: ${parcel.zoning}` : "";
     tooltip.innerHTML = `
       <strong>(${parcel.x}, ${parcel.y})</strong><br>
-      ${parcel.ownerId ? `Owner: ${parcel.ownerId.slice(0, 8)}...` : "Unowned"}
+      ${parcel.ownerId ? `Owner: ${parcel.ownerId.slice(0, 8)}...` : "Unowned"}${zoningLabel}
     `;
     tooltip.style.display = "block";
   } else {

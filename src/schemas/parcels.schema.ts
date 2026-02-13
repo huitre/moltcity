@@ -41,7 +41,7 @@ export const sellParcelSchema = z.object({
 // Set zoning schema
 export const setZoningSchema = z.object({
   parcelId: z.string(),
-  zoning: zoningTypeSchema,
+  zoning: zoningTypeSchema.nullable(),
 });
 
 // Type exports

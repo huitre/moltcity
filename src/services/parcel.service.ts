@@ -217,13 +217,17 @@ export class ParcelService {
     return { price, parcelsOwned, freeRemaining };
   }
 
-  async setZoning(parcelId: string, zoning: ZoningType): Promise<Parcel> {
+  async setZoning(parcelId: string, zoning: ZoningType | null): Promise<Parcel> {
     const parcel = await this.parcelRepo.getParcelById(parcelId);
     if (!parcel) {
       throw new NotFoundError('Parcel', parcelId);
     }
 
-    await this.parcelRepo.setZoning(parcelId, zoning);
+    if (zoning) {
+      await this.parcelRepo.setZoning(parcelId, zoning);
+    } else {
+      await this.parcelRepo.clearZoning(parcelId);
+    }
     return (await this.parcelRepo.getParcelById(parcelId))!;
   }
 }

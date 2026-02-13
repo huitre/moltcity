@@ -19,10 +19,10 @@ export function spawnPedestrian() {
 
   // Find buildings to spawn near (prefer commercial areas)
   const commercialBuildings = buildings.filter(
-    (b) => ["shop", "office", "factory", "plaza"].includes(b.type) && b.constructionProgress >= 100
+    (b) => ["shop", "office", "factory", "plaza"].includes(b.type)
   );
   const residentialBuildings = buildings.filter(
-    (b) => ["house", "apartment"].includes(b.type) && b.constructionProgress >= 100
+    (b) => ["house", "apartment"].includes(b.type)
   );
 
   // 70% chance to spawn near commercial, 30% near residential

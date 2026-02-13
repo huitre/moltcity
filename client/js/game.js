@@ -6,7 +6,7 @@ import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
 import { seededRandom } from "./sprites.js";
-import { drawGrassTile, drawHighlight } from "./render/tiles.js";
+import { drawGrassTile, drawHighlight, drawZoneTile } from "./render/tiles.js";
 import { drawRoad, hasRoadAt } from "./render/roads.js";
 import { animateVehicles, initVehicles } from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
@@ -105,11 +105,42 @@ export function render() {
   worldContainer.addChild(tilesLayer);
   worldContainer.addChild(waterPipesLayer);
 
-  // Draw grid tiles (grass)
+  // Build lookup maps for occupied tiles (buildings + roads)
+  const occupiedTiles = new Set();
+  for (const building of buildings) {
+    const p = parcels.find((p) => p.id === building.parcelId);
+    if (!p) continue;
+    const w = building.width || 1;
+    const h = building.height || 1;
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        occupiedTiles.add(`${p.x + dx},${p.y + dy}`);
+      }
+    }
+  }
+  for (const road of roads) {
+    const p = parcels.find((p) => p.id === road.parcelId);
+    if (p) occupiedTiles.add(`${p.x},${p.y}`);
+  }
+
+  // Build parcel coord lookup for zoning
+  const parcelByCoord = new Map();
+  for (const p of parcels) {
+    if (p.zoning) parcelByCoord.set(`${p.x},${p.y}`, p);
+  }
+
+  // Draw grid tiles (grass or zone color)
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
-      const tile = drawGrassTile(x, y);
-      tilesLayer.addChild(tile);
+      const key = `${x},${y}`;
+      const zonedParcel = parcelByCoord.get(key);
+      if (zonedParcel && !occupiedTiles.has(key)) {
+        const tile = drawZoneTile(x, y, zonedParcel.zoning);
+        tilesLayer.addChild(tile);
+      } else {
+        const tile = drawGrassTile(x, y);
+        tilesLayer.addChild(tile);
+      }
     }
   }
 
@@ -184,11 +215,6 @@ function drawBuilding(x, y, building) {
   const spriteIsoY = cartToIso(x + fw - 1, y + fh - 1).y + TILE_HEIGHT;
   const zIdx = x + fw - 1 + (y + fh - 1);
 
-  // Check if building is under construction
-  if (building.constructionProgress < 100) {
-    return drawConstruction(x, y, building, spriteIsoX, spriteIsoY, zIdx);
-  }
-
   const powered = building.powered;
   const type = building.type;
   const floors = building.floors || 1;
@@ -261,6 +287,7 @@ function drawBuilding(x, y, building) {
     police_station: state.serviceSprites.police,
     fire_station: state.serviceSprites.firestation,
     hospital: state.serviceSprites.hospital,
+    power_plant: state.powerPlantSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     const sprites = serviceSpriteMap[type];
@@ -397,86 +424,6 @@ function animateStatusIcons(delta) {
     icon.y = icon._baseY + Math.sin(icon._animTime) * 3;
     icon.alpha = 0.7 + 0.3 * Math.sin(icon._animTime * 1.4);
   }
-}
-
-/**
- * Draw construction site
- */
-function drawConstruction(x, y, building, sIsoX, sIsoY, zIdx) {
-  const progress = building.constructionProgress;
-
-  // Use crane sprite if available
-  if (state.craneSprites.length > 0) {
-    const container = new PIXI.Container();
-    const craneData = state.craneSprites[0];
-    const sprite = new PIXI.Sprite(craneData.texture);
-    const tileSpan = craneData.tiles || 1;
-    const scale = (TILE_WIDTH * tileSpan) / craneData.width;
-    sprite.scale.set(scale);
-    sprite.anchor.set(craneData.anchor.x, craneData.anchor.y);
-    sprite.x = sIsoX;
-    sprite.y = sIsoY;
-
-    container.addChild(sprite);
-
-    // Progress bar overlay
-    const g = new PIXI.Graphics();
-    const barY = sIsoY - craneData.height * scale * 0.7;
-    const barWidth = 30;
-    const barHeight = 4;
-    g.beginFill(0x333333);
-    g.drawRect(sIsoX - barWidth / 2, barY, barWidth, barHeight);
-    g.endFill();
-    g.beginFill(0x4ecdc4);
-    g.drawRect(
-      sIsoX - barWidth / 2,
-      barY,
-      (progress / 100) * barWidth,
-      barHeight,
-    );
-    g.endFill();
-
-    container.addChild(g);
-    container.zIndex = zIdx;
-    return container;
-  }
-
-  // Fallback: procedural scaffolding
-  const iso = cartToIso(x, y);
-  const g = new PIXI.Graphics();
-  const cx = iso.x;
-  const baseY = iso.y + TILE_HEIGHT;
-
-  g.beginFill(0x8b4513);
-  g.drawRect(cx - 20, baseY - 5, 40, 10);
-  g.endFill();
-
-  g.lineStyle(2, 0xdaa520);
-  g.moveTo(cx - 15, baseY - 5);
-  g.lineTo(cx - 15, baseY - 30);
-  g.moveTo(cx + 15, baseY - 5);
-  g.lineTo(cx + 15, baseY - 30);
-  g.moveTo(cx - 15, baseY - 15);
-  g.lineTo(cx + 15, baseY - 15);
-  g.moveTo(cx - 15, baseY - 25);
-  g.lineTo(cx + 15, baseY - 25);
-
-  const barWidth = 30;
-  const barHeight = 4;
-  g.beginFill(0x333333);
-  g.drawRect(cx - barWidth / 2, baseY - 40, barWidth, barHeight);
-  g.endFill();
-  g.beginFill(0x4ecdc4);
-  g.drawRect(
-    cx - barWidth / 2,
-    baseY - 40,
-    (progress / 100) * barWidth,
-    barHeight,
-  );
-  g.endFill();
-
-  g.zIndex = zIdx;
-  return g;
 }
 
 // Procedural building drawing functions

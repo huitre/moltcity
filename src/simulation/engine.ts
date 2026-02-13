@@ -12,6 +12,7 @@ import { ZoneEvolutionSimulator } from './zone-evolution.simulator.js';
 import { DemandCalculator } from './demand.calculator.js';
 import { CrimeSimulator } from './crime.simulator.js';
 import { FireSimulator } from './fire.simulator.js';
+import { ZoneBuildSimulator } from './zone-build.simulator.js';
 
 // ============================================
 // Activity Logger
@@ -44,48 +45,6 @@ const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boo
   residential: { min: 2, max: 4, perFloor: true },
   suburban: { min: 2, max: 4, perFloor: false },
 };
-
-// ============================================
-// Construction Simulator
-// ============================================
-
-export class ConstructionSimulator {
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
-
-  /**
-   * Advance construction progress for all buildings under construction
-   * Returns list of buildings that just completed
-   */
-  simulate(currentTick: number): Building[] {
-    const completedBuildings: Building[] = [];
-    const underConstruction = this.db.buildings.getBuildingsUnderConstruction();
-
-    for (const building of underConstruction) {
-      if (building.constructionTimeTicks <= 0) {
-        // Instant construction (e.g., roads)
-        this.db.buildings.updateConstructionProgress(building.id, 100);
-        continue;
-      }
-
-      const ticksElapsed = currentTick - (building.constructionStartedAt || 0);
-      const newProgress = Math.min(100, Math.floor((ticksElapsed / building.constructionTimeTicks) * 100));
-
-      if (newProgress !== building.constructionProgress) {
-        this.db.buildings.updateConstructionProgress(building.id, newProgress);
-
-        if (newProgress >= 100) {
-          completedBuildings.push({ ...building, constructionProgress: 100 });
-          console.log(`[Construction] Building completed: ${building.name} (${building.type})`);
-          this.log?.('construction_completed', `Building completed: ${building.name} (${building.type})`, {
-            buildingId: building.id, type: building.type, name: building.name,
-          });
-        }
-      }
-    }
-
-    return completedBuildings;
-  }
-}
 
 // ============================================
 // Rent Enforcement Simulator
@@ -1084,7 +1043,6 @@ export class SimulationEngine extends EventEmitter {
   private waterGrid: WaterGridSimulator;
   private agentSimulator: AgentSimulator;
   private vehicleSimulator: VehicleSimulator;
-  private constructionSimulator: ConstructionSimulator;
   private rentEnforcementSimulator: RentEnforcementSimulator;
   private populationSimulator: PopulationSimulator;
   private employmentSimulator: EmploymentSimulator;
@@ -1094,6 +1052,7 @@ export class SimulationEngine extends EventEmitter {
   private demandCalculator: DemandCalculator;
   private crimeSimulator: CrimeSimulator;
   private fireSimulator: FireSimulator;
+  private zoneBuildSimulator: ZoneBuildSimulator;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
@@ -1106,7 +1065,6 @@ export class SimulationEngine extends EventEmitter {
     this.waterGrid = new WaterGridSimulator(db);
     this.agentSimulator = new AgentSimulator(db, gridWidth, gridHeight);
     this.vehicleSimulator = new VehicleSimulator(db, gridWidth, gridHeight);
-    this.constructionSimulator = new ConstructionSimulator(db);
     this.rentEnforcementSimulator = new RentEnforcementSimulator(db);
     this.populationSimulator = new PopulationSimulator(db);
     this.employmentSimulator = new EmploymentSimulator(db);
@@ -1116,6 +1074,7 @@ export class SimulationEngine extends EventEmitter {
     this.demandCalculator = new DemandCalculator(db);
     this.crimeSimulator = new CrimeSimulator(db);
     this.fireSimulator = new FireSimulator(db);
+    this.zoneBuildSimulator = new ZoneBuildSimulator(db);
   }
 
   /**
@@ -1124,12 +1083,12 @@ export class SimulationEngine extends EventEmitter {
   setActivityLogger(logger: ActivityLogger): void {
     this.activityLogger = logger;
     // Re-create simulators that use the logger
-    this.constructionSimulator = new ConstructionSimulator(this.db, logger);
     this.rentEnforcementSimulator = new RentEnforcementSimulator(this.db, logger);
     this.taxationSimulator = new TaxationSimulator(this.db, logger);
     this.crimeSimulator = new CrimeSimulator(this.db, logger);
     this.fireSimulator = new FireSimulator(this.db, logger);
     this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(this.db, logger);
+    this.zoneBuildSimulator = new ZoneBuildSimulator(this.db, logger);
   }
 
   getCurrentTick(): number {
@@ -1186,20 +1145,6 @@ export class SimulationEngine extends EventEmitter {
       this.waterGrid.applyWaterStatus(waterStatus);
     }
 
-    // Simulate construction progress
-    const completedBuildings = this.constructionSimulator.simulate(this.currentTick);
-    for (const building of completedBuildings) {
-      events.push({
-        type: 'building_powered' as CityEventType, // Reuse existing event type for completion
-        timestamp: Date.now(),
-        data: { buildingId: building.id, type: building.type, name: building.name, constructionComplete: true },
-      });
-
-      // Spawn population for completed residential buildings
-      const populationEvents = this.populationSimulator.onBuildingCompleted(building);
-      events.push(...populationEvents);
-    }
-
     // Simulate employment (job matching and payroll)
     const employmentEvents = this.employmentSimulator.simulate(this.currentTick, time);
     events.push(...employmentEvents);
@@ -1213,6 +1158,9 @@ export class SimulationEngine extends EventEmitter {
 
     // Simulate land value recalculation (runs daily at hour 1)
     this.landValueSimulator.simulate(time);
+
+    // Simulate zone auto-building (every 100 ticks)
+    this.zoneBuildSimulator.simulate(this.currentTick, time);
 
     // Simulate zone evolution (runs daily at hour 2)
     this.zoneEvolutionSimulator.simulate(time);

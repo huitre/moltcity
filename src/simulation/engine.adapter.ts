@@ -143,14 +143,6 @@ class LegacyBuildingRepository {
     return runSync(this.db.buildings.getAllBuildings());
   }
 
-  getBuildingsUnderConstruction() {
-    return runSync(this.db.buildings.getBuildingsUnderConstruction());
-  }
-
-  updateConstructionProgress(buildingId: string, progress: number): void {
-    runSync(this.db.buildings.updateConstructionProgress(buildingId, progress));
-  }
-
   updatePowerStatus(buildingId: string, powered: boolean): void {
     runSync(this.db.buildings.updatePowerStatus(buildingId, powered));
   }

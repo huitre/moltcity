@@ -166,7 +166,7 @@ export function animateVehicles(delta) {
     // Update sprite position
     const iso = cartToIso(vehicle.x, vehicle.y);
     vehicle.sprite.x = iso.x;
-    vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 5;
+    vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 12;
     vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
 
     // Remove if out of bounds

@@ -77,6 +77,60 @@ export function drawWaterTile(x, y) {
 }
 
 /**
+ * Zone colors for zoned-but-empty tiles
+ */
+const ZONE_COLORS = {
+  residential: 0x4caf50, // green
+  suburban: 0x66bb6a,    // lighter green
+  office: 0x42a5f5,      // blue
+  industrial: 0xffca28,  // yellow
+};
+
+/**
+ * Draw a zone-colored tile (replaces grass for zoned empty parcels)
+ */
+export function drawZoneTile(x, y, zoning) {
+  const color = ZONE_COLORS[zoning];
+  if (!color) return drawGrassTile(x, y);
+
+  const iso = cartToIso(x, y);
+  const graphics = new PIXI.Graphics();
+
+  // Grass base (slightly visible under zone color)
+  const variation = ((x * 7 + y * 13) % 10) - 5;
+  const grassColor = lightenColor(COLORS.grass, variation);
+
+  // Draw base grass tile
+  graphics.beginFill(grassColor);
+  graphics.moveTo(iso.x, iso.y);
+  graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+  graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.closePath();
+  graphics.endFill();
+
+  // Zone color overlay with transparency
+  graphics.beginFill(color, 0.45);
+  graphics.moveTo(iso.x, iso.y);
+  graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+  graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.closePath();
+  graphics.endFill();
+
+  // Subtle border
+  graphics.lineStyle(1, darkenColor(color, 30), 0.5);
+  graphics.moveTo(iso.x, iso.y);
+  graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+  graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.closePath();
+
+  graphics.zIndex = 0;
+  return graphics;
+}
+
+/**
  * Draw a highlight overlay for a tile
  */
 export function drawHighlight(x, y, color = COLORS.highlight, isSelection = false) {

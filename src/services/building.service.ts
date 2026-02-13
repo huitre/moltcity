@@ -67,8 +67,6 @@ export class BuildingService {
     const baseCost = BUILDING_COSTS[type] || 500;
     const powerRequired = this.buildingRepo.getPowerRequirement(type) * floors;
     const waterRequired = this.buildingRepo.getWaterRequirement(type) * floors;
-    const constructionTimeTicks = type === 'road' ? 0 : floors * 240;
-
     return {
       type,
       floors,
@@ -76,7 +74,7 @@ export class BuildingService {
       totalCost,
       powerRequired,
       waterRequired,
-      constructionTimeTicks,
+      constructionTimeTicks: 0,
     };
   }
 
@@ -93,8 +91,15 @@ export class BuildingService {
     createAgent?: boolean;
     agentName?: string;
     role?: UserRole;
+    internal?: boolean; // true when called by simulation engine (bypasses zone restriction)
   }): Promise<Building> {
     const role: UserRole = params.role || 'user';
+
+    // Zone types can only be built by the simulation engine, not directly by users
+    const ZONE_ONLY_TYPES: BuildingType[] = ['residential', 'offices', 'industrial', 'suburban'];
+    if (ZONE_ONLY_TYPES.includes(params.type) && !params.internal) {
+      throw new ForbiddenError(`'${params.type}' buildings are auto-built by the simulation. Use zoning instead.`);
+    }
 
     // Check building type restrictions
     if (!canUserBuild(params.type, role)) {
@@ -317,11 +322,4 @@ export class BuildingService {
     await this.buildingRepo.deleteBuilding(buildingId);
   }
 
-  async getBuildingsUnderConstruction(): Promise<Building[]> {
-    return this.buildingRepo.getBuildingsUnderConstruction();
-  }
-
-  async updateConstructionProgress(buildingId: string, progress: number): Promise<void> {
-    await this.buildingRepo.updateConstructionProgress(buildingId, Math.min(100, progress));
-  }
 }

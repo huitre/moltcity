@@ -2,7 +2,7 @@
 // MOLTCITY - Building Repository
 // ============================================
 
-import { eq, lt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { buildings, type BuildingRow, type BuildingInsert } from '../db/schema/buildings.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -55,8 +55,6 @@ const WATER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
   jail: 300,
 };
 
-const TICKS_PER_FLOOR = 240;
-
 export class BuildingRepository extends BaseRepository<typeof buildings, BuildingRow, BuildingInsert> {
   constructor(db: DrizzleDb) {
     super(db, buildings);
@@ -106,10 +104,6 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     const powerRequired = basePower * floors;
     const waterRequired = baseWater * floors;
 
-    const constructionTimeTicks = type === 'road' ? 0 : floors * TICKS_PER_FLOOR;
-    const constructionProgress = type === 'road' ? 100 : 0;
-    const constructionStartedAt = type === 'road' ? null : currentTick;
-
     await this.db.insert(buildings).values({
       id,
       parcelId,
@@ -123,9 +117,9 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       waterRequired,
       builtAt: this.now(),
       ownerId,
-      constructionProgress,
-      constructionStartedAt,
-      constructionTimeTicks,
+      constructionProgress: 100,
+      constructionStartedAt: null,
+      constructionTimeTicks: 0,
       density: 1,
     });
 
@@ -164,21 +158,6 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       .update(buildings)
       .set({ powered })
       .where(eq(buildings.id, buildingId));
-  }
-
-  async updateConstructionProgress(buildingId: string, progress: number): Promise<void> {
-    await this.db
-      .update(buildings)
-      .set({ constructionProgress: progress })
-      .where(eq(buildings.id, buildingId));
-  }
-
-  async getBuildingsUnderConstruction(): Promise<Building[]> {
-    const results = await this.db
-      .select()
-      .from(buildings)
-      .where(lt(buildings.constructionProgress, 100));
-    return results.map(row => this.rowToBuilding(row));
   }
 
   getPowerRequirement(type: BuildingType): number {

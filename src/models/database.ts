@@ -411,6 +411,16 @@ export class ParcelRepository {
     this.db.prepare('UPDATE parcels SET zoning = ? WHERE id = ?').run(zoning, parcelId);
   }
 
+  getZonedParcelsWithoutBuilding(): Parcel[] {
+    const rows = this.db.prepare(`
+      SELECT p.* FROM parcels p
+      WHERE p.zoning IS NOT NULL
+        AND p.id NOT IN (SELECT parcel_id FROM buildings)
+        AND p.id NOT IN (SELECT parcel_id FROM roads)
+    `).all() as any[];
+    return rows.map(row => this.rowToParcel(row));
+  }
+
   transferParcel(parcelId: string, newOwnerId: string, price: number): void {
     this.db.prepare(`
       UPDATE parcels
@@ -476,17 +486,10 @@ export class BuildingRepository {
     const powerRequired = basePower * floors;
     const waterRequired = baseWater * floors;
 
-    // Calculate construction time: 24 real seconds per floor
-    // 10 ticks per second, so 24 seconds = 240 ticks per floor
-    const TICKS_PER_FLOOR = 240;
-    const constructionTimeTicks = type === 'road' ? 0 : floors * TICKS_PER_FLOOR;
-    const constructionProgress = type === 'road' ? 100 : 0;
-    const constructionStartedAt = type === 'road' ? null : currentTick;
-
     this.db.prepare(`
       INSERT INTO buildings (id, parcel_id, type, name, sprite, floors, power_required, water_required, built_at, owner_id, construction_progress, construction_started_at, construction_time_ticks)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, parcelId, type, name, sprite || '', floors, powerRequired, waterRequired, Date.now(), ownerId, constructionProgress, constructionStartedAt, constructionTimeTicks);
+    `).run(id, parcelId, type, name, sprite || '', floors, powerRequired, waterRequired, Date.now(), ownerId, 100, null, 0);
 
     return this.getBuilding(id)!;
   }
@@ -535,15 +538,6 @@ export class BuildingRepository {
 
   deleteBuilding(buildingId: string): void {
     this.db.prepare('DELETE FROM buildings WHERE id = ?').run(buildingId);
-  }
-
-  updateConstructionProgress(buildingId: string, progress: number): void {
-    this.db.prepare('UPDATE buildings SET construction_progress = ? WHERE id = ?').run(progress, buildingId);
-  }
-
-  getBuildingsUnderConstruction(): Building[] {
-    const rows = this.db.prepare('SELECT * FROM buildings WHERE construction_progress < 100').all() as any[];
-    return rows.map(row => this.rowToBuilding(row));
   }
 
   private rowToBuilding(row: any): Building {

@@ -340,6 +340,17 @@ export async function getSimulationState() {
 // Sprites Config API
 // ============================================
 
+// ============================================
+// Zoning API
+// ============================================
+
+export async function setZoning(parcelId, zoning) {
+  return fetchApi('/api/parcels/zoning', {
+    method: 'POST',
+    body: JSON.stringify({ parcelId, zoning }),
+  });
+}
+
 export async function updateSpriteConfig(data) {
   return fetchApi('/api/sprites/config', {
     method: 'PATCH',

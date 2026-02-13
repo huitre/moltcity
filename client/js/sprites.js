@@ -182,6 +182,23 @@ export async function loadSprites() {
       }
     }
 
+    // Load power plant sprites
+    if (spritesConfig.power_plant) {
+      for (let i = 0; i < spritesConfig.power_plant.length; i++) {
+        const spriteConfig = spritesConfig.power_plant[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.powerPlantSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded power_plant: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(`[Sprites] Failed to load power_plant ${spriteConfig.id}:`, err);
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };

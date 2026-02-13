@@ -19,15 +19,6 @@ function resolveSpriteData(building, x, y) {
   const type = building.type;
   const floors = building.floors || 1;
 
-  // Construction → crane
-  if (building.constructionProgress < 100) {
-    if (state.craneSprites.length > 0) {
-      const sd = state.craneSprites[0];
-      return { spriteData: sd, source: 'crane', category: null, index: sd._jsonIndex ?? 0 };
-    }
-    return null;
-  }
-
   // Residential / Offices zone sprites
   if (type === 'residential' || type === 'offices') {
     const spriteMap = type === 'residential' ? state.residentialSprites : state.officeSprites;

@@ -84,6 +84,13 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
       .where(eq(parcels.id, parcelId));
   }
 
+  async clearZoning(parcelId: string): Promise<void> {
+    await this.db
+      .update(parcels)
+      .set({ zoning: null })
+      .where(eq(parcels.id, parcelId));
+  }
+
   async transferParcel(parcelId: string, newOwnerId: string, price: number): Promise<void> {
     await this.db
       .update(parcels)
