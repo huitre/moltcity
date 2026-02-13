@@ -229,22 +229,41 @@ function getTilesAlongLine(x0: number, y0: number, x1: number, y1: number): Arra
 // Power Grid Simulation
 // ============================================
 
-export class PowerGridSimulator {
-  constructor(private db: DatabaseManager) {}
-
-  /**
-   * Check if a tile is adjacent to any tile in the powered set (including diagonals)
-   */
-  private isAdjacentToPoweredTile(x: number, y: number, poweredTiles: Set<string>): boolean {
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (poweredTiles.has(`${x + dx},${y + dy}`)) {
-          return true;
+/**
+ * Check if any tile in a building's footprint is adjacent to a set of supplied tiles
+ */
+function isBuildingAdjacentToSupplied(
+  px: number, py: number, bw: number, bh: number, suppliedTiles: Set<string>
+): boolean {
+  for (let by = 0; by < bh; by++) {
+    for (let bx = 0; bx < bw; bx++) {
+      const cx = px + bx;
+      const cy = py + by;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (suppliedTiles.has(`${cx + dx},${cy + dy}`)) {
+            return true;
+          }
         }
       }
     }
-    return false;
   }
+  return false;
+}
+
+/**
+ * Add all tiles of a building's footprint to a set
+ */
+function addBuildingTiles(set: Set<string>, px: number, py: number, bw: number, bh: number): void {
+  for (let by = 0; by < bh; by++) {
+    for (let bx = 0; bx < bw; bx++) {
+      set.add(`${px + bx},${py + by}`);
+    }
+  }
+}
+
+export class PowerGridSimulator {
+  constructor(private db: DatabaseManager) {}
 
   /**
    * Distribute power from plants to buildings via power lines
@@ -276,13 +295,13 @@ export class PowerGridSimulator {
       }
     }
 
-    // Find all power plant locations and their adjacent tiles
+    // Find all power plant locations (all footprint tiles)
     const powerPlantTiles = new Set<string>();
     for (const building of buildings) {
       if (building.type === 'power_plant') {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
         if (parcel) {
-          powerPlantTiles.add(`${parcel.x},${parcel.y}`);
+          addBuildingTiles(powerPlantTiles, parcel.x, parcel.y, building.width || 1, building.height || 1);
         }
       }
     }
@@ -335,7 +354,7 @@ export class PowerGridSimulator {
     for (const building of buildings) {
       if (building.type !== 'power_plant') {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel && this.isAdjacentToPoweredTile(parcel.x, parcel.y, poweredTiles)) {
+        if (parcel && isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, poweredTiles)) {
           totalDemand += building.powerRequired;
         }
       }
@@ -350,8 +369,7 @@ export class PowerGridSimulator {
       } else {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
         if (parcel) {
-          // Building is powered if adjacent to any powered tile
-          const isConnected = this.isAdjacentToPoweredTile(parcel.x, parcel.y, poweredTiles);
+          const isConnected = isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, poweredTiles);
           powerStatus.set(building.id, isConnected && hasEnoughPower);
         } else {
           powerStatus.set(building.id, false);
@@ -379,16 +397,9 @@ export class PowerGridSimulator {
 export class WaterGridSimulator {
   constructor(private db: DatabaseManager) {}
 
-  private isAdjacentToSuppliedTile(x: number, y: number, suppliedTiles: Set<string>): boolean {
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (suppliedTiles.has(`${x + dx},${y + dy}`)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
+  private lastStats = { capacity: 0, demand: 0, suppliedTiles: 0, connectedBuildings: 0 };
+
+  getStats() { return this.lastStats; }
 
   /**
    * Distribute water from towers to buildings via water pipes
@@ -419,13 +430,13 @@ export class WaterGridSimulator {
       }
     }
 
-    // Find all water tower locations
+    // Find all water tower locations (all footprint tiles)
     const waterTowerTiles = new Set<string>();
     for (const building of buildings) {
       if (building.type === 'water_tower') {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
         if (parcel) {
-          waterTowerTiles.add(`${parcel.x},${parcel.y}`);
+          addBuildingTiles(waterTowerTiles, parcel.x, parcel.y, building.width || 1, building.height || 1);
         }
       }
     }
@@ -471,11 +482,13 @@ export class WaterGridSimulator {
     }
 
     let totalDemand = 0;
+    let connectedBuildings = 0;
     for (const building of buildings) {
       if (building.type !== 'water_tower') {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel && this.isAdjacentToSuppliedTile(parcel.x, parcel.y, suppliedTiles)) {
+        if (parcel && isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, suppliedTiles)) {
           totalDemand += building.waterRequired;
+          connectedBuildings++;
         }
       }
     }
@@ -489,7 +502,7 @@ export class WaterGridSimulator {
       } else {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
         if (parcel) {
-          const isConnected = this.isAdjacentToSuppliedTile(parcel.x, parcel.y, suppliedTiles);
+          const isConnected = isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, suppliedTiles);
           waterStatus.set(building.id, isConnected && hasEnoughWater);
         } else {
           waterStatus.set(building.id, false);
@@ -497,6 +510,7 @@ export class WaterGridSimulator {
       }
     }
 
+    this.lastStats = { capacity: totalCapacity, demand: totalDemand, suppliedTiles: suppliedTiles.size, connectedBuildings };
     return waterStatus;
   }
 
@@ -1300,6 +1314,13 @@ export class SimulationEngine extends EventEmitter {
    */
   getEmploymentStats() {
     return this.employmentSimulator.getEmploymentStats();
+  }
+
+  /**
+   * Get water system statistics
+   */
+  getWaterStats() {
+    return this.waterGrid.getStats();
   }
 
   /**

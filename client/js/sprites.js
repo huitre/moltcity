@@ -199,6 +199,23 @@ export async function loadSprites() {
       }
     }
 
+    // Load water tank sprites (used for water_tower building type)
+    if (spritesConfig.water_tank) {
+      for (let i = 0; i < spritesConfig.water_tank.length; i++) {
+        const spriteConfig = spritesConfig.water_tank[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.waterTankSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded water_tank: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(`[Sprites] Failed to load water_tank ${spriteConfig.id}:`, err);
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };

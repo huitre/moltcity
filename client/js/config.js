@@ -45,6 +45,8 @@ export const BUILDING_FOOTPRINTS = {
   hospital: { w: 2, h: 2 },
   police_station: { w: 2, h: 2 },
   fire_station: { w: 2, h: 2 },
+  power_plant: { w: 2, h: 2 },
+  water_tower: { w: 2, h: 2 },
 };
 
 // Vehicle/pedestrian config

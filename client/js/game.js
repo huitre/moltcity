@@ -288,6 +288,7 @@ function drawBuilding(x, y, building) {
     fire_station: state.serviceSprites.firestation,
     hospital: state.serviceSprites.hospital,
     power_plant: state.powerPlantSprites,
+    water_tower: state.waterTankSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     const sprites = serviceSpriteMap[type];

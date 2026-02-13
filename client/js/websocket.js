@@ -174,7 +174,7 @@ function handleTick(data) {
  * Handle population update message
  */
 function handlePopulationUpdate(data) {
-  const { total, employed, traffic } = data;
+  const { total, employed, traffic, water } = data;
 
   state.setCurrentPopulation(total || 0);
 
@@ -182,11 +182,16 @@ function handlePopulationUpdate(data) {
   const popDisplay = document.getElementById("population-display");
   const empDisplay = document.getElementById("employed-display");
   const trafficDisplay = document.getElementById("traffic-display");
+  const waterDisplay = document.getElementById("water-display");
 
   if (popDisplay) popDisplay.textContent = total || 0;
   if (empDisplay) empDisplay.textContent = employed || 0;
   if (trafficDisplay && traffic !== undefined) {
     trafficDisplay.textContent = traffic;
+  }
+  if (waterDisplay && water) {
+    waterDisplay.textContent = `${water.demand}/${water.capacity}`;
+    waterDisplay.style.color = water.demand > water.capacity ? '#ff6b6b' : '#4ecdc4';
   }
 
   updateTrafficLimits();

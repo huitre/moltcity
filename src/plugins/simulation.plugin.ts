@@ -81,12 +81,15 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
         lastPopulationBroadcast = data.tick;
         const targetVehicles = engine.getTargetVehicleCount(data.time);
 
+        const waterStats = engine.getWaterStats();
+
         fastify.broadcast('population_update', {
           total: populationStats.total,
           employed: populationStats.employed,
           unemployed: populationStats.unemployed,
           employmentRate: populationStats.employmentRate,
           traffic: targetVehicles,
+          water: waterStats,
         });
       }
 
