@@ -90,16 +90,16 @@ export function drawRoad(x, y) {
       else if (!conn.se) roadType = "road_088";
     } else if (connCount === 2) {
       if (conn.ne && conn.sw) {
-        const variants = ["road_081", "road_055", "road_044"];
+        const variants = ["road_081", "road_055"];
         const rng = mulberry32(x * 1000 + y);
         roadType = variants[Math.floor(rng() * variants.length)];
       } else if (conn.nw && conn.se) {
-        const variants = ["road_073", "road_064", "road_036"];
+        const variants = ["road_073", "road_064"];
         const rng = mulberry32(x * 1000 + y);
         roadType = variants[Math.floor(rng() * variants.length)];
       } else if (conn.nw && conn.ne) roadType = "road_125";
-      else if (conn.ne && conn.se) roadType = "road_126";
-      else if (conn.se && conn.sw) roadType = "road_124";
+      else if (conn.ne && conn.se) roadType = "road_124";
+      else if (conn.se && conn.sw) roadType = "road_122";
       else if (conn.sw && conn.nw) roadType = "road_125";
     } else if (connCount === 1) {
       if (conn.sw) roadType = "road_110";

@@ -86,7 +86,7 @@ export function spawnVehicle(vehicleTypes) {
   const iso = cartToIso(vehicle.x, vehicle.y);
   sprite.x = iso.x;
   sprite.y = iso.y + TILE_HEIGHT / 2;
-  sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
+  sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 0.5;
 
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
@@ -167,7 +167,7 @@ export function animateVehicles(delta) {
     const iso = cartToIso(vehicle.x, vehicle.y);
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 12;
-    vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
+    vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y) + 1;
 
     // Remove if out of bounds
     if (

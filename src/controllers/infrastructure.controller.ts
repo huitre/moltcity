@@ -40,6 +40,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
 
     reply.status(201);
     const powerLine = await powerLineRepo.getPowerLine(id);
+    fastify.broadcast('infrastructure_update', { type: 'power_line', action: 'created' });
     return { success: true, powerLine };
   });
 
@@ -64,6 +65,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
       throw new NotFoundError('Power line', params.id);
     }
 
+    fastify.broadcast('infrastructure_update', { type: 'power_line', action: 'deleted' });
     return { success: true };
   });
 
@@ -90,6 +92,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
 
     reply.status(201);
     const waterPipe = await waterPipeRepo.getWaterPipe(id);
+    fastify.broadcast('infrastructure_update', { type: 'water_pipe', action: 'created' });
     return { success: true, waterPipe };
   });
 
@@ -114,6 +117,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
       throw new NotFoundError('Water pipe', params.id);
     }
 
+    fastify.broadcast('infrastructure_update', { type: 'water_pipe', action: 'deleted' });
     return { success: true };
   });
 };

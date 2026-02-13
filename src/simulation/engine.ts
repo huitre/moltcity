@@ -198,6 +198,34 @@ export class RentEnforcementSimulator {
 }
 
 // ============================================
+// Infrastructure Helpers
+// ============================================
+
+/**
+ * Get all tile coordinates along a line between two points (Bresenham-style).
+ * Ensures every intermediate tile is included so pipes/lines cover
+ * the full visual path, not just the endpoints.
+ */
+function getTilesAlongLine(x0: number, y0: number, x1: number, y1: number): Array<{ x: number; y: number }> {
+  const tiles: Array<{ x: number; y: number }> = [];
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  let cx = x0, cy = y0;
+
+  while (true) {
+    tiles.push({ x: cx, y: cy });
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
+  }
+  return tiles;
+}
+
+// ============================================
 // Power Grid Simulation
 // ============================================
 
@@ -240,9 +268,12 @@ export class PowerGridSimulator {
       powerGrid.get(key2)!.add(key1);
     };
 
-    // Add all power line connections
+    // Add all power line connections (including intermediate tiles)
     for (const line of powerLines) {
-      addConnection(line.from.x, line.from.y, line.to.x, line.to.y);
+      const tiles = getTilesAlongLine(line.from.x, line.from.y, line.to.x, line.to.y);
+      for (let t = 0; t < tiles.length - 1; t++) {
+        addConnection(tiles[t].x, tiles[t].y, tiles[t + 1].x, tiles[t + 1].y);
+      }
     }
 
     // Find all power plant locations and their adjacent tiles
@@ -380,8 +411,12 @@ export class WaterGridSimulator {
       waterGrid.get(key2)!.add(key1);
     };
 
+    // Add all water pipe connections (including intermediate tiles)
     for (const pipe of waterPipes) {
-      addConnection(pipe.from.x, pipe.from.y, pipe.to.x, pipe.to.y);
+      const tiles = getTilesAlongLine(pipe.from.x, pipe.from.y, pipe.to.x, pipe.to.y);
+      for (let t = 0; t < tiles.length - 1; t++) {
+        addConnection(tiles[t].x, tiles[t].y, tiles[t + 1].x, tiles[t + 1].y);
+      }
     }
 
     // Find all water tower locations

@@ -535,6 +535,11 @@ function handleWebSocketMessage(type, data) {
     case "election":
       loadElectionStatus();
       break;
+
+    case "infrastructure_update":
+      // Buildings were already re-fetched by websocket.js, just re-render
+      render();
+      break;
   }
 }
 
@@ -566,12 +571,14 @@ function showBuildingInfo(building) {
   const typeEl = document.getElementById("building-type");
   const floorsEl = document.getElementById("building-floors");
   const powerEl = document.getElementById("building-power");
+  const waterEl = document.getElementById("building-water");
   const ownerEl = document.getElementById("building-owner");
   if (iconEl) iconEl.textContent = BUILDING_ICONS[building.type] || "🏠";
   if (nameEl) nameEl.textContent = building.name || building.type;
   if (typeEl) typeEl.textContent = building.type;
   if (floorsEl) floorsEl.textContent = building.floors || 1;
   if (powerEl) powerEl.textContent = building.powered ? "Connected" : "No Power";
+  if (waterEl) waterEl.textContent = building.hasWater ? "Connected" : "No Water";
   if (ownerEl) ownerEl.textContent = building.ownerId ? building.ownerId.slice(0, 8) + "..." : "Unknown";
 
   panel.style.display = "block";

@@ -4,6 +4,7 @@
 
 import { WS_URL } from './config.js';
 import * as state from './state.js';
+import * as api from './api.js';
 import { updateTrafficLimits } from './render/ambient.js';
 
 let reconnectAttempts = 0;
@@ -84,6 +85,10 @@ function handleMessage(msg, onMessage) {
 
     case "simulation_stopped":
       console.log("[Simulation] Stopped");
+      break;
+
+    case "infrastructure_update":
+      handleInfrastructureUpdate(data, onMessage);
       break;
   }
 
@@ -205,6 +210,26 @@ function updateConnectionStatus(connected) {
     statusEl.textContent = connected ? "Connected" : "Disconnected";
     statusEl.style.color = connected ? "#4ecdc4" : "#ff6b6b";
   }
+}
+
+/**
+ * Handle infrastructure update - re-fetch buildings to get updated utility statuses
+ */
+let infraUpdateTimer = null;
+function handleInfrastructureUpdate(data, onMessage) {
+  console.log("[WebSocket] Infrastructure update:", data);
+
+  // Debounce: wait 1.5s for simulation to recalculate power/water status
+  if (infraUpdateTimer) clearTimeout(infraUpdateTimer);
+  infraUpdateTimer = setTimeout(async () => {
+    try {
+      const buildingsResponse = await api.getBuildings();
+      state.setBuildings(buildingsResponse.buildings || []);
+      if (onMessage) onMessage("infrastructure_update", data);
+    } catch (e) {
+      console.error("[WebSocket] Failed to refresh buildings after infrastructure update:", e);
+    }
+  }, 1500);
 }
 
 /**
