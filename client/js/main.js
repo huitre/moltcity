@@ -482,6 +482,7 @@ function handleTileHover(x, y, globalPos) {
         const bh = building.height || 1;
         const container = new PIXI.Container();
         container.sortableChildren = true;
+        container.zIndex = 1000;
         for (let dy = 0; dy < bh; dy++) {
           for (let dx = 0; dx < bw; dx++) {
             const highlight = drawHighlight(p.x + dx, p.y + dy, 0xff0000, true);
@@ -500,6 +501,7 @@ function handleTileHover(x, y, globalPos) {
       const footprint = BUILDING_FOOTPRINTS[state.selectedBuildType] || { w: 1, h: 1 };
       const container = new PIXI.Container();
       container.sortableChildren = true;
+      container.zIndex = 1000;
 
       for (let dy = 0; dy < footprint.h; dy++) {
         for (let dx = 0; dx < footprint.w; dx++) {
@@ -741,13 +743,13 @@ async function main() {
   if (isSpectatorMode) {
     // Spectator mode: hide auth and interactive elements
     const authOverlay = document.getElementById("auth-overlay");
-    const controls = document.getElementById("controls");
+    const topBar = document.getElementById("top-bar");
     const userInfo = document.getElementById("user-info");
     const buildMenu = document.getElementById("build-menu");
     const spectatorBanner = document.getElementById("spectator-banner");
 
     if (authOverlay) authOverlay.style.display = "none";
-    if (controls) controls.style.display = "none";
+    if (topBar) topBar.style.display = "none";
     if (userInfo) userInfo.style.display = "none";
     if (buildMenu) buildMenu.style.display = "none";
     if (spectatorBanner) spectatorBanner.style.display = "block";
