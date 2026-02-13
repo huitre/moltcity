@@ -61,6 +61,7 @@ export async function getMe() {
   return fetchApi('/api/auth/me');
 }
 
+
 // ============================================
 // City API
 // ============================================

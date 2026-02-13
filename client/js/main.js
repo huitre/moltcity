@@ -88,25 +88,30 @@ async function loadGameConfig() {
 /**
  * Update user's agent balance display
  */
-function updateUserBalance() {
+async function updateUserBalance() {
   const balanceDisplay = document.getElementById("balance-display");
   if (!balanceDisplay) return;
 
-  const { currentUser, agents } = state;
+  const { currentUser } = state;
   if (!currentUser) {
     balanceDisplay.textContent = "$0";
     return;
   }
 
-  // Find user's agent by agentId or moltbookId
-  const userAgent = agents.find(
-    (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id
-  );
-
-  if (userAgent && userAgent.wallet) {
-    balanceDisplay.textContent = `$${userAgent.wallet.balance.toLocaleString()}`;
-  } else {
-    balanceDisplay.textContent = "$0";
+  try {
+    const data = await api.getMe();
+    if (data.balance !== undefined) {
+      balanceDisplay.textContent = `$${data.balance.toLocaleString()}`;
+    }
+  } catch (e) {
+    // Fallback: try matching from local agents list
+    const { agents } = state;
+    const userAgent = agents.find(
+      (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id
+    );
+    if (userAgent && userAgent.wallet) {
+      balanceDisplay.textContent = `$${userAgent.wallet.balance.toLocaleString()}`;
+    }
   }
 }
 

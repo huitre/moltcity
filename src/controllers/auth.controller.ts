@@ -55,10 +55,16 @@ export const authController: FastifyPluginAsync = async (fastify) => {
   }, async (request) => {
     const user = await authService.getUser(request.user!.userId);
     if (!user) return { user: null };
-    
+
+    // Ensure user has an agent (auto-create if needed)
+    const agentInfo = await authService.ensureAgent(user.id);
+
     // Strip sensitive fields before returning
     const { passwordHash, ...safeUser } = user;
-    return { user: safeUser };
+    return {
+      user: { ...safeUser, agentId: agentInfo.agentId },
+      balance: agentInfo.balance,
+    };
   });
 
   // Change password

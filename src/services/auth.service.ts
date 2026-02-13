@@ -226,6 +226,31 @@ export class AuthService {
     return (await this.userRepo.getUser(userId))!;
   }
 
+  async ensureAgent(userId: string): Promise<{ agentId: string; balance: number }> {
+    const user = await this.userRepo.getUser(userId);
+    if (!user) throw new NotFoundError('User', userId);
+
+    // Already has an agent linked
+    if (user.agentId) {
+      const agent = await this.agentRepo.getAgent(user.agentId);
+      if (agent) {
+        return { agentId: agent.id, balance: agent.wallet.balance };
+      }
+    }
+
+    // Check if there's an agent with moltbookId matching user id
+    const existingAgent = await this.agentRepo.getAgentByMoltbookId(userId);
+    if (existingAgent) {
+      await this.userRepo.linkAgent(userId, existingAgent.id);
+      return { agentId: existingAgent.id, balance: existingAgent.wallet.balance };
+    }
+
+    // Auto-create agent
+    const agent = await this.agentRepo.createAgent(user.name, 25, 25, userId);
+    await this.userRepo.linkAgent(userId, agent.id);
+    return { agentId: agent.id, balance: agent.wallet.balance };
+  }
+
   async linkAgent(userId: string, agentId: string): Promise<User> {
     const user = await this.userRepo.getUser(userId);
     if (!user) {

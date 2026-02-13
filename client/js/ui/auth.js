@@ -32,6 +32,11 @@ export async function checkAuth() {
     if (res.ok) {
       const data = await res.json();
       state.setCurrentUser(data.user);
+      // Update balance display immediately from auth response
+      if (data.balance !== undefined) {
+        const balanceDisplay = document.getElementById("balance-display");
+        if (balanceDisplay) balanceDisplay.textContent = `$${data.balance.toLocaleString()}`;
+      }
       hideAuthModal();
       showUserInfo();
       if (onAuthSuccessCallback) {
