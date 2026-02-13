@@ -7,6 +7,7 @@ import { BaseRepository } from './base.repository.js';
 import { agents, type AgentRow, type AgentInsert } from '../db/schema/agents.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { Agent, AgentState, Coordinate } from '../models/types.js';
+import { CURRENCY } from '../config/game.js';
 
 const DEFAULT_SCHEDULE = { wakeUp: 7, workStart: 9, workEnd: 17, sleepTime: 22 };
 
@@ -48,6 +49,7 @@ export class AgentRepository extends BaseRepository<typeof agents, AgentRow, Age
       currentX: startX,
       currentY: startY,
       schedule: JSON.stringify(DEFAULT_SCHEDULE),
+      walletBalance: CURRENCY.STARTING_BALANCE,
       moltbookId: moltbookId || null,
       createdAt: this.now(),
     });

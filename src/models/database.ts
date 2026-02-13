@@ -694,9 +694,9 @@ export class AgentRepository {
     const defaultSchedule = { wakeUp: 7, workStart: 9, workEnd: 17, sleepTime: 22 };
 
     this.db.prepare(`
-      INSERT INTO agents (id, name, current_x, current_y, schedule, moltbook_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, name, startX, startY, JSON.stringify(defaultSchedule), moltbookId || null, Date.now());
+      INSERT INTO agents (id, name, current_x, current_y, schedule, wallet_balance, moltbook_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, name, startX, startY, JSON.stringify(defaultSchedule), 1000, moltbookId || null, Date.now());
 
     return this.getAgent(id)!;
   }
