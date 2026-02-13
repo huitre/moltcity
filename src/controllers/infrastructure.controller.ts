@@ -9,7 +9,9 @@ import {
   createWaterPipeSchema,
   infrastructureIdParamSchema,
 } from '../schemas/infrastructure.schema.js';
-import { NotFoundError } from '../plugins/error-handler.plugin.js';
+import { NotFoundError, ForbiddenError } from '../plugins/error-handler.plugin.js';
+import { UserRepository } from '../repositories/user.repository.js';
+import { hasElevatedPrivileges, type UserRole } from '../config/game.js';
 
 export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   const powerLineRepo = new PowerLineRepository(fastify.db);
@@ -41,8 +43,20 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     return { success: true, powerLine };
   });
 
-  // Delete power line
-  fastify.delete('/api/infrastructure/power-lines/:id', async (request) => {
+  // Delete power line (requires mayor/admin)
+  fastify.delete('/api/infrastructure/power-lines/:id', {
+    preHandler: [fastify.authenticate],
+  }, async (request) => {
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
+    if (!hasElevatedPrivileges(role)) {
+      throw new ForbiddenError('Only mayors and admins can delete power lines');
+    }
+
     const params = infrastructureIdParamSchema.parse(request.params);
     const deleted = await powerLineRepo.deletePowerLine(params.id);
 
@@ -79,8 +93,20 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     return { success: true, waterPipe };
   });
 
-  // Delete water pipe
-  fastify.delete('/api/infrastructure/water-pipes/:id', async (request) => {
+  // Delete water pipe (requires mayor/admin)
+  fastify.delete('/api/infrastructure/water-pipes/:id', {
+    preHandler: [fastify.authenticate],
+  }, async (request) => {
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
+    if (!hasElevatedPrivileges(role)) {
+      throw new ForbiddenError('Only mayors and admins can delete water pipes');
+    }
+
     const params = infrastructureIdParamSchema.parse(request.params);
     const deleted = await waterPipeRepo.deleteWaterPipe(params.id);
 

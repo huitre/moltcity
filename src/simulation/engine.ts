@@ -7,13 +7,24 @@ import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, Ci
 import { DatabaseManager } from '../models/database.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
 import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS } from '../config/game.js';
+import { LandValueSimulator } from './landvalue.simulator.js';
+import { ZoneEvolutionSimulator } from './zone-evolution.simulator.js';
+import { DemandCalculator } from './demand.calculator.js';
+import { CrimeSimulator } from './crime.simulator.js';
+import { FireSimulator } from './fire.simulator.js';
+
+// ============================================
+// Activity Logger
+// ============================================
+
+export type ActivityLogger = (type: string, message: string, metadata?: Record<string, unknown>) => void;
 
 // ============================================
 // Configuration
 // ============================================
 
-const TICK_INTERVAL_MS = 100;          // How often the simulation updates (100ms = 10 ticks/second)
-const TICKS_PER_MINUTE = 10;            // 10 ticks = 1 in-game minute
+const TICK_INTERVAL_MS = 50;            // How often the simulation updates (50ms = 20 ticks/second)
+const TICKS_PER_MINUTE = 5;             // 5 ticks = 1 in-game minute (faster days)
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
@@ -21,7 +32,7 @@ const AGENT_WALK_SPEED = 0.5;           // Parcels per tick
 const VEHICLE_BASE_SPEED = 2.0;         // Parcels per tick
 
 // Time constants
-const TICKS_PER_HOUR = 600; // 10 ticks/min * 60 min
+const TICKS_PER_HOUR = TICKS_PER_MINUTE * MINUTES_PER_HOUR; // 5 ticks/min * 60 min = 300
 const TICKS_PER_DAY = TICKS_PER_HOUR * 24;
 const WARNING_DEADLINE_DAYS = 3; // Days to pay after warning
 const JAIL_SENTENCE_DAYS = 7; // Days in jail for rent nonpayment
@@ -30,6 +41,8 @@ const JAIL_SENTENCE_DAYS = 7; // Days in jail for rent nonpayment
 const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boolean }> = {
   house: { min: 2, max: 4, perFloor: false },
   apartment: { min: 3, max: 3, perFloor: true },
+  residential: { min: 2, max: 4, perFloor: true },
+  suburban: { min: 2, max: 4, perFloor: false },
 };
 
 // ============================================
@@ -37,7 +50,7 @@ const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boo
 // ============================================
 
 export class ConstructionSimulator {
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
 
   /**
    * Advance construction progress for all buildings under construction
@@ -63,6 +76,9 @@ export class ConstructionSimulator {
         if (newProgress >= 100) {
           completedBuildings.push({ ...building, constructionProgress: 100 });
           console.log(`[Construction] Building completed: ${building.name} (${building.type})`);
+          this.log?.('construction_completed', `Building completed: ${building.name} (${building.type})`, {
+            buildingId: building.id, type: building.type, name: building.name,
+          });
         }
       }
     }
@@ -78,7 +94,7 @@ export class ConstructionSimulator {
 export class RentEnforcementSimulator {
   private lastProcessedDay: number = 0;
 
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
 
   /**
    * Process rent enforcement - runs once per day at midnight
@@ -198,6 +214,10 @@ export class RentEnforcementSimulator {
           // Update agent state
           this.db.agents.updateState(courtCase.defendantId, 'in_jail');
           console.log(`[RentEnforcement] Agent ${courtCase.defendantId} sent to jail for ${JAIL_SENTENCE_DAYS} days`);
+          const jailedAgent = this.db.agents.findAgent(courtCase.defendantId);
+          this.log?.('jail_update', `Agent ${jailedAgent?.name || courtCase.defendantId} sent to jail for ${JAIL_SENTENCE_DAYS} days`, {
+            agentId: courtCase.defendantId, days: JAIL_SENTENCE_DAYS,
+          });
         }
       }
     }
@@ -210,6 +230,10 @@ export class RentEnforcementSimulator {
       this.db.jailInmates.releaseInmate(inmate.id);
       this.db.agents.updateState(inmate.agentId, 'idle');
       console.log(`[RentEnforcement] Agent ${inmate.agentId} released from jail`);
+      const releasedAgent = this.db.agents.findAgent(inmate.agentId);
+      this.log?.('jail_update', `Agent ${releasedAgent?.name || inmate.agentId} released from jail`, {
+        agentId: inmate.agentId,
+      });
     }
   }
 }
@@ -354,6 +378,137 @@ export class PowerGridSimulator {
   applyPowerStatus(status: Map<string, boolean>): void {
     for (const [buildingId, powered] of status) {
       this.db.buildings.updatePowerStatus(buildingId, powered);
+    }
+  }
+}
+
+// ============================================
+// Water Grid Simulation
+// ============================================
+
+export class WaterGridSimulator {
+  constructor(private db: DatabaseManager) {}
+
+  private isAdjacentToSuppliedTile(x: number, y: number, suppliedTiles: Set<string>): boolean {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (suppliedTiles.has(`${x + dx},${y + dy}`)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Distribute water from towers to buildings via water pipes
+   * Returns map of buildingId -> hasWater
+   */
+  simulate(): Map<string, boolean> {
+    const buildings = this.db.buildings.getAllBuildings();
+    const waterPipes = this.db.waterPipes.getAllWaterPipes();
+    const waterStatus = new Map<string, boolean>();
+
+    // Build adjacency graph from water pipes
+    const waterGrid = new Map<string, Set<string>>();
+
+    const addConnection = (x1: number, y1: number, x2: number, y2: number) => {
+      const key1 = `${x1},${y1}`;
+      const key2 = `${x2},${y2}`;
+      if (!waterGrid.has(key1)) waterGrid.set(key1, new Set());
+      if (!waterGrid.has(key2)) waterGrid.set(key2, new Set());
+      waterGrid.get(key1)!.add(key2);
+      waterGrid.get(key2)!.add(key1);
+    };
+
+    for (const pipe of waterPipes) {
+      addConnection(pipe.from.x, pipe.from.y, pipe.to.x, pipe.to.y);
+    }
+
+    // Find all water tower locations
+    const waterTowerTiles = new Set<string>();
+    for (const building of buildings) {
+      if (building.type === 'water_tower') {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel) {
+          waterTowerTiles.add(`${parcel.x},${parcel.y}`);
+        }
+      }
+    }
+
+    // BFS to find all tiles connected to water towers via water pipes
+    const suppliedTiles = new Set<string>();
+    const queue: string[] = [];
+
+    for (const towerTile of waterTowerTiles) {
+      suppliedTiles.add(towerTile);
+      const [tx, ty] = towerTile.split(',').map(Number);
+
+      for (const gridTile of waterGrid.keys()) {
+        const [gx, gy] = gridTile.split(',').map(Number);
+        if (Math.abs(gx - tx) <= 1 && Math.abs(gy - ty) <= 1) {
+          if (!suppliedTiles.has(gridTile)) {
+            suppliedTiles.add(gridTile);
+            queue.push(gridTile);
+          }
+        }
+      }
+    }
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const neighbors = waterGrid.get(current);
+      if (neighbors) {
+        for (const neighbor of neighbors) {
+          if (!suppliedTiles.has(neighbor)) {
+            suppliedTiles.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      }
+    }
+
+    // Calculate capacity vs demand
+    let totalCapacity = 0;
+    for (const building of buildings) {
+      if (building.type === 'water_tower') {
+        totalCapacity += 5000; // Each tower supplies 5000 liters/tick
+      }
+    }
+
+    let totalDemand = 0;
+    for (const building of buildings) {
+      if (building.type !== 'water_tower') {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel && this.isAdjacentToSuppliedTile(parcel.x, parcel.y, suppliedTiles)) {
+          totalDemand += building.waterRequired;
+        }
+      }
+    }
+
+    const hasEnoughWater = totalCapacity >= totalDemand;
+
+    // Set water status for each building
+    for (const building of buildings) {
+      if (building.type === 'water_tower') {
+        waterStatus.set(building.id, true);
+      } else {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel) {
+          const isConnected = this.isAdjacentToSuppliedTile(parcel.x, parcel.y, suppliedTiles);
+          waterStatus.set(building.id, isConnected && hasEnoughWater);
+        } else {
+          waterStatus.set(building.id, false);
+        }
+      }
+    }
+
+    return waterStatus;
+  }
+
+  applyWaterStatus(status: Map<string, boolean>): void {
+    for (const [buildingId, hasWater] of status) {
+      this.db.buildings.updateWaterStatus(buildingId, hasWater);
     }
   }
 }
@@ -839,7 +994,7 @@ export class EmploymentSimulator {
 export class TaxationSimulator {
   private lastProcessedDay: number = 0;
 
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
 
   /**
    * Process daily taxation - runs once per day at midnight
@@ -910,6 +1065,9 @@ export class TaxationSimulator {
       const newTreasury = city.stats.treasury + totalTaxCollected;
       this.db.city.updateTreasury(newTreasury);
       console.log(`[Taxation] City treasury received $${totalTaxCollected} (new total: $${newTreasury})`);
+      this.log?.('tax_collected', `City treasury received $${totalTaxCollected} in daily taxes`, {
+        amount: totalTaxCollected, day: time.day,
+      });
     }
 
     return events;
@@ -923,6 +1081,7 @@ export class TaxationSimulator {
 export class SimulationEngine extends EventEmitter {
   private db: DatabaseManager;
   private powerGrid: PowerGridSimulator;
+  private waterGrid: WaterGridSimulator;
   private agentSimulator: AgentSimulator;
   private vehicleSimulator: VehicleSimulator;
   private constructionSimulator: ConstructionSimulator;
@@ -930,14 +1089,21 @@ export class SimulationEngine extends EventEmitter {
   private populationSimulator: PopulationSimulator;
   private employmentSimulator: EmploymentSimulator;
   private taxationSimulator: TaxationSimulator;
+  private landValueSimulator: LandValueSimulator;
+  private zoneEvolutionSimulator: ZoneEvolutionSimulator;
+  private demandCalculator: DemandCalculator;
+  private crimeSimulator: CrimeSimulator;
+  private fireSimulator: FireSimulator;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
+  private activityLogger?: ActivityLogger;
 
   constructor(db: DatabaseManager, gridWidth: number, gridHeight: number) {
     super();
     this.db = db;
     this.powerGrid = new PowerGridSimulator(db);
+    this.waterGrid = new WaterGridSimulator(db);
     this.agentSimulator = new AgentSimulator(db, gridWidth, gridHeight);
     this.vehicleSimulator = new VehicleSimulator(db, gridWidth, gridHeight);
     this.constructionSimulator = new ConstructionSimulator(db);
@@ -945,6 +1111,25 @@ export class SimulationEngine extends EventEmitter {
     this.populationSimulator = new PopulationSimulator(db);
     this.employmentSimulator = new EmploymentSimulator(db);
     this.taxationSimulator = new TaxationSimulator(db);
+    this.landValueSimulator = new LandValueSimulator(db);
+    this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(db);
+    this.demandCalculator = new DemandCalculator(db);
+    this.crimeSimulator = new CrimeSimulator(db);
+    this.fireSimulator = new FireSimulator(db);
+  }
+
+  /**
+   * Set activity logger callback for simulation events
+   */
+  setActivityLogger(logger: ActivityLogger): void {
+    this.activityLogger = logger;
+    // Re-create simulators that use the logger
+    this.constructionSimulator = new ConstructionSimulator(this.db, logger);
+    this.rentEnforcementSimulator = new RentEnforcementSimulator(this.db, logger);
+    this.taxationSimulator = new TaxationSimulator(this.db, logger);
+    this.crimeSimulator = new CrimeSimulator(this.db, logger);
+    this.fireSimulator = new FireSimulator(this.db, logger);
+    this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(this.db, logger);
   }
 
   getCurrentTick(): number {
@@ -996,6 +1181,9 @@ export class SimulationEngine extends EventEmitter {
     if (this.currentTick % 10 === 0) {
       const powerStatus = this.powerGrid.simulate();
       this.powerGrid.applyPowerStatus(powerStatus);
+
+      const waterStatus = this.waterGrid.simulate();
+      this.waterGrid.applyWaterStatus(waterStatus);
     }
 
     // Simulate construction progress
@@ -1022,6 +1210,22 @@ export class SimulationEngine extends EventEmitter {
     // Simulate taxation (infrastructure fees, runs daily at midnight)
     const taxEvents = this.taxationSimulator.simulate(this.currentTick, time);
     events.push(...taxEvents);
+
+    // Simulate land value recalculation (runs daily at hour 1)
+    this.landValueSimulator.simulate(time);
+
+    // Simulate zone evolution (runs daily at hour 2)
+    this.zoneEvolutionSimulator.simulate(time);
+
+    // Simulate crime (every 300 ticks / hourly)
+    if (this.currentTick % 300 === 0) {
+      this.crimeSimulator.simulate(time, this.currentTick);
+    }
+
+    // Simulate fire (every 10 ticks)
+    if (this.currentTick % 10 === 0) {
+      this.fireSimulator.simulate(time, this.currentTick);
+    }
 
     // Simulate agents
     const agentEvents = this.agentSimulator.simulate(time);
@@ -1086,6 +1290,8 @@ export class SimulationEngine extends EventEmitter {
     const populationStats = this.populationSimulator.getPopulationStats();
     const employmentStats = this.employmentSimulator.getEmploymentStats();
 
+    const demandStats = this.demandCalculator.calculate();
+
     return {
       running: this.running,
       tick: this.currentTick,
@@ -1095,6 +1301,7 @@ export class SimulationEngine extends EventEmitter {
       buildingCount: buildings.length,
       population: populationStats,
       employment: employmentStats,
+      demand: demandStats,
     };
   }
 

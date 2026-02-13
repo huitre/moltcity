@@ -10,7 +10,7 @@ import { CityRepository } from '../repositories/city.repository.js';
 import { RoadRepository } from '../repositories/road.repository.js';
 import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, ValidationError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
-import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, getBuildingCost, BUILDING_COSTS, type UserRole } from '../config/game.js';
+import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, getBuildingCost, BUILDING_COSTS, BUILDING_FOOTPRINTS, type UserRole } from '../config/game.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { FastifyInstance } from 'fastify';
 import type { Building, BuildingType } from '../models/types.js';
@@ -113,9 +113,19 @@ export class BuildingService {
       throw new NotFoundError('Parcel');
     }
 
-    // Check if parcel is owned (admins/mayors can build on any parcel)
-    if (!parcel.ownerId && !hasElevatedPrivileges(role)) {
-      throw new ValidationError('Parcel must be owned to build on it');
+    // Auto-claim unowned parcels when building
+    if (!parcel.ownerId) {
+      let claimAgent = null;
+      if (params.agentId) {
+        claimAgent = await this.agentRepo.getAgent(params.agentId);
+        if (!claimAgent) claimAgent = await this.agentRepo.getAgentByMoltbookId(params.agentId);
+      }
+      if (!claimAgent && params.moltbookId) {
+        claimAgent = await this.agentRepo.getAgentByMoltbookId(params.moltbookId);
+      }
+      const claimOwnerId = claimAgent?.id || 'system';
+      await this.parcelRepo.purchaseParcel(parcel.id, claimOwnerId, 0);
+      parcel = (await this.parcelRepo.getParcelById(parcel.id))!;
     }
 
     // Find agent
@@ -157,20 +167,76 @@ export class BuildingService {
       throw new ForbiddenError('Agent does not own this parcel');
     }
 
-    // Check for existing building
-    const existingBuilding = await this.buildingRepo.getBuildingAtParcel(parcel.id);
-    if (existingBuilding) {
-      throw new ConflictError('Parcel already has a building');
+    // Get building footprint
+    const footprint = BUILDING_FOOTPRINTS[params.type] || { w: 1, h: 1 };
+    const claimOwnerId = agent?.id || parcel.ownerId || 'system';
+
+    // Validate ALL tiles in footprint
+    // First, load all existing buildings to check multi-tile overlaps
+    const allBuildings = await this.buildingRepo.getAllBuildings();
+
+    for (let dy = 0; dy < footprint.h; dy++) {
+      for (let dx = 0; dx < footprint.w; dx++) {
+        const tileX = parcel.x + dx;
+        const tileY = parcel.y + dy;
+
+        let tileParcel = (dx === 0 && dy === 0)
+          ? parcel
+          : await this.parcelRepo.getParcel(tileX, tileY);
+
+        if (!tileParcel) {
+          throw new ValidationError(`Tile (${tileX}, ${tileY}) doesn't exist`);
+        }
+
+        // Check for existing building at this parcel
+        const existingBuilding = await this.buildingRepo.getBuildingAtParcel(tileParcel.id);
+        if (existingBuilding) {
+          throw new ConflictError(`Tile (${tileX}, ${tileY}) already has a building`);
+        }
+
+        // Check for existing road
+        const existingRoad = await this.roadRepo.getRoad(tileParcel.id);
+        if (existingRoad) {
+          throw new ConflictError(`Cannot build on road at (${tileX}, ${tileY})`);
+        }
+
+        // Check overlap with existing multi-tile buildings
+        for (const b of allBuildings) {
+          if (b.width <= 1 && b.height <= 1) continue;
+          const bParcel = await this.parcelRepo.getParcelById(b.parcelId);
+          if (!bParcel) continue;
+          if (tileX >= bParcel.x && tileX < bParcel.x + b.width &&
+              tileY >= bParcel.y && tileY < bParcel.y + b.height) {
+            throw new ConflictError(`Tile (${tileX}, ${tileY}) is occupied by ${b.name}`);
+          }
+        }
+
+        // Auto-claim unowned parcels in footprint
+        if (!tileParcel.ownerId) {
+          await this.parcelRepo.purchaseParcel(tileParcel.id, claimOwnerId, 0);
+        }
+      }
     }
 
-    // Check for existing road (cannot build on roads)
-    const existingRoad = await this.roadRepo.getRoad(parcel.id);
-    if (existingRoad) {
-      throw new ConflictError('Cannot build on a road');
+    // Auto-set parcel zoning for zone buildings
+    const zoningMap: Partial<Record<BuildingType, string>> = {
+      suburban: 'suburban',
+      residential: 'residential',
+      offices: 'office',
+      industrial: 'industrial',
+    };
+    const autoZoning = zoningMap[params.type];
+    if (autoZoning) {
+      await this.parcelRepo.setZoning(parcel.id, autoZoning as any);
     }
+
+    // Enforce floor limits for zone types
+    let floors = params.floors || 1;
+    if (params.type === 'suburban') floors = 1;
+    if (params.type === 'industrial') floors = Math.min(floors, 2);
 
     // Get building cost and check agent wallet (unless admin/mayor)
-    const quote = this.getQuote(params.type, params.floors || 1);
+    const quote = this.getQuote(params.type, floors);
     if (!hasElevatedPrivileges(role) && agent) {
       if (agent.wallet.balance < quote.totalCost) {
         throw new InsufficientFundsError(quote.totalCost, agent.wallet.balance);
@@ -187,15 +253,17 @@ export class BuildingService {
     const city = await this.cityRepo.getCity();
     const currentTick = city?.time.tick || 0;
 
-    // Create building
+    // Create building with footprint dimensions
     const building = await this.buildingRepo.createBuilding(
       parcel.id,
       params.type,
       params.name,
       ownerId,
       params.sprite,
-      params.floors || 1,
-      currentTick
+      floors,
+      currentTick,
+      footprint.w,
+      footprint.h
     );
 
     // Log activity

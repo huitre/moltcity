@@ -7,6 +7,8 @@ import fp from 'fastify-plugin';
 import { SimulationEngine } from '../simulation/engine.js';
 import { DatabaseManager } from '../models/database.js';
 import { ElectionService } from '../services/election.service.js';
+import { ActivityService } from '../services/activity.service.js';
+import type { ActivityType } from '../db/schema/activity.js';
 import type { CityTime, CityEvent } from '../models/types.js';
 
 // Default grid size
@@ -44,6 +46,13 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
   // Create the simulation engine
   const engine = new SimulationEngine(legacyDb, gridWidth, gridHeight);
   fastify.decorate('simulationEngine', engine);
+
+  // Wire simulation activity logger to the activity feed
+  const activityService = new ActivityService(fastify.db, fastify);
+  engine.setActivityLogger((type, message, metadata) => {
+    activityService.logActivity(type as ActivityType, undefined, 'MoltCity', message, metadata)
+      .catch(err => fastify.log.error({ err }, 'Failed to log simulation activity'));
+  });
 
   // Track last broadcasts to avoid spam
   let lastPopulationBroadcast = 0;

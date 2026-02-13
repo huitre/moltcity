@@ -42,10 +42,10 @@ export const INFRASTRUCTURE_TYPES = ['power_line', 'water_pipe'] as const;
 
 // Buildings that regular users/agents can create
 export const USER_BUILDING_TYPES: BuildingType[] = [
-  'house',
-  'apartment',
-  'shop',
-  'office',
+  'residential',
+  'offices',
+  'suburban',
+  'industrial',
   'factory',
   'fire_station',
   'police_station',
@@ -64,20 +64,29 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
 ];
 
 // ============================================
+// Building Footprints (multi-tile buildings)
+// ============================================
+export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: number }>> = {
+  hospital: { w: 2, h: 2 },
+  police_station: { w: 2, h: 2 },
+  fire_station: { w: 2, h: 2 },
+};
+
+// ============================================
 // Zoning Restrictions
 // ============================================
 // Defines which building types and max floors are allowed per zone
 export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[]; maxFloors: number }> = {
   residential: {
-    allowedTypes: ['house', 'apartment'],
+    allowedTypes: ['house', 'apartment', 'residential'],
     maxFloors: 10,
   },
-  commercial: {
-    allowedTypes: ['shop', 'office'],
+  office: {
+    allowedTypes: ['shop', 'office', 'offices'],
     maxFloors: 10,
   },
   industrial: {
-    allowedTypes: ['factory'],
+    allowedTypes: ['factory', 'industrial'],
     maxFloors: 2,
   },
   municipal: {
@@ -89,8 +98,8 @@ export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[];
     maxFloors: 1,
   },
   suburban: {
-    allowedTypes: ['house'], // Only small houses
-    maxFloors: 1, // Single floor only
+    allowedTypes: ['house', 'suburban'],
+    maxFloors: 1,
   },
 };
 
@@ -123,8 +132,13 @@ export const HOUSING = {
 // Building Costs ($CITY currency)
 // ============================================
 export const BUILDING_COSTS: Record<string, number> = {
-  // User buildings - base cost (housing uses FLOOR_COSTS instead)
-  house: 250, // Base price for 1 floor
+  // Zone buildings
+  residential: 250,
+  offices: 500,
+  suburban: 150,
+  industrial: 1500,
+  // Legacy user buildings - base cost (housing uses FLOOR_COSTS instead)
+  house: 250,
   apartment: 400,
   shop: 500,
   office: 800,
@@ -161,6 +175,10 @@ export const BUILDING_COSTS: Record<string, number> = {
 // Building Limits per User
 // ============================================
 export const BUILDING_LIMITS: Partial<Record<BuildingType, number>> = {
+  residential: 5,
+  offices: 3,
+  suburban: 10,
+  industrial: 3,
   house: 5,
   apartment: 3,
   shop: 3,
@@ -230,6 +248,10 @@ export const INFRASTRUCTURE_FEES = {
   WATER_RATE: 3, // $3 per 100 units/day
   // Garbage collection fee per building per day
   GARBAGE_FEE: {
+    residential: 1,
+    offices: 2,
+    suburban: 1,
+    industrial: 8,
     house: 1,
     apartment: 3,
     shop: 2,
@@ -277,6 +299,7 @@ export const BUILDING_JOBS: Partial<Record<BuildingType, { count: number; salary
   shop: { count: 3, salary: (SHOP_INCOME.MIN_DAILY + SHOP_INCOME.MAX_DAILY) / 2 },
   office: { count: OFFICE.JOBS_PER_OFFICE, salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2 },
   factory: { count: 20, salary: 40 },
+  industrial: { count: 15, salary: 35 },
 };
 
 export const ADMIN_ONLY_BUILDING_TYPES = MAYOR_ONLY_BUILDING_TYPES;
@@ -360,8 +383,12 @@ export function getParcelCost(parcelsOwned: number): number {
  */
 export function getBuildingCost(type: BuildingType, floors: number = 1): number {
   // Housing uses floor-based pricing
-  if (type === 'house' || type === 'apartment') {
+  if (type === 'house' || type === 'apartment' || type === 'residential') {
     return getHousingCost(floors);
+  }
+  // Suburban and industrial use flat cost
+  if (type === 'suburban' || type === 'industrial') {
+    return BUILDING_COSTS[type] ?? 500;
   }
   // Other buildings use flat cost from config
   return BUILDING_COSTS[type] ?? 500;
@@ -456,6 +483,10 @@ export const CITY_SERVICES = {
   
   // Garbage accumulation
   GARBAGE_PER_DAY: {
+    residential: 2,
+    offices: 2,
+    suburban: 1,
+    industrial: 8,
     house: 2,
     apartment: 5,
     shop: 3,
@@ -503,7 +534,7 @@ export const HAPPINESS = {
 export const LANDMARKS = {
   // One-per-city buildings
   UNIQUE: ['stadium', 'monument'] as const,
-  
+
   // City-wide effects
   EFFECTS: {
     stadium: { happiness: 20, tourism: 50 },
@@ -512,4 +543,26 @@ export const LANDMARKS = {
     monument: { prestige: 10, tourism: 100 },
     amusement_park: { happiness: 30, tourism: 80 },
   },
+};
+
+// ============================================
+// Zone Evolution Configuration
+// ============================================
+export const ZONE_EVOLUTION = {
+  LAND_VALUE_THRESHOLD_MEDIUM: 75,
+  LAND_VALUE_THRESHOLD_HIGH: 150,
+  DEMAND_THRESHOLD: 0.3,
+  SUBURBAN_MAX_DENSITY: 1,
+  RESIDENTIAL_MAX_DENSITY: 3,
+  OFFICE_MAX_DENSITY: 3,
+  INDUSTRIAL_MAX_DENSITY: 2,
+  DENSITY_TO_FLOORS: { 1: 1, 2: 3, 3: 6 } as Record<number, number>,
+};
+
+// ============================================
+// Demand Balance Configuration (R/O/I ratio)
+// ============================================
+export const DEMAND_BALANCE = {
+  IDEAL_RATIO: { residential: 0.45, office: 0.35, industrial: 0.20 },
+  IMBALANCE_MULTIPLIER: 2.0,
 };

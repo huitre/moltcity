@@ -42,6 +42,7 @@ export let birdsContainer = null;
 export let dayNightOverlay = null;
 export let vehiclesContainer = null;
 export let pedestriansContainer = null;
+export let sceneLayer = null;
 
 // Ambient elements
 export const clouds = [];
@@ -62,6 +63,14 @@ export let spritesConfig = null;
 export const defaultSprites = new Map();
 export const roadSprites = new Map();
 export const vehicleSprites = new Map();
+export const residentialSprites = { low: [], medium: [], high: [] };
+export const officeSprites = { low: [], medium: [], high: [] };
+export const serviceSprites = { police: [], hospital: [], firestation: [] };
+export const parkSprites = [];
+export const suburbanSprites = [];
+export const industrialSprites = [];
+export const craneSprites = [];
+// Legacy arrays (kept for old procedural code paths)
 export const houseBricks = [];
 export const houseBottoms = [];
 export const houseRoofs = [];
@@ -108,6 +117,7 @@ export function setBirdsContainer(container) { birdsContainer = container; }
 export function setDayNightOverlay(overlay) { dayNightOverlay = overlay; }
 export function setVehiclesContainer(container) { vehiclesContainer = container; }
 export function setPedestriansContainer(container) { pedestriansContainer = container; }
+export function setSceneLayer(layer) { sceneLayer = layer; }
 export function setCurrentPopulation(pop) { currentPopulation = pop; }
 export function setCurrentHour(hour) { currentHour = hour; }
 export function setMaxAnimatedVehicles(max) { MAX_ANIMATED_VEHICLES = max; }

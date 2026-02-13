@@ -3,9 +3,12 @@
 // ============================================
 
 import { FastifyPluginAsync } from 'fastify';
+import fs from 'fs';
+import path from 'path';
 import { SpriteService } from '../services/sprite.service.js';
 import { listSpritesQuerySchema, spriteIdParamSchema } from '../schemas/sprites.schema.js';
 import { NotFoundError, ValidationError } from '../plugins/error-handler.plugin.js';
+import { env } from '../config/env.js';
 import type { BuildingType } from '../models/types.js';
 
 export const spritesController: FastifyPluginAsync = async (fastify) => {
@@ -84,5 +87,57 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
 
     spriteService.deleteSprite(params.id, requestedBy);
     return { success: true };
+  });
+
+  // Patch sprite config (edit sprites.json entries in-place)
+  fastify.patch('/api/sprites/config', async (request) => {
+    const { source, category, index, updates } = request.body as {
+      source: string;
+      category: string | null;
+      index: number | null;
+      updates: { width?: number; height?: number; anchor?: { x: number; y: number } };
+    };
+
+    if (!source || !updates) {
+      throw new ValidationError('source and updates are required');
+    }
+
+    const spritesJsonPath = path.resolve(process.cwd(), env.SPRITES_DIR, 'sprites.json');
+    const raw = fs.readFileSync(spritesJsonPath, 'utf-8');
+    const config = JSON.parse(raw);
+
+    // Locate the entry:
+    // config[source][category][index] → e.g. residential.low[2]
+    // config[source][index]           → e.g. park[0], crane[0]
+    // config.buildings[category]      → e.g. buildings.power_plant (no index, it's an object)
+    let entry: Record<string, any> | null = null;
+
+    if (source === 'buildings' && category) {
+      // buildings map: config.buildings[category] is a single object
+      entry = config.buildings?.[category] ?? null;
+    } else if (category !== null && index !== null) {
+      // Array within a category: config[source][category][index]
+      entry = config[source]?.[category]?.[index] ?? null;
+    } else if (index !== null) {
+      // Array without category: config[source][index]
+      entry = config[source]?.[index] ?? null;
+    }
+
+    if (!entry) {
+      throw new NotFoundError('Sprite config entry', `${source}.${category ?? ''}[${index ?? ''}]`);
+    }
+
+    // Apply updates
+    if (updates.width !== undefined) entry.width = updates.width;
+    if (updates.height !== undefined) entry.height = updates.height;
+    if (updates.anchor) {
+      if (!entry.anchor) entry.anchor = {};
+      entry.anchor.x = updates.anchor.x;
+      entry.anchor.y = updates.anchor.y;
+    }
+
+    fs.writeFileSync(spritesJsonPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+
+    return { success: true, entry };
   });
 };

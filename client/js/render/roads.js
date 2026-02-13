@@ -2,9 +2,14 @@
 // MOLTCITY - Road Rendering
 // ============================================
 
-import { TILE_WIDTH, TILE_HEIGHT, DIR_VECTORS, OPPOSITE_DIR } from '../config.js';
-import { cartToIso, drawDashedLine } from '../utils.js';
-import * as state from '../state.js';
+import {
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  DIR_VECTORS,
+  OPPOSITE_DIR,
+} from "../config.js";
+import { cartToIso, drawDashedLine } from "../utils.js";
+import * as state from "../state.js";
 
 /**
  * Check if there's a road at the given grid position
@@ -71,7 +76,9 @@ export function drawRoad(x, y) {
 
   // Try to use road sprites
   if (state.roadSprites.size > 0) {
-    const connCount = [conn.nw, conn.ne, conn.se, conn.sw].filter(Boolean).length;
+    const connCount = [conn.nw, conn.ne, conn.se, conn.sw].filter(
+      Boolean,
+    ).length;
     let roadType = null;
 
     if (connCount === 4) {
@@ -110,7 +117,7 @@ export function drawRoad(x, y) {
       sprite.scale.set(scale);
       sprite.anchor.set(config.anchor.x, config.anchor.y);
       sprite.x = iso.x;
-      sprite.y = iso.y + TILE_HEIGHT;
+      sprite.y = iso.y + TILE_HEIGHT + 8;
       sprite.zIndex = x + y;
       return sprite;
     }

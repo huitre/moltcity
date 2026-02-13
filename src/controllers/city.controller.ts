@@ -105,6 +105,7 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
         name: b.name,
         floors: b.floors,
         powered: b.powered,
+        hasWater: b.hasWater,
         constructionProgress: b.constructionProgress,
       })),
       agents: agents.map(a => ({

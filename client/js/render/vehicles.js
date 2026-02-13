@@ -2,10 +2,17 @@
 // MOLTCITY - Vehicle Rendering & Animation
 // ============================================
 
-import { TILE_HEIGHT, VEHICLE_SPEED, DIR_VECTORS, OPPOSITE_DIR, GRID_SIZE } from '../config.js';
-import { cartToIso } from '../utils.js';
-import * as state from '../state.js';
-import { getRoadAt, getValidDirections } from './roads.js';
+import {
+  TILE_HEIGHT,
+  VEHICLE_SPEED,
+  DIR_VECTORS,
+  OPPOSITE_DIR,
+  GRID_SIZE,
+  CARDINAL_TO_ISO,
+} from "../config.js";
+import { cartToIso } from "../utils.js";
+import * as state from "../state.js";
+import { getRoadAt, getValidDirections } from "./roads.js";
 
 /**
  * Initialize vehicles on the roads
@@ -27,9 +34,18 @@ export function initVehicles() {
  * Spawn a new vehicle on a random road
  */
 export function spawnVehicle(vehicleTypes) {
-  const { animatedVehicles, roads, parcels, vehiclesContainer, vehicleSprites } = state;
+  const {
+    animatedVehicles,
+    roads,
+    parcels,
+    vehiclesContainer,
+    vehicleSprites,
+  } = state;
 
-  if (animatedVehicles.length >= state.MAX_ANIMATED_VEHICLES || roads.length === 0) {
+  if (
+    animatedVehicles.length >= state.MAX_ANIMATED_VEHICLES ||
+    roads.length === 0
+  ) {
     return;
   }
 
@@ -39,7 +55,8 @@ export function spawnVehicle(vehicleTypes) {
   if (!parcel) return;
 
   // Pick random vehicle type
-  const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
+  const vehicleType =
+    vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
   const vehicleData = vehicleSprites.get(vehicleType);
   if (!vehicleData) return;
 
@@ -48,7 +65,7 @@ export function spawnVehicle(vehicleTypes) {
   if (validDirs.length === 0) return;
 
   const dir = validDirs[Math.floor(Math.random() * validDirs.length)];
-  const texture = vehicleData.directions.get(dir);
+  const texture = vehicleData.directions.get(CARDINAL_TO_ISO[dir]);
   if (!texture) return;
 
   const sprite = new PIXI.Sprite(texture);
@@ -72,7 +89,7 @@ export function spawnVehicle(vehicleTypes) {
   sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
 
   // Add directly to worldContainer for proper z-sorting with buildings
-  state.worldContainer.addChild(sprite);
+  state.sceneLayer.addChild(sprite);
   animatedVehicles.push(vehicle);
 }
 
@@ -83,7 +100,10 @@ export function animateVehicles(delta) {
   const { animatedVehicles, vehiclesContainer, vehicleSprites } = state;
 
   // Try to maintain vehicle count
-  if (animatedVehicles.length < state.MAX_ANIMATED_VEHICLES && Math.random() < 0.01) {
+  if (
+    animatedVehicles.length < state.MAX_ANIMATED_VEHICLES &&
+    Math.random() < 0.01
+  ) {
     const vehicleTypes = Array.from(vehicleSprites.keys());
     if (vehicleTypes.length > 0) {
       spawnVehicle(vehicleTypes);
@@ -105,17 +125,17 @@ export function animateVehicles(delta) {
 
       const targetRoad = getRoadAt(currentX, currentY);
       if (!targetRoad) {
-        state.worldContainer.removeChild(vehicle.sprite);
+        state.sceneLayer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
       }
 
       const validDirs = getValidDirections(currentX, currentY).filter(
-        (d) => d !== OPPOSITE_DIR[vehicle.dir]
+        (d) => d !== OPPOSITE_DIR[vehicle.dir],
       );
 
       if (validDirs.length === 0) {
-        state.worldContainer.removeChild(vehicle.sprite);
+        state.sceneLayer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
       }
@@ -130,7 +150,9 @@ export function animateVehicles(delta) {
       vehicle.targetY = currentY + DIR_VECTORS[nextDir].dy;
 
       // Update sprite texture for new direction
-      const texture = vehicle.vehicleData.directions.get(nextDir);
+      const texture = vehicle.vehicleData.directions.get(
+        CARDINAL_TO_ISO[nextDir],
+      );
       if (texture) {
         vehicle.sprite.texture = texture;
       }
@@ -144,7 +166,7 @@ export function animateVehicles(delta) {
     // Update sprite position
     const iso = cartToIso(vehicle.x, vehicle.y);
     vehicle.sprite.x = iso.x;
-    vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
+    vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 5;
     vehicle.sprite.zIndex = Math.floor(vehicle.x) + Math.floor(vehicle.y);
 
     // Remove if out of bounds
@@ -154,7 +176,7 @@ export function animateVehicles(delta) {
       vehicle.y < 0 ||
       vehicle.y >= GRID_SIZE
     ) {
-      state.worldContainer.removeChild(vehicle.sprite);
+      state.sceneLayer.removeChild(vehicle.sprite);
       animatedVehicles.splice(i, 1);
     }
   }

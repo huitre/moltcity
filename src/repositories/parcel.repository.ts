@@ -128,6 +128,22 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     }
   }
 
+  async updateLandValue(parcelId: string, value: number): Promise<void> {
+    await this.db
+      .update(parcels)
+      .set({ landValue: value })
+      .where(eq(parcels.id, parcelId));
+  }
+
+  async updateLandValues(updates: { parcelId: string; value: number }[]): Promise<void> {
+    for (const u of updates) {
+      await this.db
+        .update(parcels)
+        .set({ landValue: u.value })
+        .where(eq(parcels.id, u.parcelId));
+    }
+  }
+
   private rowToParcel(row: ParcelRow): Parcel {
     return {
       id: row.id,
@@ -138,6 +154,7 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
       ownerId: row.ownerId,
       purchasePrice: row.purchasePrice,
       purchaseDate: row.purchaseDate,
+      landValue: row.landValue,
     };
   }
 }

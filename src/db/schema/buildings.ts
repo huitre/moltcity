@@ -24,6 +24,7 @@ export const buildings = sqliteTable('buildings', {
   constructionProgress: integer('construction_progress').notNull().default(100),
   constructionStartedAt: integer('construction_started_at'),
   constructionTimeTicks: integer('construction_time_ticks').notNull().default(0),
+  density: integer('density').notNull().default(1),
 }, (table) => [
   index('idx_buildings_parcel').on(table.parcelId),
   index('idx_buildings_owner').on(table.ownerId),

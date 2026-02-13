@@ -4,14 +4,17 @@
 
 import * as state from './state.js';
 import * as api from './api.js';
+import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS } from './config.js';
 import { initPixi, setupInteractions } from './pixi/init.js';
 import { initGame, render } from './game.js';
 import { connectWebSocket } from './websocket.js';
 import { loadSprites } from './sprites.js';
+import { drawHighlight } from './render/tiles.js';
 import { setupAuthUI, checkAuth, setOnAuthSuccess } from './ui/auth.js';
 import { loadActivities, addActivity } from './ui/activity.js';
 import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 import { setupLeaderboard } from './ui/leaderboard.js';
+import { showSpriteEditor } from './ui/sprite-editor.js';
 
 let appInitialized = false;
 
@@ -112,8 +115,13 @@ function updateUserBalance() {
  */
 async function loadCityData() {
   try {
-    // Load city state
-    const cityResponse = await api.getCity();
+    // Load city state (auto-init if not yet created)
+    let cityResponse = await api.getCity();
+    if (!cityResponse.city && !cityResponse.initialized) {
+      console.log("[MoltCity] City not initialized, auto-creating...");
+      await api.initCity("MoltCity");
+      cityResponse = await api.getCity();
+    }
     if (cityResponse.city) {
       state.setCityData(cityResponse.city);
     }
@@ -158,6 +166,12 @@ async function handleTileClick(x, y) {
 
   const { selectedBuildType } = state;
 
+  // Demolish mode
+  if (selectedBuildType === "demolish") {
+    await handleDemolish(x, y);
+    return;
+  }
+
   // If a build type is selected, try to build
   if (selectedBuildType) {
     await handleBuild(x, y, selectedBuildType);
@@ -173,8 +187,134 @@ async function handleTileClick(x, y) {
 
   if (building) {
     showBuildingInfo(building);
+    const bParcel = state.parcels.find((p) => p.id === building.parcelId);
+    if (bParcel) showSpriteEditor(building, bParcel.x, bParcel.y);
   } else if (parcel) {
     showParcelInfo(parcel);
+  }
+}
+
+/**
+ * Check if a tile is occupied by a building or road (accounting for multi-tile footprints)
+ */
+function isTileOccupied(x, y) {
+  // Check roads
+  const hasRoad = state.roads.some((r) => {
+    const p = state.parcels.find((p) => p.id === r.parcelId);
+    return p && p.x === x && p.y === y;
+  });
+  if (hasRoad) return true;
+
+  // Check all buildings (including multi-tile footprints)
+  for (const building of state.buildings) {
+    const p = state.parcels.find((p) => p.id === building.parcelId);
+    if (!p) continue;
+    const w = building.width || 1;
+    const h = building.height || 1;
+    if (x >= p.x && x < p.x + w && y >= p.y && y < p.y + h) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Find a building covering a tile (accounts for multi-tile footprints)
+ */
+function findBuildingAtTile(x, y) {
+  for (const building of state.buildings) {
+    const p = state.parcels.find((p) => p.id === building.parcelId);
+    if (!p) continue;
+    const w = building.width || 1;
+    const h = building.height || 1;
+    if (x >= p.x && x < p.x + w && y >= p.y && y < p.y + h) {
+      return building;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find a road at a tile
+ */
+function findRoadAtTile(x, y) {
+  return state.roads.find((r) => {
+    const p = state.parcels.find((p) => p.id === r.parcelId);
+    return p && p.x === x && p.y === y;
+  }) || null;
+}
+
+/**
+ * Find a power line connected to a tile
+ */
+function findPowerLineAtTile(x, y) {
+  return state.powerLines.find(
+    (l) => (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y)
+  ) || null;
+}
+
+/**
+ * Find a water pipe connected to a tile
+ */
+function findWaterPipeAtTile(x, y) {
+  return state.waterPipes.find(
+    (p) => (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y)
+  ) || null;
+}
+
+/**
+ * Handle demolish action at a tile
+ */
+async function handleDemolish(x, y) {
+  try {
+    // 1. Check for building
+    const building = findBuildingAtTile(x, y);
+    if (building) {
+      await api.demolishBuilding(building.id);
+      const buildingsResponse = await api.getBuildings();
+      state.setBuildings(buildingsResponse.buildings || []);
+      render();
+      showToast(`Demolished ${building.name}`);
+      return;
+    }
+
+    // 2. Check for road
+    const road = findRoadAtTile(x, y);
+    if (road) {
+      await api.deleteRoad(road.id);
+      const roadsResponse = await api.getRoads();
+      state.setRoads(roadsResponse.roads || []);
+      render();
+      showToast(`Road removed at (${x}, ${y})`);
+      return;
+    }
+
+    // 3. Check for power line
+    const powerLine = findPowerLineAtTile(x, y);
+    if (powerLine) {
+      await api.deletePowerLine(powerLine.id);
+      const powerLinesResponse = await api.getPowerLines();
+      state.setPowerLines(powerLinesResponse.powerLines || []);
+      render();
+      showToast("Power line removed");
+      return;
+    }
+
+    // 4. Check for water pipe
+    const waterPipe = findWaterPipeAtTile(x, y);
+    if (waterPipe) {
+      await api.deleteWaterPipe(waterPipe.id);
+      const waterPipesResponse = await api.getWaterPipes();
+      state.setWaterPipes(waterPipesResponse.waterPipes || []);
+      render();
+      showToast("Water pipe removed");
+      return;
+    }
+
+    showToast("Nothing to demolish here", true);
+  } catch (error) {
+    console.error("[MoltCity] Demolish failed:", error.message);
+    showToast(`Demolish failed: ${error.message}`, true);
   }
 }
 
@@ -192,6 +332,7 @@ async function handleBuild(x, y, buildType) {
       const roadsResponse = await api.getRoads();
       state.setRoads(roadsResponse.roads || []);
       render();
+      showToast(`Road placed at (${x}, ${y})`);
     } else if (buildType === "power_line" || buildType === "water_pipe") {
       // Infrastructure requires start/end points - two-click interaction
       if (!state.infraStartPoint) {
@@ -219,6 +360,10 @@ async function handleBuild(x, y, buildType) {
     } else {
       // Create building with auto-generated name
       const buildingNames = {
+        residential: "Residence",
+        offices: "Office",
+        suburban: "Suburban Home",
+        industrial: "Industrial Zone",
         house: "House",
         apartment: "Apartment",
         shop: "Shop",
@@ -228,9 +373,28 @@ async function handleBuild(x, y, buildType) {
         power_plant: "Power Plant",
         water_tower: "Water Tower",
         police_station: "Police Station",
+        fire_station: "Fire Station",
+        hospital: "Hospital",
         jail: "Jail",
       };
       const name = buildingNames[buildType] || buildType;
+
+      // Check multi-tile footprint fits and is available
+      const footprint = BUILDING_FOOTPRINTS[buildType] || { w: 1, h: 1 };
+      for (let dy = 0; dy < footprint.h; dy++) {
+        for (let dx = 0; dx < footprint.w; dx++) {
+          const tx = x + dx;
+          const ty = y + dy;
+          if (tx >= GRID_SIZE || ty >= GRID_SIZE) {
+            showToast(`${name} doesn't fit here (out of bounds)`, true);
+            return;
+          }
+          if (isTileOccupied(tx, ty)) {
+            showToast(`Tile (${tx}, ${ty}) is already occupied`, true);
+            return;
+          }
+        }
+      }
 
       const result = await api.createBuilding({
         type: buildType,
@@ -245,10 +409,11 @@ async function handleBuild(x, y, buildType) {
       const buildingsResponse = await api.getBuildings();
       state.setBuildings(buildingsResponse.buildings || []);
       render();
+      showToast(`${name} placed at (${x}, ${y})`);
     }
   } catch (error) {
     console.error("[MoltCity] Build failed:", error.message);
-    alert(`Build failed: ${error.message}`);
+    showToast(`Build failed: ${error.message}`, true);
   }
 }
 
@@ -257,6 +422,57 @@ async function handleBuild(x, y, buildType) {
  */
 function handleTileHover(x, y, globalPos) {
   updateTooltip(x, y, globalPos);
+
+  // Show build cursor highlight when a build type is selected
+  if (state.highlightGraphics) {
+    state.worldContainer.removeChild(state.highlightGraphics);
+    state.setHighlightGraphics(null);
+  }
+  if (state.selectedBuildType && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+    if (state.selectedBuildType === "demolish") {
+      // Demolish mode: red highlight, expand to building footprint if hovering one
+      const building = findBuildingAtTile(x, y);
+      if (building) {
+        const p = state.parcels.find((p) => p.id === building.parcelId);
+        const bw = building.width || 1;
+        const bh = building.height || 1;
+        const container = new PIXI.Container();
+        container.sortableChildren = true;
+        for (let dy = 0; dy < bh; dy++) {
+          for (let dx = 0; dx < bw; dx++) {
+            const highlight = drawHighlight(p.x + dx, p.y + dy, 0xff0000, true);
+            container.addChild(highlight);
+          }
+        }
+        state.worldContainer.addChild(container);
+        state.setHighlightGraphics(container);
+      } else {
+        const highlight = drawHighlight(x, y, 0xff0000, true);
+        state.worldContainer.addChild(highlight);
+        state.setHighlightGraphics(highlight);
+      }
+    } else {
+      // Build mode: green/red footprint highlight
+      const footprint = BUILDING_FOOTPRINTS[state.selectedBuildType] || { w: 1, h: 1 };
+      const container = new PIXI.Container();
+      container.sortableChildren = true;
+
+      for (let dy = 0; dy < footprint.h; dy++) {
+        for (let dx = 0; dx < footprint.w; dx++) {
+          const tx = x + dx;
+          const ty = y + dy;
+          if (tx >= GRID_SIZE || ty >= GRID_SIZE) continue;
+          const occupied = isTileOccupied(tx, ty);
+          const color = occupied ? 0xff0000 : COLORS.selected;
+          const highlight = drawHighlight(tx, ty, color, true);
+          container.addChild(highlight);
+        }
+      }
+
+      state.worldContainer.addChild(container);
+      state.setHighlightGraphics(container);
+    }
+  }
 }
 
 /**
@@ -345,6 +561,37 @@ function updateTooltip(x, y, globalPos) {
   const tooltip = document.getElementById("tooltip");
   if (!tooltip) return;
 
+  // In demolish mode, show what would be deleted
+  if (state.selectedBuildType === "demolish") {
+    const building = findBuildingAtTile(x, y);
+    if (building) {
+      tooltip.innerHTML = `<strong style="color:#e74c3c">Demolish: ${building.name}</strong><br>Type: ${building.type}`;
+      tooltip.style.display = "block";
+    } else {
+      const road = findRoadAtTile(x, y);
+      const powerLine = findPowerLineAtTile(x, y);
+      const waterPipe = findWaterPipeAtTile(x, y);
+      if (road) {
+        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove road</strong>`;
+        tooltip.style.display = "block";
+      } else if (powerLine) {
+        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove power line</strong>`;
+        tooltip.style.display = "block";
+      } else if (waterPipe) {
+        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove water pipe</strong>`;
+        tooltip.style.display = "block";
+      } else {
+        tooltip.innerHTML = `<strong>(${x}, ${y})</strong><br>Nothing to demolish`;
+        tooltip.style.display = "block";
+      }
+    }
+    if (tooltip.style.display === "block" && globalPos) {
+      tooltip.style.left = `${globalPos.x + 15}px`;
+      tooltip.style.top = `${globalPos.y + 15}px`;
+    }
+    return;
+  }
+
   const parcel = state.parcels.find((p) => p.x === x && p.y === y);
   const building = state.buildings.find((b) => {
     const p = state.parcels.find((p) => p.id === b.parcelId);
@@ -372,6 +619,26 @@ function updateTooltip(x, y, globalPos) {
     tooltip.style.left = `${globalPos.x + 15}px`;
     tooltip.style.top = `${globalPos.y + 15}px`;
   }
+}
+
+/**
+ * Show a toast notification
+ */
+function showToast(message, isError = false) {
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    padding: 10px 20px; border-radius: 6px; color: white; font-size: 14px;
+    z-index: 10000; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    background: ${isError ? "#e74c3c" : "#2ecc71"};
+  `;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity = "1"; });
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
 }
 
 /**

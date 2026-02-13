@@ -5,6 +5,7 @@
 import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
+import { seededRandom } from "./sprites.js";
 import { drawGrassTile, drawHighlight } from "./render/tiles.js";
 import { drawRoad, hasRoadAt } from "./render/roads.js";
 import { animateVehicles, initVehicles } from "./render/vehicles.js";
@@ -17,6 +18,7 @@ import {
 } from "./render/ambient.js";
 
 let renderContainer = null;
+let statusIcons = [];
 
 /**
  * Initialize the game world
@@ -44,6 +46,9 @@ function gameLoop(delta) {
 
   // Animate pedestrians
   animatePedestrians(delta);
+
+  // Animate status icons
+  animateStatusIcons(delta);
 }
 
 /**
@@ -64,11 +69,10 @@ export function render() {
   const permanentContainers = [
     state.cloudsContainer,
     state.birdsContainer,
-    state.vehiclesContainer,
-    state.pedestriansContainer,
+    state.sceneLayer,
   ];
 
-  // Remove non-permanent children
+  // Remove non-permanent children from worldContainer
   for (let i = worldContainer.children.length - 1; i >= 0; i--) {
     const child = worldContainer.children[i];
     if (!permanentContainers.includes(child)) {
@@ -76,17 +80,49 @@ export function render() {
     }
   }
 
-  // Create a new container for this render
-  renderContainer = new PIXI.Container();
-  renderContainer.sortableChildren = true;
-  worldContainer.addChild(renderContainer);
+  // Clear scene layer static content, but keep vehicle/pedestrian sprites
+  const sceneLayer = state.sceneLayer;
+  const dynamicSprites = new Set();
+  for (const v of state.animatedVehicles) dynamicSprites.add(v.sprite);
+  for (const p of state.animatedPedestrians) dynamicSprites.add(p.sprite);
+  for (let i = sceneLayer.children.length - 1; i >= 0; i--) {
+    const child = sceneLayer.children[i];
+    if (!dynamicSprites.has(child)) {
+      sceneLayer.removeChild(child);
+    }
+  }
+
+  // Layers: tiles(100) < waterpipes(200)
+  //         < scene(700: roads+powerlines+buildings+vehicles+pedestrians sorted by x+y)
+  //         < birds(800) < clouds(900)
+
+  const tilesLayer = new PIXI.Container();
+  tilesLayer.zIndex = 100;
+
+  const waterPipesLayer = new PIXI.Container();
+  waterPipesLayer.zIndex = 200;
+
+  worldContainer.addChild(tilesLayer);
+  worldContainer.addChild(waterPipesLayer);
 
   // Draw grid tiles (grass)
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
       const tile = drawGrassTile(x, y);
-      renderContainer.addChild(tile);
+      tilesLayer.addChild(tile);
     }
+  }
+
+  // Draw water pipes
+  for (const pipe of waterPipes) {
+    const pipeGraphic = drawWaterPipe(pipe.from, pipe.to);
+    waterPipesLayer.addChild(pipeGraphic);
+  }
+
+  // Draw power lines
+  for (const line of powerLines) {
+    const lineGraphic = drawPowerLine(line.from, line.to);
+    sceneLayer.addChild(lineGraphic);
   }
 
   // Draw roads
@@ -94,28 +130,27 @@ export function render() {
     const parcel = parcels.find((p) => p.id === road.parcelId);
     if (parcel) {
       const roadGraphic = drawRoad(parcel.x, parcel.y);
-      renderContainer.addChild(roadGraphic);
+      sceneLayer.addChild(roadGraphic);
     }
   }
 
-  // Draw power lines
-  for (const line of powerLines) {
-    const lineGraphic = drawPowerLine(line.from, line.to);
-    renderContainer.addChild(lineGraphic);
-  }
-
-  // Draw water pipes
-  for (const pipe of waterPipes) {
-    const pipeGraphic = drawWaterPipe(pipe.from, pipe.to);
-    renderContainer.addChild(pipeGraphic);
+  // Initialize vehicles after roads are loaded
+  if (state.animatedVehicles.length === 0 && roads.length > 0) {
+    initVehicles();
   }
 
   // Draw buildings
+  statusIcons = [];
   for (const building of buildings) {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (parcel) {
       const buildingGraphic = drawBuilding(parcel.x, parcel.y, building);
-      renderContainer.addChild(buildingGraphic);
+      sceneLayer.addChild(buildingGraphic);
+      const icons = drawStatusIcons(parcel.x, parcel.y, building);
+      if (icons) {
+        sceneLayer.addChild(icons);
+        statusIcons.push(icons);
+      }
     }
   }
 
@@ -125,16 +160,11 @@ export function render() {
       agent.currentLocation.x,
       agent.currentLocation.y,
     );
-    renderContainer.addChild(agentGraphic);
+    sceneLayer.addChild(agentGraphic);
   }
 
-  // Force sort by zIndex to ensure proper rendering order
-  renderContainer.sortChildren();
-
-  // Initialize vehicles after roads are loaded
-  if (state.animatedVehicles.length === 0 && roads.length > 0) {
-    initVehicles();
-  }
+  // Sort scene layer for proper isometric depth
+  sceneLayer.sortChildren();
 
   // Update UI
   updateUI();
@@ -144,28 +174,124 @@ export function render() {
  * Draw a building at the given position
  */
 function drawBuilding(x, y, building) {
-  const iso = cartToIso(x, y);
   const g = new PIXI.Graphics();
+
+  // Compute footprint-aware positions
+  const fw = building.width || 1;
+  const fh = building.height || 1;
+  // Center X of footprint, bottom Y of footprint
+  const spriteIsoX = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2).x;
+  const spriteIsoY = cartToIso(x + fw - 1, y + fh - 1).y + TILE_HEIGHT;
+  const zIdx = x + fw - 1 + (y + fh - 1);
 
   // Check if building is under construction
   if (building.constructionProgress < 100) {
-    return drawConstruction(x, y, building);
+    return drawConstruction(x, y, building, spriteIsoX, spriteIsoY, zIdx);
   }
 
   const powered = building.powered;
   const type = building.type;
   const floors = building.floors || 1;
 
+  // Suburban zone sprites (flat array, no density)
+  if (type === "suburban" && state.suburbanSprites.length > 0) {
+    const sprites = state.suburbanSprites;
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * sprites.length);
+    const spriteData = sprites[idx];
+    const sprite = new PIXI.Sprite(spriteData.texture);
+    const tileSpan = spriteData.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+    sprite.scale.set(scale);
+    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+    sprite.x = spriteIsoX;
+    sprite.y = spriteIsoY;
+    sprite.zIndex = zIdx;
+    if (!powered) sprite.tint = 0x888888;
+    return sprite;
+  }
+
+  // Industrial zone sprites (flat array, no density)
+  if (type === "industrial" && state.industrialSprites.length > 0) {
+    const sprites = state.industrialSprites;
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * sprites.length);
+    const spriteData = sprites[idx];
+    const sprite = new PIXI.Sprite(spriteData.texture);
+    const tileSpan = spriteData.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+    sprite.scale.set(scale);
+    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+    sprite.x = spriteIsoX;
+    sprite.y = spriteIsoY;
+    sprite.zIndex = zIdx;
+    if (!powered) sprite.tint = 0x888888;
+    return sprite;
+  }
+
+  // Try zone sprites for residential/offices
+  if (type === "residential" || type === "offices") {
+    const spriteMap =
+      type === "residential" ? state.residentialSprites : state.officeSprites;
+    // Density mapping: floors 1 = low, floors 2-3 = medium, floors 4+ = high
+    const density = floors <= 1 ? "low" : floors <= 3 ? "medium" : "high";
+    const sprites = spriteMap[density];
+    if (sprites && sprites.length > 0) {
+      const rng = seededRandom(x * 1000 + y);
+      const idx = Math.floor(rng() * sprites.length);
+      const spriteData = sprites[idx];
+      const sprite = new PIXI.Sprite(spriteData.texture);
+      const tileSpan = spriteData.tiles || 1;
+      const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+      sprite.scale.set(scale);
+      sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+      sprite.x = spriteIsoX;
+      sprite.y = spriteIsoY;
+      sprite.zIndex = zIdx;
+      if (!powered) {
+        sprite.tint = 0x888888;
+      }
+      return sprite;
+    }
+  }
+
+  // Try service/park sprites
+  const serviceSpriteMap = {
+    park: state.parkSprites,
+    police_station: state.serviceSprites.police,
+    fire_station: state.serviceSprites.firestation,
+    hospital: state.serviceSprites.hospital,
+  };
+  if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
+    const sprites = serviceSpriteMap[type];
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * sprites.length);
+    const spriteData = sprites[idx];
+    const sprite = new PIXI.Sprite(spriteData.texture);
+    const tileSpan = spriteData.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+    sprite.scale.set(scale);
+    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+    sprite.x = spriteIsoX;
+    sprite.y = spriteIsoY;
+    sprite.zIndex = zIdx;
+    if (!powered) {
+      sprite.tint = 0x888888;
+    }
+    return sprite;
+  }
+
   // Try to use sprite first
   if (state.defaultSprites.has(type)) {
     const { texture, config } = state.defaultSprites.get(type);
     const sprite = new PIXI.Sprite(texture);
-    const scale = (TILE_WIDTH * 1.2) / config.width;
+    const tileSpan = config.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / config.width;
     sprite.scale.set(scale);
     sprite.anchor.set(config.anchor.x, config.anchor.y);
-    sprite.x = iso.x;
-    sprite.y = iso.y + TILE_HEIGHT;
-    sprite.zIndex = x + y;
+    sprite.x = spriteIsoX;
+    sprite.y = spriteIsoY;
+    sprite.zIndex = zIdx;
 
     // Tint if not powered
     if (!powered) {
@@ -176,6 +302,7 @@ function drawBuilding(x, y, building) {
   }
 
   // Fallback to procedural drawing
+  const iso = cartToIso(x, y);
   const wallHeight = 20 + floors * 15;
   const cx = iso.x;
   const baseY = iso.y + TILE_HEIGHT;
@@ -202,26 +329,128 @@ function drawBuilding(x, y, building) {
       drawGenericBuilding(g, cx, baseY, powered, wallHeight);
   }
 
-  g.zIndex = x + y;
+  g.zIndex = zIdx;
   return g;
+}
+
+/**
+ * Draw small status icons above a building missing power/water.
+ * Returns null if the building has both utilities.
+ * Icons are drawn in local coords and positioned via .x/.y for animation.
+ */
+function drawStatusIcons(x, y, building) {
+  const needsPower = !building.powered;
+  const needsWater = building.hasWater === false;
+  if (!needsPower && !needsWater) return null;
+  if (building.constructionProgress < 100) return null;
+
+  const fw = building.width || 1;
+  const fh = building.height || 1;
+  const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
+  const zIdx = x + fw - 1 + (y + fh - 1) + 0.1;
+
+  const g = new PIXI.Graphics();
+  g.x = iso.x;
+  g.y = iso.y - 8;
+  g._baseY = g.y; // stash for animation
+  g._animTime = Math.random() * Math.PI * 2; // random phase offset
+
+  const iconCount = (needsPower ? 1 : 0) + (needsWater ? 1 : 0);
+  const spacing = 12;
+  let ox = (-(iconCount - 1) * spacing) / 2;
+
+  if (needsPower) {
+    // Lightning bolt icon (drawn in local coords around 0,0)
+    g.lineStyle(1.5, 0xffa500, 1);
+    g.beginFill(0xffd700, 0.9);
+    g.moveTo(ox + 2, -8);
+    g.lineTo(ox - 1, -2);
+    g.lineTo(ox + 1, -2);
+    g.lineTo(ox - 2, 4);
+    g.lineTo(ox + 1, 0);
+    g.lineTo(ox - 1, 0);
+    g.closePath();
+    g.endFill();
+    ox += spacing;
+  }
+
+  if (needsWater) {
+    // Water drop icon
+    g.lineStyle(1, 0x2980b9, 1);
+    g.beginFill(0x5dade2, 0.9);
+    g.moveTo(ox, -8);
+    g.bezierCurveTo(ox - 4, -2, ox - 4, 2, ox, 4);
+    g.bezierCurveTo(ox + 4, 2, ox + 4, -2, ox, -8);
+    g.endFill();
+  }
+
+  g.zIndex = zIdx;
+  return g;
+}
+
+/**
+ * Animate status icons — gentle bob + pulse
+ */
+function animateStatusIcons(delta) {
+  for (const icon of statusIcons) {
+    icon._animTime += delta * 0.05;
+    icon.y = icon._baseY + Math.sin(icon._animTime) * 3;
+    icon.alpha = 0.7 + 0.3 * Math.sin(icon._animTime * 1.4);
+  }
 }
 
 /**
  * Draw construction site
  */
-function drawConstruction(x, y, building) {
+function drawConstruction(x, y, building, sIsoX, sIsoY, zIdx) {
+  const progress = building.constructionProgress;
+
+  // Use crane sprite if available
+  if (state.craneSprites.length > 0) {
+    const container = new PIXI.Container();
+    const craneData = state.craneSprites[0];
+    const sprite = new PIXI.Sprite(craneData.texture);
+    const tileSpan = craneData.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / craneData.width;
+    sprite.scale.set(scale);
+    sprite.anchor.set(craneData.anchor.x, craneData.anchor.y);
+    sprite.x = sIsoX;
+    sprite.y = sIsoY;
+
+    container.addChild(sprite);
+
+    // Progress bar overlay
+    const g = new PIXI.Graphics();
+    const barY = sIsoY - craneData.height * scale * 0.7;
+    const barWidth = 30;
+    const barHeight = 4;
+    g.beginFill(0x333333);
+    g.drawRect(sIsoX - barWidth / 2, barY, barWidth, barHeight);
+    g.endFill();
+    g.beginFill(0x4ecdc4);
+    g.drawRect(
+      sIsoX - barWidth / 2,
+      barY,
+      (progress / 100) * barWidth,
+      barHeight,
+    );
+    g.endFill();
+
+    container.addChild(g);
+    container.zIndex = zIdx;
+    return container;
+  }
+
+  // Fallback: procedural scaffolding
   const iso = cartToIso(x, y);
   const g = new PIXI.Graphics();
   const cx = iso.x;
   const baseY = iso.y + TILE_HEIGHT;
-  const progress = building.constructionProgress;
 
-  // Draw foundation
   g.beginFill(0x8b4513);
   g.drawRect(cx - 20, baseY - 5, 40, 10);
   g.endFill();
 
-  // Draw scaffolding
   g.lineStyle(2, 0xdaa520);
   g.moveTo(cx - 15, baseY - 5);
   g.lineTo(cx - 15, baseY - 30);
@@ -232,13 +461,11 @@ function drawConstruction(x, y, building) {
   g.moveTo(cx - 15, baseY - 25);
   g.lineTo(cx + 15, baseY - 25);
 
-  // Progress bar
   const barWidth = 30;
   const barHeight = 4;
   g.beginFill(0x333333);
   g.drawRect(cx - barWidth / 2, baseY - 40, barWidth, barHeight);
   g.endFill();
-
   g.beginFill(0x4ecdc4);
   g.drawRect(
     cx - barWidth / 2,
@@ -248,7 +475,7 @@ function drawConstruction(x, y, building) {
   );
   g.endFill();
 
-  g.zIndex = x + y;
+  g.zIndex = zIdx;
   return g;
 }
 
@@ -443,12 +670,7 @@ function drawAgent(x, y) {
  * Update UI displays
  */
 function updateUI() {
-  const {
-    cityData,
-    agents,
-    buildings,
-    currentPopulation,
-  } = state;
+  const { cityData, agents, buildings, currentPopulation } = state;
 
   if (cityData) {
     const dayDisplay = document.getElementById("day-display");

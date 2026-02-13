@@ -13,6 +13,7 @@ export const parcels = sqliteTable('parcels', {
   ownerId: text('owner_id'),
   purchasePrice: real('purchase_price'),
   purchaseDate: integer('purchase_date'),
+  landValue: real('land_value').notNull().default(50),
 }, (table) => [
   uniqueIndex('idx_parcels_coords_unique').on(table.x, table.y),
   index('idx_parcels_owner').on(table.ownerId),

@@ -10,7 +10,7 @@ export const activityController: FastifyPluginAsync = async (fastify) => {
   const activityService = new ActivityService(fastify.db, fastify);
 
   // Get recent activities
-  fastify.get('/api/activities', async (request) => {
+  const getActivities = async (request: any) => {
     const query = getActivitiesQuerySchema.parse(request.query);
     const activities = await activityService.getRecentActivities(query.limit);
 
@@ -25,5 +25,8 @@ export const activityController: FastifyPluginAsync = async (fastify) => {
         createdAt: a.createdAt.toISOString(),
       })),
     };
-  });
+  };
+
+  fastify.get('/api/activities', getActivities);
+  fastify.get('/api/activity', getActivities);
 };

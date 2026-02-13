@@ -40,6 +40,13 @@ export const BIRD_COUNT = 12;
 // Building limits
 export const MAX_FLOORS = { house: 3, office: 5 };
 
+// Building footprints (tiles wide x tiles tall)
+export const BUILDING_FOOTPRINTS = {
+  hospital: { w: 2, h: 2 },
+  police_station: { w: 2, h: 2 },
+  fire_station: { w: 2, h: 2 },
+};
+
 // Vehicle/pedestrian config
 export const VEHICLE_SPEED = 0.5;
 export const PEDESTRIAN_SPEED = 0.2;
@@ -61,4 +68,12 @@ export const OPPOSITE_DIR = {
   south: "north",
   east: "west",
   west: "east",
+};
+
+// Cardinal directions → isometric sprite directions
+export const CARDINAL_TO_ISO = {
+  north: "NE",
+  south: "SW",
+  east: "SE",
+  west: "NW",
 };

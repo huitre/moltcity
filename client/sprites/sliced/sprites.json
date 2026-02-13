@@ -1,0 +1,1732 @@
+{
+  "sheet01_houses": [
+    {
+      "id": "sheet01_houses_01",
+      "file": "sliced/sheet01_houses_01.png",
+      "width": 188,
+      "height": 183,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_02",
+      "file": "sliced/sheet01_houses_02.png",
+      "width": 186,
+      "height": 183,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_03",
+      "file": "sliced/sheet01_houses_03.png",
+      "width": 194,
+      "height": 373,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_04",
+      "file": "sliced/sheet01_houses_04.png",
+      "width": 186,
+      "height": 176,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_05",
+      "file": "sliced/sheet01_houses_05.png",
+      "width": 188,
+      "height": 183,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_06",
+      "file": "sliced/sheet01_houses_06.png",
+      "width": 188,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_07",
+      "file": "sliced/sheet01_houses_07.png",
+      "width": 186,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_08",
+      "file": "sliced/sheet01_houses_08.png",
+      "width": 186,
+      "height": 183,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_09",
+      "file": "sliced/sheet01_houses_09.png",
+      "width": 188,
+      "height": 179,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_10",
+      "file": "sliced/sheet01_houses_10.png",
+      "width": 187,
+      "height": 187,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_11",
+      "file": "sliced/sheet01_houses_11.png",
+      "width": 186,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_12",
+      "file": "sliced/sheet01_houses_12.png",
+      "width": 190,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_13",
+      "file": "sliced/sheet01_houses_13.png",
+      "width": 186,
+      "height": 187,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_14",
+      "file": "sliced/sheet01_houses_14.png",
+      "width": 188,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_15",
+      "file": "sliced/sheet01_houses_15.png",
+      "width": 187,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_16",
+      "file": "sliced/sheet01_houses_16.png",
+      "width": 186,
+      "height": 181,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_17",
+      "file": "sliced/sheet01_houses_17.png",
+      "width": 190,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_18",
+      "file": "sliced/sheet01_houses_18.png",
+      "width": 186,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_19",
+      "file": "sliced/sheet01_houses_19.png",
+      "width": 188,
+      "height": 178,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_20",
+      "file": "sliced/sheet01_houses_20.png",
+      "width": 187,
+      "height": 181,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_21",
+      "file": "sliced/sheet01_houses_21.png",
+      "width": 186,
+      "height": 181,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_22",
+      "file": "sliced/sheet01_houses_22.png",
+      "width": 190,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_23",
+      "file": "sliced/sheet01_houses_23.png",
+      "width": 186,
+      "height": 181,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet01_houses_24",
+      "file": "sliced/sheet01_houses_24.png",
+      "width": 188,
+      "height": 172,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet02_apartments": [
+    {
+      "id": "sheet02_apartments_01",
+      "file": "sliced/sheet02_apartments_01.png",
+      "width": 233,
+      "height": 317,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_02",
+      "file": "sliced/sheet02_apartments_02.png",
+      "width": 235,
+      "height": 318,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_03",
+      "file": "sliced/sheet02_apartments_03.png",
+      "width": 239,
+      "height": 312,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_04",
+      "file": "sliced/sheet02_apartments_04.png",
+      "width": 237,
+      "height": 306,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_05",
+      "file": "sliced/sheet02_apartments_05.png",
+      "width": 236,
+      "height": 330,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_06",
+      "file": "sliced/sheet02_apartments_06.png",
+      "width": 235,
+      "height": 327,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_07",
+      "file": "sliced/sheet02_apartments_07.png",
+      "width": 242,
+      "height": 305,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_08",
+      "file": "sliced/sheet02_apartments_08.png",
+      "width": 238,
+      "height": 322,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_09",
+      "file": "sliced/sheet02_apartments_09.png",
+      "width": 236,
+      "height": 288,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_10",
+      "file": "sliced/sheet02_apartments_10.png",
+      "width": 236,
+      "height": 268,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_11",
+      "file": "sliced/sheet02_apartments_11.png",
+      "width": 240,
+      "height": 268,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet02_apartments_12",
+      "file": "sliced/sheet02_apartments_12.png",
+      "width": 237,
+      "height": 264,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet03_offices": [
+    {
+      "id": "sheet03_offices_01",
+      "file": "sliced/sheet03_offices_01.png",
+      "width": 235,
+      "height": 387,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_02",
+      "file": "sliced/sheet03_offices_02.png",
+      "width": 240,
+      "height": 383,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_03",
+      "file": "sliced/sheet03_offices_03.png",
+      "width": 226,
+      "height": 378,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_04",
+      "file": "sliced/sheet03_offices_04.png",
+      "width": 233,
+      "height": 361,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_05",
+      "file": "sliced/sheet03_offices_05.png",
+      "width": 239,
+      "height": 287,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_06",
+      "file": "sliced/sheet03_offices_06.png",
+      "width": 235,
+      "height": 274,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_07",
+      "file": "sliced/sheet03_offices_07.png",
+      "width": 235,
+      "height": 274,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_08",
+      "file": "sliced/sheet03_offices_08.png",
+      "width": 240,
+      "height": 256,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_09",
+      "file": "sliced/sheet03_offices_09.png",
+      "width": 233,
+      "height": 248,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_10",
+      "file": "sliced/sheet03_offices_10.png",
+      "width": 233,
+      "height": 234,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_11",
+      "file": "sliced/sheet03_offices_11.png",
+      "width": 240,
+      "height": 240,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet03_offices_12",
+      "file": "sliced/sheet03_offices_12.png",
+      "width": 238,
+      "height": 242,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet04_buildings": [
+    {
+      "id": "sheet04_buildings_01",
+      "file": "sliced/sheet04_buildings_01.png",
+      "width": 970,
+      "height": 960,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_02",
+      "file": "sliced/sheet04_buildings_02.png",
+      "width": 166,
+      "height": 166,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_03",
+      "file": "sliced/sheet04_buildings_03.png",
+      "width": 958,
+      "height": 960,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_04",
+      "file": "sliced/sheet04_buildings_04.png",
+      "width": 170,
+      "height": 171,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_05",
+      "file": "sliced/sheet04_buildings_05.png",
+      "width": 168,
+      "height": 174,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_06",
+      "file": "sliced/sheet04_buildings_06.png",
+      "width": 167,
+      "height": 165,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_07",
+      "file": "sliced/sheet04_buildings_07.png",
+      "width": 167,
+      "height": 166,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_08",
+      "file": "sliced/sheet04_buildings_08.png",
+      "width": 167,
+      "height": 166,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_09",
+      "file": "sliced/sheet04_buildings_09.png",
+      "width": 166,
+      "height": 207,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_10",
+      "file": "sliced/sheet04_buildings_10.png",
+      "width": 167,
+      "height": 158,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet04_buildings_11",
+      "file": "sliced/sheet04_buildings_11.png",
+      "width": 167,
+      "height": 157,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet05_mixed": [
+    {
+      "id": "sheet05_mixed_01",
+      "file": "sliced/sheet05_mixed_01.png",
+      "width": 184,
+      "height": 185,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_02",
+      "file": "sliced/sheet05_mixed_02.png",
+      "width": 184,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_03",
+      "file": "sliced/sheet05_mixed_03.png",
+      "width": 185,
+      "height": 384,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_04",
+      "file": "sliced/sheet05_mixed_04.png",
+      "width": 183,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_05",
+      "file": "sliced/sheet05_mixed_05.png",
+      "width": 185,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_06",
+      "file": "sliced/sheet05_mixed_06.png",
+      "width": 183,
+      "height": 185,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_07",
+      "file": "sliced/sheet05_mixed_07.png",
+      "width": 183,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_08",
+      "file": "sliced/sheet05_mixed_08.png",
+      "width": 183,
+      "height": 174,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_09",
+      "file": "sliced/sheet05_mixed_09.png",
+      "width": 185,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_10",
+      "file": "sliced/sheet05_mixed_10.png",
+      "width": 184,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_11",
+      "file": "sliced/sheet05_mixed_11.png",
+      "width": 183,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_12",
+      "file": "sliced/sheet05_mixed_12.png",
+      "width": 184,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_13",
+      "file": "sliced/sheet05_mixed_13.png",
+      "width": 183,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_14",
+      "file": "sliced/sheet05_mixed_14.png",
+      "width": 185,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_15",
+      "file": "sliced/sheet05_mixed_15.png",
+      "width": 184,
+      "height": 187,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_16",
+      "file": "sliced/sheet05_mixed_16.png",
+      "width": 183,
+      "height": 187,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_17",
+      "file": "sliced/sheet05_mixed_17.png",
+      "width": 184,
+      "height": 187,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_18",
+      "file": "sliced/sheet05_mixed_18.png",
+      "width": 183,
+      "height": 186,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_19",
+      "file": "sliced/sheet05_mixed_19.png",
+      "width": 185,
+      "height": 191,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_20",
+      "file": "sliced/sheet05_mixed_20.png",
+      "width": 184,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_21",
+      "file": "sliced/sheet05_mixed_21.png",
+      "width": 183,
+      "height": 183,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_22",
+      "file": "sliced/sheet05_mixed_22.png",
+      "width": 185,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_23",
+      "file": "sliced/sheet05_mixed_23.png",
+      "width": 183,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet05_mixed_24",
+      "file": "sliced/sheet05_mixed_24.png",
+      "width": 185,
+      "height": 150,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet06_services": [
+    {
+      "id": "sheet06_services_01",
+      "file": "sliced/sheet06_services_01.png",
+      "width": 650,
+      "height": 743,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_02",
+      "file": "sliced/sheet06_services_02.png",
+      "width": 987,
+      "height": 969,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_03",
+      "file": "sliced/sheet06_services_03.png",
+      "width": 81,
+      "height": 102,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_04",
+      "file": "sliced/sheet06_services_04.png",
+      "width": 65,
+      "height": 52,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_05",
+      "file": "sliced/sheet06_services_05.png",
+      "width": 671,
+      "height": 969,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_06",
+      "file": "sliced/sheet06_services_06.png",
+      "width": 62,
+      "height": 52,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_07",
+      "file": "sliced/sheet06_services_07.png",
+      "width": 81,
+      "height": 102,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_08",
+      "file": "sliced/sheet06_services_08.png",
+      "width": 388,
+      "height": 327,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_09",
+      "file": "sliced/sheet06_services_09.png",
+      "width": 132,
+      "height": 103,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_10",
+      "file": "sliced/sheet06_services_10.png",
+      "width": 414,
+      "height": 327,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_11",
+      "file": "sliced/sheet06_services_11.png",
+      "width": 86,
+      "height": 103,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet06_services_12",
+      "file": "sliced/sheet06_services_12.png",
+      "width": 107,
+      "height": 71,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet07_blocks": [
+    {
+      "id": "sheet07_blocks_01",
+      "file": "sliced/sheet07_blocks_01.png",
+      "width": 989,
+      "height": 988,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_02",
+      "file": "sliced/sheet07_blocks_02.png",
+      "width": 110,
+      "height": 129,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_03",
+      "file": "sliced/sheet07_blocks_03.png",
+      "width": 108,
+      "height": 134,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_04",
+      "file": "sliced/sheet07_blocks_04.png",
+      "width": 105,
+      "height": 128,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_05",
+      "file": "sliced/sheet07_blocks_05.png",
+      "width": 106,
+      "height": 133,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_06",
+      "file": "sliced/sheet07_blocks_06.png",
+      "width": 105,
+      "height": 102,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_07",
+      "file": "sliced/sheet07_blocks_07.png",
+      "width": 79,
+      "height": 105,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_08",
+      "file": "sliced/sheet07_blocks_08.png",
+      "width": 65,
+      "height": 95,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_09",
+      "file": "sliced/sheet07_blocks_09.png",
+      "width": 62,
+      "height": 93,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_10",
+      "file": "sliced/sheet07_blocks_10.png",
+      "width": 66,
+      "height": 93,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_11",
+      "file": "sliced/sheet07_blocks_11.png",
+      "width": 105,
+      "height": 118,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_12",
+      "file": "sliced/sheet07_blocks_12.png",
+      "width": 186,
+      "height": 263,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_13",
+      "file": "sliced/sheet07_blocks_13.png",
+      "width": 184,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_14",
+      "file": "sliced/sheet07_blocks_14.png",
+      "width": 178,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_15",
+      "file": "sliced/sheet07_blocks_15.png",
+      "width": 185,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet07_blocks_16",
+      "file": "sliced/sheet07_blocks_16.png",
+      "width": 180,
+      "height": 113,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet08_cityscape": [
+    {
+      "id": "sheet08_cityscape_01",
+      "file": "sliced/sheet08_cityscape_01.png",
+      "width": 158,
+      "height": 173,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_02",
+      "file": "sliced/sheet08_cityscape_02.png",
+      "width": 156,
+      "height": 174,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_03",
+      "file": "sliced/sheet08_cityscape_03.png",
+      "width": 192,
+      "height": 363,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_04",
+      "file": "sliced/sheet08_cityscape_04.png",
+      "width": 185,
+      "height": 386,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_05",
+      "file": "sliced/sheet08_cityscape_05.png",
+      "width": 193,
+      "height": 173,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_06",
+      "file": "sliced/sheet08_cityscape_06.png",
+      "width": 159,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_07",
+      "file": "sliced/sheet08_cityscape_07.png",
+      "width": 159,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_08",
+      "file": "sliced/sheet08_cityscape_08.png",
+      "width": 163,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_09",
+      "file": "sliced/sheet08_cityscape_09.png",
+      "width": 159,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_10",
+      "file": "sliced/sheet08_cityscape_10.png",
+      "width": 159,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_11",
+      "file": "sliced/sheet08_cityscape_11.png",
+      "width": 190,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_12",
+      "file": "sliced/sheet08_cityscape_12.png",
+      "width": 177,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_13",
+      "file": "sliced/sheet08_cityscape_13.png",
+      "width": 194,
+      "height": 182,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_14",
+      "file": "sliced/sheet08_cityscape_14.png",
+      "width": 186,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_15",
+      "file": "sliced/sheet08_cityscape_15.png",
+      "width": 192,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_16",
+      "file": "sliced/sheet08_cityscape_16.png",
+      "width": 190,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_17",
+      "file": "sliced/sheet08_cityscape_17.png",
+      "width": 190,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_18",
+      "file": "sliced/sheet08_cityscape_18.png",
+      "width": 194,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_19",
+      "file": "sliced/sheet08_cityscape_19.png",
+      "width": 186,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_20",
+      "file": "sliced/sheet08_cityscape_20.png",
+      "width": 194,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_21",
+      "file": "sliced/sheet08_cityscape_21.png",
+      "width": 189,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_22",
+      "file": "sliced/sheet08_cityscape_22.png",
+      "width": 190,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet08_cityscape_23",
+      "file": "sliced/sheet08_cityscape_23.png",
+      "width": 190,
+      "height": 188,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet09_emergency": [
+    {
+      "id": "sheet09_emergency_01",
+      "file": "sliced/sheet09_emergency_01.png",
+      "width": 427,
+      "height": 386,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_02",
+      "file": "sliced/sheet09_emergency_02.png",
+      "width": 246,
+      "height": 347,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_03",
+      "file": "sliced/sheet09_emergency_03.png",
+      "width": 243,
+      "height": 312,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_04",
+      "file": "sliced/sheet09_emergency_04.png",
+      "width": 307,
+      "height": 307,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_05",
+      "file": "sliced/sheet09_emergency_05.png",
+      "width": 288,
+      "height": 276,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_06",
+      "file": "sliced/sheet09_emergency_06.png",
+      "width": 400,
+      "height": 420,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_07",
+      "file": "sliced/sheet09_emergency_07.png",
+      "width": 269,
+      "height": 304,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_08",
+      "file": "sliced/sheet09_emergency_08.png",
+      "width": 272,
+      "height": 330,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_09",
+      "file": "sliced/sheet09_emergency_09.png",
+      "width": 120,
+      "height": 138,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_10",
+      "file": "sliced/sheet09_emergency_10.png",
+      "width": 105,
+      "height": 129,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_11",
+      "file": "sliced/sheet09_emergency_11.png",
+      "width": 108,
+      "height": 119,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_12",
+      "file": "sliced/sheet09_emergency_12.png",
+      "width": 164,
+      "height": 147,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_13",
+      "file": "sliced/sheet09_emergency_13.png",
+      "width": 104,
+      "height": 118,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet09_emergency_14",
+      "file": "sliced/sheet09_emergency_14.png",
+      "width": 108,
+      "height": 120,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ],
+  "sheet10_suburban": [
+    {
+      "id": "sheet10_suburban_01",
+      "file": "sliced/sheet10_suburban_01.png",
+      "width": 185,
+      "height": 171,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_02",
+      "file": "sliced/sheet10_suburban_02.png",
+      "width": 183,
+      "height": 363,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_03",
+      "file": "sliced/sheet10_suburban_03.png",
+      "width": 185,
+      "height": 386,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_04",
+      "file": "sliced/sheet10_suburban_04.png",
+      "width": 188,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_05",
+      "file": "sliced/sheet10_suburban_05.png",
+      "width": 187,
+      "height": 175,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_06",
+      "file": "sliced/sheet10_suburban_06.png",
+      "width": 185,
+      "height": 192,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_07",
+      "file": "sliced/sheet10_suburban_07.png",
+      "width": 188,
+      "height": 179,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_08",
+      "file": "sliced/sheet10_suburban_08.png",
+      "width": 186,
+      "height": 179,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_09",
+      "file": "sliced/sheet10_suburban_09.png",
+      "width": 185,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_10",
+      "file": "sliced/sheet10_suburban_10.png",
+      "width": 183,
+      "height": 185,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_11",
+      "file": "sliced/sheet10_suburban_11.png",
+      "width": 185,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_12",
+      "file": "sliced/sheet10_suburban_12.png",
+      "width": 188,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_13",
+      "file": "sliced/sheet10_suburban_13.png",
+      "width": 187,
+      "height": 190,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_14",
+      "file": "sliced/sheet10_suburban_14.png",
+      "width": 184,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_15",
+      "file": "sliced/sheet10_suburban_15.png",
+      "width": 183,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_16",
+      "file": "sliced/sheet10_suburban_16.png",
+      "width": 185,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_17",
+      "file": "sliced/sheet10_suburban_17.png",
+      "width": 191,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_18",
+      "file": "sliced/sheet10_suburban_18.png",
+      "width": 187,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_19",
+      "file": "sliced/sheet10_suburban_19.png",
+      "width": 184,
+      "height": 184,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_20",
+      "file": "sliced/sheet10_suburban_20.png",
+      "width": 183,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_21",
+      "file": "sliced/sheet10_suburban_21.png",
+      "width": 185,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_22",
+      "file": "sliced/sheet10_suburban_22.png",
+      "width": 187,
+      "height": 181,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    },
+    {
+      "id": "sheet10_suburban_23",
+      "file": "sliced/sheet10_suburban_23.png",
+      "width": 187,
+      "height": 180,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      }
+    }
+  ]
+}

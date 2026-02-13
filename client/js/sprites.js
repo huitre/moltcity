@@ -57,85 +57,126 @@ export async function loadSprites() {
       }
     }
 
-    // Load house parts (bricks, bottoms, and roofs)
-    if (spritesConfig.houseParts) {
-      // Load brick sprites
-      for (const brick of spritesConfig.houseParts.bricks || []) {
-        const promise = PIXI.Assets.load(`/sprites/${brick.file}`)
-          .then((texture) => {
-            state.houseBricks.push({ texture, ...brick });
-            console.log(`[Sprites] Loaded brick: ${brick.id}`);
-          })
-          .catch((err) => {
-            console.warn(`[Sprites] Failed to load brick ${brick.id}:`, err);
-          });
-        loadPromises.push(promise);
+    // Load residential zone sprites (low/medium/high density)
+    if (spritesConfig.residential) {
+      for (const density of ['low', 'medium', 'high']) {
+        for (let i = 0; i < (spritesConfig.residential[density] || []).length; i++) {
+          const spriteConfig = spritesConfig.residential[density][i];
+          const jsonIndex = i;
+          const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+            .then((texture) => {
+              state.residentialSprites[density].push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+              console.log(`[Sprites] Loaded residential.${density}: ${spriteConfig.id}`);
+            })
+            .catch((err) => {
+              console.warn(`[Sprites] Failed to load residential.${density} ${spriteConfig.id}:`, err);
+            });
+          loadPromises.push(promise);
+        }
       }
+    }
 
-      // Load bottom sprites (ground floor)
-      for (const bottom of spritesConfig.houseParts.bottoms || []) {
-        const promise = PIXI.Assets.load(`/sprites/${bottom.file}`)
-          .then((texture) => {
-            state.houseBottoms.push({ texture, ...bottom });
-            console.log(`[Sprites] Loaded bottom: ${bottom.id}`);
-          })
-          .catch((err) => {
-            console.warn(`[Sprites] Failed to load bottom ${bottom.id}:`, err);
-          });
-        loadPromises.push(promise);
+    // Load office zone sprites (low/medium/high density)
+    if (spritesConfig.offices) {
+      for (const density of ['low', 'medium', 'high']) {
+        for (let i = 0; i < (spritesConfig.offices[density] || []).length; i++) {
+          const spriteConfig = spritesConfig.offices[density][i];
+          const jsonIndex = i;
+          const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+            .then((texture) => {
+              state.officeSprites[density].push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+              console.log(`[Sprites] Loaded offices.${density}: ${spriteConfig.id}`);
+            })
+            .catch((err) => {
+              console.warn(`[Sprites] Failed to load offices.${density} ${spriteConfig.id}:`, err);
+            });
+          loadPromises.push(promise);
+        }
       }
+    }
 
-      // Load roof sprites
-      for (const roof of spritesConfig.houseParts.roofs || []) {
-        const promise = PIXI.Assets.load(`/sprites/${roof.file}`)
+    // Load service building sprites (police, hospital, firestation)
+    for (const serviceType of ['police', 'hospital', 'firestation']) {
+      if (spritesConfig[serviceType]) {
+        for (let i = 0; i < spritesConfig[serviceType].length; i++) {
+          const spriteConfig = spritesConfig[serviceType][i];
+          const jsonIndex = i;
+          const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+            .then((texture) => {
+              state.serviceSprites[serviceType].push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+              console.log(`[Sprites] Loaded ${serviceType}: ${spriteConfig.id}`);
+            })
+            .catch((err) => {
+              console.warn(`[Sprites] Failed to load ${serviceType} ${spriteConfig.id}:`, err);
+            });
+          loadPromises.push(promise);
+        }
+      }
+    }
+
+    // Load park sprites
+    if (spritesConfig.park) {
+      for (let i = 0; i < spritesConfig.park.length; i++) {
+        const spriteConfig = spritesConfig.park[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
           .then((texture) => {
-            state.houseRoofs.push({ texture, ...roof });
-            console.log(`[Sprites] Loaded roof: ${roof.id}`);
+            state.parkSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded park: ${spriteConfig.id}`);
           })
           .catch((err) => {
-            console.warn(`[Sprites] Failed to load roof ${roof.id}:`, err);
+            console.warn(`[Sprites] Failed to load park ${spriteConfig.id}:`, err);
           });
         loadPromises.push(promise);
       }
     }
 
-    // Load office parts (bottoms, floors and roofs)
-    if (spritesConfig.officeParts) {
-      // Load office bottom sprites (ground floor)
-      for (const bottom of spritesConfig.officeParts.bottoms || []) {
-        const promise = PIXI.Assets.load(`/sprites/${bottom.file}`)
+    // Load suburban sprites
+    if (spritesConfig.suburban) {
+      for (let i = 0; i < spritesConfig.suburban.length; i++) {
+        const spriteConfig = spritesConfig.suburban[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
           .then((texture) => {
-            state.officeBottoms.push({ texture, ...bottom });
-            console.log(`[Sprites] Loaded office bottom: ${bottom.id}`);
+            state.suburbanSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded suburban: ${spriteConfig.id}`);
           })
           .catch((err) => {
-            console.warn(`[Sprites] Failed to load office bottom ${bottom.id}:`, err);
+            console.warn(`[Sprites] Failed to load suburban ${spriteConfig.id}:`, err);
           });
         loadPromises.push(promise);
       }
+    }
 
-      // Load office floor sprites
-      for (const floor of spritesConfig.officeParts.floors || []) {
-        const promise = PIXI.Assets.load(`/sprites/${floor.file}`)
+    // Load industrial sprites
+    if (spritesConfig.industrial) {
+      for (let i = 0; i < spritesConfig.industrial.length; i++) {
+        const spriteConfig = spritesConfig.industrial[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
           .then((texture) => {
-            state.officeFloors.push({ texture, ...floor });
-            console.log(`[Sprites] Loaded office floor: ${floor.id}`);
+            state.industrialSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded industrial: ${spriteConfig.id}`);
           })
           .catch((err) => {
-            console.warn(`[Sprites] Failed to load office floor ${floor.id}:`, err);
+            console.warn(`[Sprites] Failed to load industrial ${spriteConfig.id}:`, err);
           });
         loadPromises.push(promise);
       }
+    }
 
-      // Load office roof sprites
-      for (const roof of spritesConfig.officeParts.roofs || []) {
-        const promise = PIXI.Assets.load(`/sprites/${roof.file}`)
+    // Load crane sprites (construction)
+    if (spritesConfig.crane) {
+      for (let i = 0; i < spritesConfig.crane.length; i++) {
+        const spriteConfig = spritesConfig.crane[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
           .then((texture) => {
-            state.officeRoofs.push({ texture, ...roof });
-            console.log(`[Sprites] Loaded office roof: ${roof.id}`);
+            state.craneSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded crane: ${spriteConfig.id}`);
           })
           .catch((err) => {
-            console.warn(`[Sprites] Failed to load office roof ${roof.id}:`, err);
+            console.warn(`[Sprites] Failed to load crane ${spriteConfig.id}:`, err);
           });
         loadPromises.push(promise);
       }
@@ -169,13 +210,14 @@ export async function loadSprites() {
     }
 
     await Promise.all(loadPromises);
+    const resCount = state.residentialSprites.low.length + state.residentialSprites.medium.length + state.residentialSprites.high.length;
+    const offCount = state.officeSprites.low.length + state.officeSprites.medium.length + state.officeSprites.high.length;
+    const svcCount = state.serviceSprites.police.length + state.serviceSprites.hospital.length + state.serviceSprites.firestation.length;
     console.log(
       `[Sprites] Loaded ${state.defaultSprites.size} buildings, ` +
       `${state.roadSprites.size} roads, ` +
-      `${state.houseBricks.length} house bricks, ` +
-      `${state.houseBottoms.length} house bottoms, ` +
-      `${state.officeFloors.length} office floors, ` +
-      `${state.officeBottoms.length} office bottoms, ` +
+      `${resCount} residential, ${offCount} offices, ${state.suburbanSprites.length} suburban, ${state.industrialSprites.length} industrial, ` +
+      `${svcCount} services, ${state.parkSprites.length} parks, ` +
       `${state.vehicleSprites.size} vehicle types`
     );
   } catch (err) {

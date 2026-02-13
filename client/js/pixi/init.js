@@ -33,33 +33,31 @@ export async function initPixi() {
   worldContainer.x = app.screen.width / 2 - centerIso.x;
   worldContainer.y = app.screen.height / 4 - centerIso.y;
 
-  // Create clouds container (in world space)
-  const cloudsContainer = new PIXI.Container();
-  cloudsContainer.zIndex = 10000;
-  worldContainer.addChild(cloudsContainer);
-  state.setCloudsContainer(cloudsContainer);
+  // Layer ordering (ascending):
+  // tiles(100), waterpipes(200) are created in render()
+  // sceneLayer(700) is persistent — holds roads, powerlines, buildings, vehicles, pedestrians
+  // birds(800), clouds(900) are permanent containers
+
+  // Scene layer — persistent, depth-sorted container for all gameplay objects
+  const sceneLayer = new PIXI.Container();
+  sceneLayer.sortableChildren = true;
+  sceneLayer.zIndex = 700;
+  worldContainer.addChild(sceneLayer);
+  state.setSceneLayer(sceneLayer);
 
   // Birds container
   const birdsContainer = new PIXI.Container();
-  birdsContainer.zIndex = 9999;
+  birdsContainer.zIndex = 800;
   worldContainer.addChild(birdsContainer);
   state.setBirdsContainer(birdsContainer);
 
-  // Vehicles container - no fixed zIndex, vehicles added directly to worldContainer
-  const vehiclesContainer = new PIXI.Container();
-  vehiclesContainer.sortableChildren = true;
-  // No zIndex set - vehicles added directly to worldContainer for proper sorting
-  worldContainer.addChild(vehiclesContainer);
-  state.setVehiclesContainer(vehiclesContainer);
+  // Clouds container
+  const cloudsContainer = new PIXI.Container();
+  cloudsContainer.zIndex = 900;
+  worldContainer.addChild(cloudsContainer);
+  state.setCloudsContainer(cloudsContainer);
 
-  // Pedestrians container - no fixed zIndex, children sorted with world
-  const pedestriansContainer = new PIXI.Container();
-  pedestriansContainer.sortableChildren = true;
-  // No zIndex set - pedestrians will use their individual x+y zIndex
-  worldContainer.addChild(pedestriansContainer);
-  state.setPedestriansContainer(pedestriansContainer);
-
-  // Day/night overlay (screen space - stays fixed on screen)
+  // Day/night overlay (screen space - stays fixed on screen, above everything)
   const dayNightOverlay = new PIXI.Graphics();
   dayNightOverlay.zIndex = 20000;
   app.stage.addChild(dayNightOverlay);

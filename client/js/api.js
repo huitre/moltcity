@@ -8,8 +8,9 @@ import * as state from './state.js';
 /**
  * Get auth headers for API requests
  */
-function getHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
+function getHeaders(hasBody = true) {
+  const headers = {};
+  if (hasBody) headers['Content-Type'] = 'application/json';
   if (state.currentToken) {
     headers['Authorization'] = `Bearer ${state.currentToken}`;
   }
@@ -20,9 +21,10 @@ function getHeaders() {
  * Generic fetch wrapper with error handling
  */
 async function fetchApi(endpoint, options = {}) {
+  const hasBody = options.body !== undefined;
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers: { ...getHeaders(), ...options.headers },
+    headers: { ...getHeaders(hasBody), ...options.headers },
   });
 
   if (!response.ok) {
@@ -167,6 +169,10 @@ export async function createRoad(params) {
     method: 'POST',
     body: JSON.stringify(params),
   });
+}
+
+export async function deleteRoad(id) {
+  return fetchApi(`/api/roads/${id}`, { method: 'DELETE' });
 }
 
 // ============================================
@@ -328,4 +334,15 @@ export async function stopSimulation() {
 
 export async function getSimulationState() {
   return fetchApi('/api/simulation/state');
+}
+
+// ============================================
+// Sprites Config API
+// ============================================
+
+export async function updateSpriteConfig(data) {
+  return fetchApi('/api/sprites/config', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }

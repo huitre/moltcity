@@ -9,7 +9,7 @@ export interface Coordinate {
 }
 
 export type TerrainType = 'land' | 'water' | 'hill';
-export type ZoningType = 'residential' | 'commercial' | 'industrial' | 'municipal' | 'park' | 'suburban';
+export type ZoningType = 'residential' | 'office' | 'industrial' | 'municipal' | 'park' | 'suburban';
 
 // === Parcel (Land Unit) ===
 export interface Parcel {
@@ -21,6 +21,7 @@ export interface Parcel {
   ownerId: string | null;
   purchasePrice: number | null;
   purchaseDate: number | null; // Unix timestamp
+  landValue: number; // land value score (affects zone evolution)
 }
 
 // === Buildings ===
@@ -39,6 +40,11 @@ export type BuildingType =
   | 'police_station'
   | 'courthouse'
   | 'jail'
+  // Zone types
+  | 'residential'
+  | 'offices'
+  | 'suburban'
+  | 'industrial'
   // New service buildings
   | 'fire_station'
   | 'school'
@@ -73,6 +79,7 @@ export interface Building {
   constructionProgress: number; // 0-100, 100 = complete
   constructionStartedAt: number | null; // tick when construction started
   constructionTimeTicks: number; // total ticks needed to complete
+  density: number; // zone density level (1-3)
 }
 
 // === Infrastructure: Roads ===

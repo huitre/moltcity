@@ -4,7 +4,7 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
-import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType, RentalUnit, RentWarning, CourtCase, JailInmate, RentalUnitType, RentalUnitStatus, RentWarningStatus, CourtCaseStatus, CourtVerdict, CourtSentence, JailStatus } from './types.js';
+import type { Parcel, Building, Road, Agent, Vehicle, City, TerrainType, ZoningType, BuildingType, AgentState, RoadDirection, VehicleType, RentalUnit, RentWarning, CourtCase, JailInmate, RentalUnitType, RentalUnitStatus, RentWarningStatus, CourtCaseStatus, CourtVerdict, CourtSentence, JailStatus, Crime, CrimeType, CrimeStatus, PoliceOfficer, OfficerStatus, Fire, FireStatus, FireIntensity, Firefighter, FirefighterStatus } from './types.js';
 
 const DEFAULT_DB_PATH = path.join(process.cwd(), 'moltcity.db');
 
@@ -208,6 +208,68 @@ export function createDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_jail_inmates_status ON jail_inmates(status);
   `);
 
+  // Crime & fire tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS crimes (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      parcel_id TEXT NOT NULL,
+      location_x REAL NOT NULL,
+      location_y REAL NOT NULL,
+      victim_id TEXT,
+      building_id TEXT,
+      damage_amount INTEGER NOT NULL DEFAULT 0,
+      reported_at INTEGER NOT NULL,
+      resolved_at INTEGER,
+      responding_officer_id TEXT,
+      status TEXT NOT NULL DEFAULT 'active'
+    );
+    CREATE INDEX IF NOT EXISTS idx_crimes_status ON crimes(status);
+
+    CREATE TABLE IF NOT EXISTS police_officers (
+      id TEXT PRIMARY KEY,
+      station_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      current_x REAL NOT NULL,
+      current_y REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'available',
+      assigned_crime_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_officers_station ON police_officers(station_id);
+
+    CREATE TABLE IF NOT EXISTS fires (
+      id TEXT PRIMARY KEY,
+      building_id TEXT NOT NULL,
+      parcel_id TEXT NOT NULL,
+      intensity INTEGER NOT NULL DEFAULT 1,
+      spread_chance INTEGER NOT NULL DEFAULT 20,
+      started_at INTEGER NOT NULL,
+      contained_at INTEGER,
+      extinguished_at INTEGER,
+      status TEXT NOT NULL DEFAULT 'burning',
+      cause TEXT NOT NULL DEFAULT 'accident'
+    );
+    CREATE INDEX IF NOT EXISTS idx_fires_status ON fires(status);
+
+    CREATE TABLE IF NOT EXISTS firefighters (
+      id TEXT PRIMARY KEY,
+      station_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      current_x REAL NOT NULL,
+      current_y REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'available',
+      assigned_fire_id TEXT,
+      truck_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_firefighters_station ON firefighters(station_id);
+  `);
+
+  // Migrations: add new columns (safe to retry - fails silently if column exists)
+  try { db.exec(`ALTER TABLE parcels ADD COLUMN land_value REAL NOT NULL DEFAULT 50`); } catch (_) {}
+  try { db.exec(`ALTER TABLE buildings ADD COLUMN density INTEGER NOT NULL DEFAULT 1`); } catch (_) {}
+
   return db;
 }
 
@@ -274,10 +336,7 @@ export class CityRepository {
 export class ParcelRepository {
   constructor(private db: Database.Database) {}
 
-  getParcel(x: number, y: number): Parcel | null {
-    const row = this.db.prepare('SELECT * FROM parcels WHERE x = ? AND y = ?').get(x, y) as any;
-    if (!row) return null;
-
+  private rowToParcel(row: any): Parcel {
     return {
       id: row.id,
       x: row.x,
@@ -287,37 +346,25 @@ export class ParcelRepository {
       ownerId: row.owner_id,
       purchasePrice: row.purchase_price,
       purchaseDate: row.purchase_date,
+      landValue: row.land_value ?? 50,
     };
+  }
+
+  getParcel(x: number, y: number): Parcel | null {
+    const row = this.db.prepare('SELECT * FROM parcels WHERE x = ? AND y = ?').get(x, y) as any;
+    if (!row) return null;
+    return this.rowToParcel(row);
   }
 
   getParcelById(id: string): Parcel | null {
     const row = this.db.prepare('SELECT * FROM parcels WHERE id = ?').get(id) as any;
     if (!row) return null;
-
-    return {
-      id: row.id,
-      x: row.x,
-      y: row.y,
-      terrain: row.terrain as TerrainType,
-      zoning: row.zoning as ZoningType | null,
-      ownerId: row.owner_id,
-      purchasePrice: row.purchase_price,
-      purchaseDate: row.purchase_date,
-    };
+    return this.rowToParcel(row);
   }
 
   getAllParcels(): Parcel[] {
     const rows = this.db.prepare('SELECT * FROM parcels').all() as any[];
-    return rows.map(row => ({
-      id: row.id,
-      x: row.x,
-      y: row.y,
-      terrain: row.terrain as TerrainType,
-      zoning: row.zoning as ZoningType | null,
-      ownerId: row.owner_id,
-      purchasePrice: row.purchase_price,
-      purchaseDate: row.purchase_date,
-    }));
+    return rows.map(row => this.rowToParcel(row));
   }
 
   getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number): Parcel[] {
@@ -325,17 +372,21 @@ export class ParcelRepository {
       SELECT * FROM parcels
       WHERE x >= ? AND x <= ? AND y >= ? AND y <= ?
     `).all(minX, maxX, minY, maxY) as any[];
+    return rows.map(row => this.rowToParcel(row));
+  }
 
-    return rows.map(row => ({
-      id: row.id,
-      x: row.x,
-      y: row.y,
-      terrain: row.terrain as TerrainType,
-      zoning: row.zoning as ZoningType | null,
-      ownerId: row.owner_id,
-      purchasePrice: row.purchase_price,
-      purchaseDate: row.purchase_date,
-    }));
+  updateLandValue(parcelId: string, value: number): void {
+    this.db.prepare('UPDATE parcels SET land_value = ? WHERE id = ?').run(value, parcelId);
+  }
+
+  updateLandValues(updates: { parcelId: string; value: number }[]): void {
+    const stmt = this.db.prepare('UPDATE parcels SET land_value = ? WHERE id = ?');
+    const transaction = this.db.transaction(() => {
+      for (const u of updates) {
+        stmt.run(u.value, u.parcelId);
+      }
+    });
+    transaction();
   }
 
   createParcel(x: number, y: number, terrain: TerrainType = 'land'): Parcel {
@@ -345,7 +396,7 @@ export class ParcelRepository {
       VALUES (?, ?, ?, ?)
     `).run(id, x, y, terrain);
 
-    return { id, x, y, terrain, zoning: null, ownerId: null, purchasePrice: null, purchaseDate: null };
+    return { id, x, y, terrain, zoning: null, ownerId: null, purchasePrice: null, purchaseDate: null, landValue: 50 };
   }
 
   purchaseParcel(parcelId: string, ownerId: string, price: number): void {
@@ -445,6 +496,11 @@ export class BuildingRepository {
       .run(powered ? 1 : 0, buildingId);
   }
 
+  updateWaterStatus(buildingId: string, hasWater: boolean): void {
+    this.db.prepare('UPDATE buildings SET has_water = ?, operational = powered AND ? WHERE id = ?')
+      .run(hasWater ? 1 : 0, hasWater ? 1 : 0, buildingId);
+  }
+
   updateBuilding(buildingId: string, updates: { name?: string; sprite?: string; type?: BuildingType; ownerId?: string }): void {
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -510,11 +566,22 @@ export class BuildingRepository {
       constructionProgress: row.construction_progress ?? 100,
       constructionStartedAt: row.construction_started_at,
       constructionTimeTicks: row.construction_time_ticks ?? 0,
+      density: row.density || 1,
     };
   }
 
+  updateDensityAndFloors(buildingId: string, density: number, floors: number): void {
+    this.db.prepare('UPDATE buildings SET density = ?, floors = ? WHERE id = ?').run(density, floors, buildingId);
+  }
+
   private getPowerRequirement(type: BuildingType): number {
-    const requirements: Record<BuildingType, number> = {
+    const requirements: Partial<Record<BuildingType, number>> = {
+      residential: 100,
+      offices: 800,
+      suburban: 50,
+      industrial: 1500,
+      fire_station: 500,
+      hospital: 2000,
       house: 100,
       apartment: 500,
       shop: 300,
@@ -534,7 +601,13 @@ export class BuildingRepository {
   }
 
   private getWaterRequirement(type: BuildingType): number {
-    const requirements: Record<BuildingType, number> = {
+    const requirements: Partial<Record<BuildingType, number>> = {
+      residential: 50,
+      offices: 100,
+      suburban: 25,
+      industrial: 400,
+      fire_station: 200,
+      hospital: 500,
       house: 50,
       apartment: 200,
       shop: 30,
@@ -1252,6 +1325,241 @@ export class PopulationRepository {
 }
 
 // ============================================
+// Crime Repository
+// ============================================
+
+export class CrimeRepository {
+  constructor(private db: Database.Database) {}
+
+  getCrime(id: string): Crime | null {
+    const row = this.db.prepare('SELECT * FROM crimes WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToCrime(row);
+  }
+
+  getActiveCrimes(): Crime[] {
+    const rows = this.db.prepare('SELECT * FROM crimes WHERE status IN (?, ?)').all('active', 'responding') as any[];
+    return rows.map(r => this.rowToCrime(r));
+  }
+
+  createCrime(type: CrimeType, parcelId: string, x: number, y: number, buildingId: string | null, damageAmount: number, tick: number): Crime {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO crimes (id, type, parcel_id, location_x, location_y, building_id, damage_amount, reported_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+    `).run(id, type, parcelId, x, y, buildingId, damageAmount, tick);
+    return this.getCrime(id)!;
+  }
+
+  assignOfficer(crimeId: string, officerId: string): void {
+    this.db.prepare('UPDATE crimes SET responding_officer_id = ?, status = ? WHERE id = ?').run(officerId, 'responding', crimeId);
+  }
+
+  resolveCrime(crimeId: string, tick: number): void {
+    this.db.prepare('UPDATE crimes SET status = ?, resolved_at = ? WHERE id = ?').run('resolved', tick, crimeId);
+  }
+
+  private rowToCrime(row: any): Crime {
+    return {
+      id: row.id,
+      type: row.type as CrimeType,
+      location: { x: row.location_x, y: row.location_y },
+      parcelId: row.parcel_id,
+      victimId: row.victim_id,
+      buildingId: row.building_id,
+      damageAmount: row.damage_amount,
+      reportedAt: row.reported_at,
+      resolvedAt: row.resolved_at,
+      respondingOfficerId: row.responding_officer_id,
+      status: row.status as CrimeStatus,
+    };
+  }
+}
+
+// ============================================
+// Police Officer Repository
+// ============================================
+
+export class PoliceOfficerRepository {
+  constructor(private db: Database.Database) {}
+
+  getOfficer(id: string): PoliceOfficer | null {
+    const row = this.db.prepare('SELECT * FROM police_officers WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToOfficer(row);
+  }
+
+  getOfficersByStation(stationId: string): PoliceOfficer[] {
+    const rows = this.db.prepare('SELECT * FROM police_officers WHERE station_id = ?').all(stationId) as any[];
+    return rows.map(r => this.rowToOfficer(r));
+  }
+
+  getAvailableOfficers(): PoliceOfficer[] {
+    const rows = this.db.prepare('SELECT * FROM police_officers WHERE status = ?').all('available') as any[];
+    return rows.map(r => this.rowToOfficer(r));
+  }
+
+  getAllOfficers(): PoliceOfficer[] {
+    const rows = this.db.prepare('SELECT * FROM police_officers').all() as any[];
+    return rows.map(r => this.rowToOfficer(r));
+  }
+
+  createOfficer(stationId: string, name: string, x: number, y: number): PoliceOfficer {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO police_officers (id, station_id, name, current_x, current_y, status, created_at)
+      VALUES (?, ?, ?, ?, ?, 'available', ?)
+    `).run(id, stationId, name, x, y, Date.now());
+    return this.getOfficer(id)!;
+  }
+
+  assignToCrime(officerId: string, crimeId: string): void {
+    this.db.prepare('UPDATE police_officers SET assigned_crime_id = ?, status = ? WHERE id = ?').run(crimeId, 'responding', officerId);
+  }
+
+  setAvailable(officerId: string): void {
+    this.db.prepare('UPDATE police_officers SET assigned_crime_id = NULL, status = ? WHERE id = ?').run('available', officerId);
+  }
+
+  updatePosition(officerId: string, x: number, y: number): void {
+    this.db.prepare('UPDATE police_officers SET current_x = ?, current_y = ? WHERE id = ?').run(x, y, officerId);
+  }
+
+  private rowToOfficer(row: any): PoliceOfficer {
+    return {
+      id: row.id,
+      stationId: row.station_id,
+      name: row.name,
+      currentLocation: { x: row.current_x, y: row.current_y },
+      status: row.status as OfficerStatus,
+      assignedCrimeId: row.assigned_crime_id,
+      patrolRoute: [],
+    };
+  }
+}
+
+// ============================================
+// Fire Repository
+// ============================================
+
+export class FireRepository {
+  constructor(private db: Database.Database) {}
+
+  getFire(id: string): Fire | null {
+    const row = this.db.prepare('SELECT * FROM fires WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToFire(row);
+  }
+
+  getActiveFires(): Fire[] {
+    const rows = this.db.prepare('SELECT * FROM fires WHERE status = ?').all('burning') as any[];
+    return rows.map(r => this.rowToFire(r));
+  }
+
+  createFire(buildingId: string, parcelId: string, cause: string, tick: number): Fire {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO fires (id, building_id, parcel_id, intensity, spread_chance, started_at, status, cause)
+      VALUES (?, ?, ?, 1, 20, ?, 'burning', ?)
+    `).run(id, buildingId, parcelId, tick, cause);
+    return this.getFire(id)!;
+  }
+
+  updateIntensity(fireId: string, intensity: number): void {
+    this.db.prepare('UPDATE fires SET intensity = ? WHERE id = ?').run(Math.min(5, Math.max(1, Math.round(intensity))), fireId);
+  }
+
+  extinguishFire(fireId: string, tick: number): void {
+    this.db.prepare('UPDATE fires SET status = ?, extinguished_at = ? WHERE id = ?').run('extinguished', tick, fireId);
+  }
+
+  containFire(fireId: string, tick: number): void {
+    this.db.prepare('UPDATE fires SET status = ?, contained_at = ? WHERE id = ?').run('contained', tick, fireId);
+  }
+
+  private rowToFire(row: any): Fire {
+    return {
+      id: row.id,
+      buildingId: row.building_id,
+      parcelId: row.parcel_id,
+      intensity: row.intensity as FireIntensity,
+      spreadChance: row.spread_chance,
+      startedAt: row.started_at,
+      containedAt: row.contained_at,
+      extinguishedAt: row.extinguished_at,
+      status: row.status as FireStatus,
+      cause: row.cause as Fire['cause'],
+    };
+  }
+}
+
+// ============================================
+// Firefighter Repository
+// ============================================
+
+export class FirefighterRepository {
+  constructor(private db: Database.Database) {}
+
+  getFirefighter(id: string): Firefighter | null {
+    const row = this.db.prepare('SELECT * FROM firefighters WHERE id = ?').get(id) as any;
+    if (!row) return null;
+    return this.rowToFirefighter(row);
+  }
+
+  getFirefightersByStation(stationId: string): Firefighter[] {
+    const rows = this.db.prepare('SELECT * FROM firefighters WHERE station_id = ?').all(stationId) as any[];
+    return rows.map(r => this.rowToFirefighter(r));
+  }
+
+  getAvailableFirefighters(): Firefighter[] {
+    const rows = this.db.prepare('SELECT * FROM firefighters WHERE status = ?').all('available') as any[];
+    return rows.map(r => this.rowToFirefighter(r));
+  }
+
+  getAllFirefighters(): Firefighter[] {
+    const rows = this.db.prepare('SELECT * FROM firefighters').all() as any[];
+    return rows.map(r => this.rowToFirefighter(r));
+  }
+
+  createFirefighter(stationId: string, name: string, x: number, y: number): Firefighter {
+    const id = crypto.randomUUID();
+    this.db.prepare(`
+      INSERT INTO firefighters (id, station_id, name, current_x, current_y, status, created_at)
+      VALUES (?, ?, ?, ?, ?, 'available', ?)
+    `).run(id, stationId, name, x, y, Date.now());
+    return this.getFirefighter(id)!;
+  }
+
+  assignToFire(firefighterId: string, fireId: string): void {
+    this.db.prepare('UPDATE firefighters SET assigned_fire_id = ?, status = ? WHERE id = ?').run(fireId, 'responding', firefighterId);
+  }
+
+  setFighting(firefighterId: string): void {
+    this.db.prepare('UPDATE firefighters SET status = ? WHERE id = ?').run('fighting', firefighterId);
+  }
+
+  setAvailable(firefighterId: string): void {
+    this.db.prepare('UPDATE firefighters SET assigned_fire_id = NULL, status = ? WHERE id = ?').run('available', firefighterId);
+  }
+
+  updatePosition(firefighterId: string, x: number, y: number): void {
+    this.db.prepare('UPDATE firefighters SET current_x = ?, current_y = ? WHERE id = ?').run(x, y, firefighterId);
+  }
+
+  private rowToFirefighter(row: any): Firefighter {
+    return {
+      id: row.id,
+      stationId: row.station_id,
+      name: row.name,
+      currentLocation: { x: row.current_x, y: row.current_y },
+      status: row.status as FirefighterStatus,
+      assignedFireId: row.assigned_fire_id,
+      truckId: row.truck_id,
+    };
+  }
+}
+
+// ============================================
 // Database Manager
 // ============================================
 
@@ -1270,6 +1578,10 @@ export class DatabaseManager {
   public courtCases: CourtCaseRepository;
   public jailInmates: JailInmateRepository;
   public population: PopulationRepository;
+  public crimes: CrimeRepository;
+  public policeOfficers: PoliceOfficerRepository;
+  public fires: FireRepository;
+  public firefighters: FirefighterRepository;
 
   constructor() {
     this.db = createDatabase();
@@ -1286,6 +1598,10 @@ export class DatabaseManager {
     this.courtCases = new CourtCaseRepository(this.db);
     this.jailInmates = new JailInmateRepository(this.db);
     this.population = new PopulationRepository(this.db);
+    this.crimes = new CrimeRepository(this.db);
+    this.policeOfficers = new PoliceOfficerRepository(this.db);
+    this.fires = new FireRepository(this.db);
+    this.firefighters = new FirefighterRepository(this.db);
   }
 
   close(): void {

@@ -11,7 +11,17 @@ export type ActivityType =
   | 'election_started'
   | 'candidate_registered'
   | 'vote_cast'
-  | 'mayor_elected';
+  | 'mayor_elected'
+  | 'crime_reported'
+  | 'crime_resolved'
+  | 'fire_started'
+  | 'fire_extinguished'
+  | 'fire_spread'
+  | 'building_destroyed'
+  | 'construction_completed'
+  | 'zone_evolved'
+  | 'jail_update'
+  | 'tax_collected';
 
 // Activities
 export const activities = sqliteTable('activities', {

@@ -9,7 +9,13 @@ import type { DrizzleDb } from '../db/drizzle.js';
 import type { Building, BuildingType } from '../models/types.js';
 
 // Power/water requirements per building type
-const POWER_REQUIREMENTS: Record<BuildingType, number> = {
+const POWER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
+  residential: 100,
+  offices: 800,
+  suburban: 50,
+  industrial: 1500,
+  fire_station: 500,
+  hospital: 2000,
   house: 100,
   apartment: 500,
   shop: 300,
@@ -26,7 +32,13 @@ const POWER_REQUIREMENTS: Record<BuildingType, number> = {
   jail: 1500,
 };
 
-const WATER_REQUIREMENTS: Record<BuildingType, number> = {
+const WATER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
+  residential: 50,
+  offices: 100,
+  suburban: 25,
+  industrial: 400,
+  fire_station: 200,
+  hospital: 500,
   house: 50,
   apartment: 200,
   shop: 30,
@@ -84,7 +96,9 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     ownerId: string,
     sprite?: string,
     floors: number = 1,
-    currentTick: number = 0
+    currentTick: number = 0,
+    width: number = 1,
+    height: number = 1
   ): Promise<Building> {
     const id = this.generateId();
     const basePower = this.getPowerRequirement(type);
@@ -103,6 +117,8 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       name,
       sprite: sprite || '',
       floors,
+      width,
+      height,
       powerRequired,
       waterRequired,
       builtAt: this.now(),
@@ -110,6 +126,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       constructionProgress,
       constructionStartedAt,
       constructionTimeTicks,
+      density: 1,
     });
 
     return (await this.getBuilding(id))!;
@@ -172,6 +189,13 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     return WATER_REQUIREMENTS[type] || 50;
   }
 
+  async updateDensityAndFloors(buildingId: string, density: number, floors: number): Promise<void> {
+    await this.db
+      .update(buildings)
+      .set({ density, floors })
+      .where(eq(buildings.id, buildingId));
+  }
+
   private rowToBuilding(row: BuildingRow): Building {
     return {
       id: row.id,
@@ -192,6 +216,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       constructionProgress: row.constructionProgress,
       constructionStartedAt: row.constructionStartedAt,
       constructionTimeTicks: row.constructionTimeTicks,
+      density: row.density,
     };
   }
 }
