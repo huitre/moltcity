@@ -7,8 +7,9 @@ import { RoadRepository } from '../repositories/road.repository.js';
 import { ParcelRepository } from '../repositories/parcel.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { createRoadSchema, roadIdParamSchema } from '../schemas/roads.schema.js';
-import { NotFoundError, ConflictError, ForbiddenError } from '../plugins/error-handler.plugin.js';
-import { hasElevatedPrivileges, type UserRole } from '../config/game.js';
+import { NotFoundError, ConflictError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
+import { hasElevatedPrivileges, BUILDING_COSTS, type UserRole } from '../config/game.js';
+import { CityRepository } from '../repositories/city.repository.js';
 
 export const roadsController: FastifyPluginAsync = async (fastify) => {
   const roadRepo = new RoadRepository(fastify.db);
@@ -55,6 +56,17 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     const existingRoad = await roadRepo.getRoad(parcelId);
     if (existingRoad) {
       throw new ConflictError('Road already exists at this location');
+    }
+
+    // Deduct road cost from city treasury
+    const cost = BUILDING_COSTS.road;
+    const cityRepo = new CityRepository(fastify.db);
+    const city = await cityRepo.getCity();
+    if (city && cost > 0) {
+      if (city.stats.treasury < cost) {
+        throw new InsufficientFundsError(cost, city.stats.treasury);
+      }
+      await cityRepo.updateTreasury(city.stats.treasury - cost);
     }
 
     const road = await roadRepo.createRoad(parcelId, body.direction, body.lanes);

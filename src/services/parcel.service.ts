@@ -8,7 +8,8 @@ import { RoadRepository } from '../repositories/road.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, InsufficientFundsError, ValidationError, ForbiddenError } from '../plugins/error-handler.plugin.js';
-import { getMaxParcels, getParcelCost, type UserRole } from '../config/game.js';
+import { getMaxParcels, getParcelCost, ZONING_COST, type UserRole } from '../config/game.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { FastifyInstance } from 'fastify';
 import type { Parcel, Building, Road, ZoningType } from '../models/types.js';
@@ -25,6 +26,7 @@ export interface PurchaseResult {
 }
 
 export class ParcelService {
+  private db: DrizzleDb;
   private parcelRepo: ParcelRepository;
   private buildingRepo: BuildingRepository;
   private roadRepo: RoadRepository;
@@ -32,6 +34,7 @@ export class ParcelService {
   private activityService: ActivityService;
 
   constructor(db: DrizzleDb, fastify?: FastifyInstance) {
+    this.db = db;
     this.parcelRepo = new ParcelRepository(db);
     this.buildingRepo = new BuildingRepository(db);
     this.roadRepo = new RoadRepository(db);
@@ -224,6 +227,15 @@ export class ParcelService {
     }
 
     if (zoning) {
+      // Deduct zoning cost from city treasury
+      const cityRepo = new CityRepository(this.db);
+      const city = await cityRepo.getCity();
+      if (city && ZONING_COST > 0) {
+        if (city.stats.treasury < ZONING_COST) {
+          throw new InsufficientFundsError(ZONING_COST, city.stats.treasury);
+        }
+        await cityRepo.updateTreasury(city.stats.treasury - ZONING_COST);
+      }
       await this.parcelRepo.setZoning(parcelId, zoning);
     } else {
       await this.parcelRepo.clearZoning(parcelId);

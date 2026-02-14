@@ -1859,6 +1859,32 @@
       }
     }
   ],
+  "university": [
+    {
+      "id": "university_01",
+      "file": "sliced/university_01.png",
+      "width": 461,
+      "height": 332,
+      "tiles": 2,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    }
+  ],
+  "stadium": [
+    {
+      "id": "stadium_01",
+      "file": "sliced/stadium_01.png",
+      "width": 966,
+      "height": 663,
+      "tiles": 4,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    }
+  ],
   "meta": {
     "attribution": "Sprites by Kenney.nl (CC0 Public Domain)",
     "source": "https://opengameart.org/content/isometric-buildings-1"

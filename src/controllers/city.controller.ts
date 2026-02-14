@@ -13,6 +13,8 @@ import {
   USER_BUILDING_TYPES,
   BUILDING_COSTS,
   BUILDING_LIMITS,
+  ZONING_COST,
+  HOUSING,
 } from '../config/game.js';
 import { z } from 'zod';
 
@@ -74,6 +76,8 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
         allowed: hasElevatedPrivileges ? [...USER_BUILDING_TYPES, ...ADMIN_ONLY_BUILDING_TYPES] : USER_BUILDING_TYPES,
       },
       costs: BUILDING_COSTS,
+      zoningCost: ZONING_COST,
+      floorCosts: HOUSING.FLOOR_COSTS,
       userRole: role,
     };
   });

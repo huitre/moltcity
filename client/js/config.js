@@ -47,14 +47,16 @@ export const BUILDING_FOOTPRINTS = {
   fire_station: { w: 2, h: 2 },
   power_plant: { w: 2, h: 2 },
   water_tower: { w: 2, h: 2 },
+  university: { w: 2, h: 2 },
+  stadium: { w: 4, h: 4 },
 };
 
 // Vehicle/pedestrian config
 export const VEHICLE_SPEED = 0.5;
 export const PEDESTRIAN_SPEED = 0.2;
 export const PEDESTRIAN_COLORS = [
-  0x4a90d9, 0xe74c3c, 0x2ecc71, 0x9b59b6,
-  0xf1c40f, 0xe67e22, 0x1abc9c, 0xecf0f1
+  0x4a90d9, 0xe74c3c, 0x2ecc71, 0x9b59b6, 0xf1c40f, 0xe67e22, 0x1abc9c,
+  0xecf0f1,
 ];
 
 // Direction vectors for pathfinding

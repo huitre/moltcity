@@ -9,9 +9,10 @@ import {
   createWaterPipeSchema,
   infrastructureIdParamSchema,
 } from '../schemas/infrastructure.schema.js';
-import { NotFoundError, ForbiddenError } from '../plugins/error-handler.plugin.js';
+import { NotFoundError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
 import { UserRepository } from '../repositories/user.repository.js';
-import { hasElevatedPrivileges, type UserRole } from '../config/game.js';
+import { CityRepository } from '../repositories/city.repository.js';
+import { hasElevatedPrivileges, BUILDING_COSTS, type UserRole } from '../config/game.js';
 
 export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   const powerLineRepo = new PowerLineRepository(fastify.db);
@@ -27,8 +28,31 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     return { powerLines };
   });
 
-  // Create power line
-  fastify.post('/api/infrastructure/power-lines', async (request, reply) => {
+  // Create power line (requires mayor/admin)
+  fastify.post('/api/infrastructure/power-lines', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
+    if (!hasElevatedPrivileges(role)) {
+      throw new ForbiddenError('Only mayors and admins can create power lines');
+    }
+
+    // Deduct cost from city treasury
+    const cost = BUILDING_COSTS.power_line;
+    const cityRepo = new CityRepository(fastify.db);
+    const city = await cityRepo.getCity();
+    if (city && cost > 0) {
+      if (city.stats.treasury < cost) {
+        throw new InsufficientFundsError(cost, city.stats.treasury);
+      }
+      await cityRepo.updateTreasury(city.stats.treasury - cost);
+    }
+
     const body = createPowerLineSchema.parse(request.body);
     const id = await powerLineRepo.createPowerLine(
       body.fromX,
@@ -79,8 +103,31 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     return { waterPipes };
   });
 
-  // Create water pipe
-  fastify.post('/api/infrastructure/water-pipes', async (request, reply) => {
+  // Create water pipe (requires mayor/admin)
+  fastify.post('/api/infrastructure/water-pipes', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = dbUser?.role || 'user';
+    }
+    if (!hasElevatedPrivileges(role)) {
+      throw new ForbiddenError('Only mayors and admins can create water pipes');
+    }
+
+    // Deduct cost from city treasury
+    const cost = BUILDING_COSTS.water_pipe;
+    const cityRepo = new CityRepository(fastify.db);
+    const city = await cityRepo.getCity();
+    if (city && cost > 0) {
+      if (city.stats.treasury < cost) {
+        throw new InsufficientFundsError(cost, city.stats.treasury);
+      }
+      await cityRepo.updateTreasury(city.stats.treasury - cost);
+    }
+
     const body = createWaterPipeSchema.parse(request.body);
     const id = await waterPipeRepo.createWaterPipe(
       body.fromX,

@@ -216,6 +216,40 @@ export async function loadSprites() {
       }
     }
 
+    // Load university sprites
+    if (spritesConfig.university) {
+      for (let i = 0; i < spritesConfig.university.length; i++) {
+        const spriteConfig = spritesConfig.university[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.universitySprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded university: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(`[Sprites] Failed to load university ${spriteConfig.id}:`, err);
+          });
+        loadPromises.push(promise);
+      }
+    }
+
+    // Load stadium sprites
+    if (spritesConfig.stadium) {
+      for (let i = 0; i < spritesConfig.stadium.length; i++) {
+        const spriteConfig = spritesConfig.stadium[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.stadiumSprites.push({ texture, ...spriteConfig, _jsonIndex: jsonIndex });
+            console.log(`[Sprites] Loaded stadium: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(`[Sprites] Failed to load stadium ${spriteConfig.id}:`, err);
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };

@@ -67,6 +67,9 @@ async function initializeApp() {
     // Setup build menu
     setupBuildMenu();
 
+    // Add cost labels to build menu options
+    updateBuildMenuCosts();
+
     console.log("[MoltCity] Initialization complete");
   } catch (error) {
     console.error("[MoltCity] Initialization failed:", error);
@@ -348,6 +351,7 @@ async function handleBuild(x, y, buildType) {
       state.setRoads(roadsResponse.roads || []);
       render();
       showToast(`Road placed at (${x}, ${y})`);
+      updateUserBalance();
     } else if (buildType === "power_line" || buildType === "water_pipe") {
       // Infrastructure requires start/end points - two-click interaction
       if (!state.infraStartPoint) {
@@ -371,6 +375,7 @@ async function handleBuild(x, y, buildType) {
           state.setWaterPipes(waterPipesResponse.waterPipes || []);
         }
         render();
+        updateUserBalance();
       }
     } else {
       // Zone types: paint zoning instead of creating buildings directly
@@ -404,6 +409,7 @@ async function handleBuild(x, y, buildType) {
         parcel.zoning = zoning;
         render();
         showToast(`${buildType} zone placed at (${x}, ${y})`);
+        updateUserBalance();
       } else {
         // Non-zone buildings: create directly
         const buildingNames = {
@@ -419,6 +425,8 @@ async function handleBuild(x, y, buildType) {
           fire_station: "Fire Station",
           hospital: "Hospital",
           jail: "Jail",
+          university: "University",
+          stadium: "Stadium",
         };
         const name = buildingNames[buildType] || buildType;
 
@@ -453,6 +461,7 @@ async function handleBuild(x, y, buildType) {
         state.setBuildings(buildingsResponse.buildings || []);
         render();
         showToast(`${name} placed at (${x}, ${y})`);
+        updateUserBalance();
       }
     }
   } catch (error) {
@@ -652,9 +661,22 @@ function updateTooltip(x, y, globalPos) {
     tooltip.style.display = "block";
   } else if (parcel) {
     const zoningLabel = parcel.zoning ? `<br>Zone: ${parcel.zoning}` : "";
+    let costLabel = "";
+    if (state.selectedBuildType && state.selectedBuildType !== "demolish" && state.gameConfig) {
+      const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
+      let cost;
+      if (ZONE_TYPES.includes(state.selectedBuildType)) {
+        cost = state.gameConfig.zoningCost;
+      } else {
+        cost = state.gameConfig.costs?.[state.selectedBuildType];
+      }
+      if (cost !== undefined) {
+        costLabel = `<br><span style="color:#4ecdc4">Cost: $${cost}</span>`;
+      }
+    }
     tooltip.innerHTML = `
       <strong>(${parcel.x}, ${parcel.y})</strong><br>
-      ${parcel.ownerId ? `Owner: ${parcel.ownerId.slice(0, 8)}...` : "Unowned"}${zoningLabel}
+      ${parcel.ownerId ? `Owner: ${parcel.ownerId.slice(0, 8)}...` : "Unowned"}${zoningLabel}${costLabel}
     `;
     tooltip.style.display = "block";
   } else {
@@ -685,6 +707,38 @@ function showToast(message, isError = false) {
     toast.style.opacity = "0";
     setTimeout(() => toast.remove(), 300);
   }, 2000);
+}
+
+/**
+ * Update build menu options with cost labels
+ */
+function updateBuildMenuCosts() {
+  const config = state.gameConfig;
+  if (!config) return;
+
+  const costs = config.costs || {};
+  const zoningCost = config.zoningCost;
+  const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
+
+  document.querySelectorAll(".build-option").forEach((option) => {
+    const type = option.dataset.type;
+    if (!type || type === "demolish") return;
+
+    let cost;
+    if (ZONE_TYPES.includes(type)) {
+      cost = zoningCost;
+    } else {
+      cost = costs[type];
+    }
+
+    if (cost !== undefined) {
+      // Add cost label after the <small> label
+      const costEl = document.createElement("span");
+      costEl.className = "build-cost";
+      costEl.textContent = `$${cost}`;
+      option.appendChild(costEl);
+    }
+  });
 }
 
 /**

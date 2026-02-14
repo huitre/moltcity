@@ -289,6 +289,8 @@ function drawBuilding(x, y, building) {
     hospital: state.serviceSprites.hospital,
     power_plant: state.powerPlantSprites,
     water_tower: state.waterTankSprites,
+    university: state.universitySprites,
+    stadium: state.stadiumSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     const sprites = serviceSpriteMap[type];

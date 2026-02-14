@@ -240,9 +240,19 @@ export class BuildingService {
     if (params.type === 'suburban') floors = 1;
     if (params.type === 'industrial') floors = Math.min(floors, 2);
 
-    // Get building cost and check agent wallet (unless admin/mayor)
+    // Get building cost and deduct from treasury (mayor/admin) or agent wallet (user)
     const quote = this.getQuote(params.type, floors);
-    if (!hasElevatedPrivileges(role) && agent) {
+    if (hasElevatedPrivileges(role)) {
+      // Mayor/admin: deduct from city treasury
+      const cityData = await this.cityRepo.getCity();
+      if (cityData && quote.totalCost > 0) {
+        if (cityData.stats.treasury < quote.totalCost) {
+          throw new InsufficientFundsError(quote.totalCost, cityData.stats.treasury);
+        }
+        await this.cityRepo.updateTreasury(cityData.stats.treasury - quote.totalCost);
+        console.log(`[Building] Deducted ${quote.totalCost} from treasury for ${params.type}`);
+      }
+    } else if (agent) {
       if (agent.wallet.balance < quote.totalCost) {
         throw new InsufficientFundsError(quote.totalCost, agent.wallet.balance);
       }

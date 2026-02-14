@@ -72,6 +72,8 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   fire_station: { w: 2, h: 2 },
   power_plant: { w: 2, h: 2 },
   water_tower: { w: 2, h: 2 },
+  university: { w: 2, h: 2 },
+  stadium: { w: 4, h: 4 },
 };
 
 // ============================================
@@ -172,6 +174,8 @@ export const BUILDING_COSTS: Record<string, number> = {
   monument: 50000,
   amusement_park: 15000,
 };
+
+export const ZONING_COST = 10;
 
 // ============================================
 // Building Limits per User
@@ -522,6 +526,12 @@ export const HAPPINESS = {
     theater: { entertainment: 10, landValue: 10 },
     stadium: { entertainment: 20 },
     amusement_park: { entertainment: 30, happiness: 10 },
+    university: { happiness: 15, education: 10 },
+  },
+
+  // City-wide happiness bonuses from buildings
+  CITY_WIDE_BONUS: {
+    university: { happiness: 10 },
   },
   
   // Penalties
