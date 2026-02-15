@@ -551,6 +551,11 @@ function handleWebSocketMessage(type, data) {
       // Buildings were already re-fetched by websocket.js, just re-render
       render();
       break;
+
+    case "buildings_update":
+      // New buildings auto-built by simulation, re-render
+      render();
+      break;
   }
 }
 

@@ -92,7 +92,11 @@ function handleMessage(msg, onMessage) {
       break;
 
     case "infrastructure_update":
-      handleInfrastructureUpdate(data, onMessage);
+      handleInfrastructureUpdate(msg.data, onMessage);
+      break;
+
+    case "buildings_update":
+      handleBuildingsUpdate(onMessage);
       break;
   }
 
@@ -239,6 +243,24 @@ function handleInfrastructureUpdate(data, onMessage) {
       console.error("[WebSocket] Failed to refresh buildings after infrastructure update:", e);
     }
   }, 1500);
+}
+
+/**
+ * Handle buildings update - new buildings were auto-built by simulation
+ */
+let buildingsUpdateTimer = null;
+function handleBuildingsUpdate(onMessage) {
+  // Debounce to batch multiple zone builds in the same tick
+  if (buildingsUpdateTimer) clearTimeout(buildingsUpdateTimer);
+  buildingsUpdateTimer = setTimeout(async () => {
+    try {
+      const buildingsResponse = await api.getBuildings();
+      state.setBuildings(buildingsResponse.buildings || []);
+      if (onMessage) onMessage("buildings_update", {});
+    } catch (e) {
+      console.error("[WebSocket] Failed to refresh buildings after zone build:", e);
+    }
+  }, 500);
 }
 
 /**

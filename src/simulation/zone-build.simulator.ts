@@ -43,12 +43,12 @@ export class ZoneBuildSimulator {
     this.demandCalculator = new DemandCalculator(db);
   }
 
-  simulate(currentTick: number, time: CityTime): void {
-    if (currentTick - this.lastProcessedTick < BUILD_INTERVAL_TICKS) return;
+  simulate(currentTick: number, time: CityTime): number {
+    if (currentTick - this.lastProcessedTick < BUILD_INTERVAL_TICKS) return 0;
     this.lastProcessedTick = currentTick;
 
     const zonedParcels = this.db.parcels.getZonedParcelsWithoutBuilding();
-    if (zonedParcels.length === 0) return;
+    if (zonedParcels.length === 0) return 0;
 
     const demand = this.demandCalculator.calculate();
     let built = 0;
@@ -98,6 +98,7 @@ export class ZoneBuildSimulator {
     if (built > 0) {
       console.log(`[ZoneBuild] ${built} buildings auto-constructed on tick ${currentTick}`);
     }
+    return built;
   }
 
   private hasAdjacentRoad(x: number, y: number): boolean {

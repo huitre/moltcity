@@ -267,6 +267,7 @@ export interface City {
 export type CityEventType =
   | 'agent_moved'
   | 'building_placed'
+  | 'buildings_updated'
   | 'parcel_purchased'
   | 'power_outage'
   | 'building_powered'

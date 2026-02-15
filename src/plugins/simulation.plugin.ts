@@ -121,6 +121,9 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
       if (event.type === 'agent_arrived' || event.type === 'building_powered') {
         fastify.broadcast('event', event);
       }
+      if (event.type === 'buildings_updated') {
+        fastify.broadcast('buildings_update', event.data);
+      }
     }
   });
 

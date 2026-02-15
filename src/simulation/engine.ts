@@ -1304,7 +1304,10 @@ export class SimulationEngine extends EventEmitter {
     this.landValueSimulator.simulate(time);
 
     // Simulate zone auto-building (every 100 ticks)
-    this.zoneBuildSimulator.simulate(this.currentTick, time);
+    const zoneBuildCount = this.zoneBuildSimulator.simulate(this.currentTick, time);
+    if (zoneBuildCount > 0) {
+      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { count: zoneBuildCount } });
+    }
 
     // Simulate zone evolution (runs daily at hour 2)
     this.zoneEvolutionSimulator.simulate(time);
