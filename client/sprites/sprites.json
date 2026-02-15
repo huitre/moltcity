@@ -676,7 +676,7 @@
         "height": 165,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.97
         }
       },
       {
@@ -686,7 +686,7 @@
         "height": 166,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 1
         }
       },
       {
@@ -816,7 +816,7 @@
         "height": 186,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.99
         }
       },
       {
@@ -916,7 +916,7 @@
         "height": 184,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.98
         }
       },
       {
@@ -1383,25 +1383,14 @@
   ],
   "firestation": [
     {
-      "id": "sheet09_emergency_04",
+      "id": "sheet09_emergency_05",
       "file": "sliced/sheet09_emergency_04.png",
       "width": 307,
       "height": 307,
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.99
-      }
-    },
-    {
-      "id": "sheet09_emergency_05",
-      "file": "sliced/sheet09_emergency_05.png",
-      "width": 307,
-      "height": 307,
-      "tiles": 2,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
+        "y": 0.93
       }
     }
   ],
@@ -1881,7 +1870,7 @@
       "tiles": 4,
       "anchor": {
         "x": 0.5,
-        "y": 0.88
+        "y": 1
       }
     }
   ],

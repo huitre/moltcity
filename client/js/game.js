@@ -213,7 +213,7 @@ function drawBuilding(x, y, building) {
   // Center X of footprint, bottom Y of footprint
   const spriteIsoX = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2).x;
   const spriteIsoY = cartToIso(x + fw - 1, y + fh - 1).y + TILE_HEIGHT;
-  const zIdx = x + fw - 1 + (y + fh - 1);
+  const zIdx = (y + fh - 1) * GRID_SIZE + (x + fw - 1);
 
   const powered = building.powered;
   const type = building.type;
@@ -377,7 +377,7 @@ function drawStatusIcons(x, y, building) {
   const fw = building.width || 1;
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
-  const zIdx = x + fw - 1 + (y + fh - 1) + 0.1;
+  const zIdx = (y + fh - 1) * GRID_SIZE + (x + fw - 1) + 0.1;
 
   const g = new PIXI.Graphics();
   g.x = iso.x;
@@ -569,7 +569,7 @@ function drawPowerLine(from, to) {
   g.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2 - 18);
   g.quadraticCurveTo(midX, midY, isoTo.x, isoTo.y + TILE_HEIGHT / 2 - 18);
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y);
+  g.zIndex = Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x);
   return g;
 }
 
@@ -591,7 +591,7 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max(from.x + from.y, to.x + to.y);
+  g.zIndex = Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x);
   return g;
 }
 
@@ -612,7 +612,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = x + y;
+  g.zIndex = y * GRID_SIZE + x;
   return g;
 }
 

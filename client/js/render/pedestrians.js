@@ -129,7 +129,7 @@ export function spawnPedestrian() {
   const iso = cartToIso(pedestrian.x, pedestrian.y);
   sprite.x = iso.x;
   sprite.y = iso.y;
-  sprite.zIndex = Math.floor(pedestrian.x) + Math.floor(pedestrian.y) + 0.5;
+  sprite.zIndex = Math.floor(pedestrian.y) * GRID_SIZE + Math.floor(pedestrian.x) + 0.5;
 
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
@@ -209,7 +209,7 @@ export function animatePedestrians(delta) {
     const iso = cartToIso(ped.x, ped.y);
     ped.sprite.x = iso.x;
     ped.sprite.y = iso.y;
-    ped.sprite.zIndex = Math.floor(ped.x) + Math.floor(ped.y) + 1;
+    ped.sprite.zIndex = Math.floor(ped.y) * GRID_SIZE + Math.floor(ped.x) + 1;
 
     // Remove if out of bounds
     if (ped.x < 0 || ped.x >= GRID_SIZE || ped.y < 0 || ped.y >= GRID_SIZE) {

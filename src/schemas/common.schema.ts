@@ -62,7 +62,16 @@ export const buildingTypeSchema = z.enum([
   'suburban',
   'industrial',
   'fire_station',
+  'school',
+  'high_school',
+  'university',
   'hospital',
+  'garbage_depot',
+  'stadium',
+  'theater',
+  'library',
+  'monument',
+  'amusement_park',
 ]);
 
 // Road directions
