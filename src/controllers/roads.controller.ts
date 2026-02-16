@@ -6,6 +6,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { RoadRepository } from '../repositories/road.repository.js';
 import { ParcelRepository } from '../repositories/parcel.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import { BuildingRepository } from '../repositories/building.repository.js';
 import { createRoadSchema, roadIdParamSchema } from '../schemas/roads.schema.js';
 import { NotFoundError, ConflictError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
 import { hasElevatedPrivileges, BUILDING_COSTS, type UserRole } from '../config/game.js';
@@ -56,6 +57,27 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     const existingRoad = await roadRepo.getRoad(parcelId);
     if (existingRoad) {
       throw new ConflictError('Road already exists at this location');
+    }
+
+    // Check for existing building at this parcel (including multi-tile overlap)
+    const buildingRepo = new BuildingRepository(fastify.db);
+    const existingBuilding = await buildingRepo.getBuildingAtParcel(parcelId);
+    if (existingBuilding) {
+      throw new ConflictError('Cannot place road on a building');
+    }
+    // Check multi-tile buildings whose footprint covers this tile
+    const parcel = await parcelRepo.getParcelById(parcelId);
+    if (parcel) {
+      const allBuildings = await buildingRepo.getAllBuildings();
+      for (const b of allBuildings) {
+        if (b.width <= 1 && b.height <= 1) continue;
+        const bParcel = await parcelRepo.getParcelById(b.parcelId);
+        if (!bParcel) continue;
+        if (parcel.x >= bParcel.x && parcel.x < bParcel.x + b.width &&
+            parcel.y >= bParcel.y && parcel.y < bParcel.y + b.height) {
+          throw new ConflictError('Cannot place road on a building');
+        }
+      }
     }
 
     // Deduct road cost from city treasury

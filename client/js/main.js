@@ -352,6 +352,11 @@ async function handleDemolish(x, y) {
 async function handleBuild(x, y, buildType) {
   try {
     if (buildType === "road") {
+      // Check tile is not occupied by a building
+      if (findBuildingAtTile(x, y)) {
+        showToast(`Cannot place road: building at (${x}, ${y})`, true);
+        return;
+      }
       // Create road
       const result = await api.createRoad({ x, y });
       console.log("[MoltCity] Road created:", result);
