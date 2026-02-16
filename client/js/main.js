@@ -93,11 +93,14 @@ async function loadGameConfig() {
  */
 async function updateUserBalance() {
   const balanceDisplay = document.getElementById("balance-display");
+  const treasuryDisplay = document.getElementById("treasury-display");
+  const treasuryStat = document.getElementById("treasury-stat");
   if (!balanceDisplay) return;
 
   const { currentUser } = state;
   if (!currentUser) {
     balanceDisplay.textContent = "$0";
+    if (treasuryStat) treasuryStat.style.display = "none";
     return;
   }
 
@@ -105,6 +108,13 @@ async function updateUserBalance() {
     const data = await api.getMe();
     if (data.balance !== undefined) {
       balanceDisplay.textContent = `$${data.balance.toLocaleString()}`;
+    }
+    // Show city treasury for mayor/admin
+    if (data.treasury !== undefined && treasuryDisplay && treasuryStat) {
+      treasuryStat.style.display = "";
+      treasuryDisplay.textContent = `$${Math.floor(data.treasury).toLocaleString()}`;
+    } else if (treasuryStat) {
+      treasuryStat.style.display = "none";
     }
   } catch (e) {
     // Fallback: try matching from local agents list

@@ -6,6 +6,17 @@ import { FastifyPluginAsync } from 'fastify';
 import { SC2K_ECONOMY } from '../config/game.js';
 import type { Bond } from '../models/types.js';
 import { calculateCreditRating } from '../simulation/engine.js';
+import { UserRepository } from '../repositories/user.repository.js';
+
+// Helper: fetch fresh role from DB (JWT role may be stale after role changes)
+async function getFreshRole(fastify: any, request: any): Promise<string | undefined> {
+  if (request.user?.userId) {
+    const userRepo = new UserRepository(fastify.db);
+    const dbUser = await userRepo.getUser(request.user.userId);
+    return dbUser?.role;
+  }
+  return request.user?.role;
+}
 
 export const economyController: FastifyPluginAsync = async (fastify) => {
 
@@ -16,7 +27,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
     const city = fastify.legacyDb.city.getCity();
     if (!city) return { error: 'City not initialized' };
 
-    const isMayor = request.user?.role === 'mayor' || request.user?.role === 'admin';
+    const role = await getFreshRole(fastify, request);
+    const isMayor = role === 'mayor' || role === 'admin';
 
     // Calculate daily projections for display
     const buildings = fastify.legacyDb.buildings.getAllBuildings();
@@ -102,7 +114,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.put('/api/economy/tax-rates', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    if (request.user?.role !== 'mayor' && request.user?.role !== 'admin') {
+    const role = await getFreshRole(fastify, request);
+    if (role !== 'mayor' && role !== 'admin') {
       return { error: 'Only the mayor can set tax rates' };
     }
     const { taxRateR, taxRateC, taxRateI } = request.body as { taxRateR: number; taxRateC: number; taxRateI: number };
@@ -115,7 +128,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/ordinances', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    if (request.user?.role !== 'mayor' && request.user?.role !== 'admin') {
+    const role = await getFreshRole(fastify, request);
+    if (role !== 'mayor' && role !== 'admin') {
       return { error: 'Only the mayor can manage ordinances' };
     }
     const { ordinanceId, enabled } = request.body as { ordinanceId: string; enabled: boolean };
@@ -138,7 +152,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/bonds/issue', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    if (request.user?.role !== 'mayor' && request.user?.role !== 'admin') {
+    const role = await getFreshRole(fastify, request);
+    if (role !== 'mayor' && role !== 'admin') {
       return { error: 'Only the mayor can issue bonds' };
     }
 
@@ -178,7 +193,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/bonds/repay', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    if (request.user?.role !== 'mayor' && request.user?.role !== 'admin') {
+    const role = await getFreshRole(fastify, request);
+    if (role !== 'mayor' && role !== 'admin') {
       return { error: 'Only the mayor can repay bonds' };
     }
     const { bondId } = request.body as { bondId: string };
@@ -210,7 +226,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.put('/api/economy/department-funding', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    if (request.user?.role !== 'mayor' && request.user?.role !== 'admin') {
+    const role = await getFreshRole(fastify, request);
+    if (role !== 'mayor' && role !== 'admin') {
       return { error: 'Only the mayor can set department funding' };
     }
     const body = request.body as Partial<Record<string, number>>;

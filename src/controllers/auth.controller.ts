@@ -61,9 +61,18 @@ export const authController: FastifyPluginAsync = async (fastify) => {
 
     // Strip sensitive fields before returning
     const { passwordHash, ...safeUser } = user;
+
+    // Include city treasury for mayor/admin
+    let treasury: number | undefined;
+    if (user.role === 'mayor' || user.role === 'admin') {
+      const city = fastify.legacyDb.city.getCity();
+      if (city) treasury = city.stats.treasury;
+    }
+
     return {
       user: { ...safeUser, agentId: agentInfo.agentId },
       balance: agentInfo.balance,
+      treasury,
     };
   });
 

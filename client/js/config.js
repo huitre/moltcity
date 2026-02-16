@@ -13,7 +13,7 @@ export const GRID_SIZE = 50;
 // World bounds for camera
 export const WORLD_MIN_X = (-GRID_SIZE * TILE_WIDTH) / 2 - 200;
 export const WORLD_MAX_X = (GRID_SIZE * TILE_WIDTH) / 2 + 200;
-export const WORLD_MIN_Y = -100;
+export const WORLD_MIN_Y = 300;
 export const WORLD_MAX_Y = GRID_SIZE * TILE_HEIGHT + 200;
 
 // Colors for rendering

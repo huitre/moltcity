@@ -1351,6 +1351,7 @@
       "file": "sliced/sheet09_emergency_06.png",
       "width": 353,
       "height": 303,
+      "tiles": 2,
       "anchor": {
         "x": 0.5,
         "y": 0.98
