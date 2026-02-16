@@ -98,7 +98,7 @@ export function drawRoad(x, y) {
         const variants = ["road_073", "road_064"];
         const rng = mulberry32(x * 1000 + y);
         roadType = variants[Math.floor(rng() * variants.length)];
-      } else if (conn.nw && conn.ne) roadType = "road_125";
+      } else if (conn.nw && conn.ne) roadType = "road_126";
       else if (conn.ne && conn.se) roadType = "road_124";
       else if (conn.se && conn.sw) roadType = "road_122";
       else if (conn.sw && conn.nw) roadType = "road_125";

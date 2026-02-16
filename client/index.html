@@ -3793,7 +3793,7 @@
       // Load Election data
       async function loadToolbarElection() {
         try {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const res = await fetch("/api/election", { headers });
 
@@ -3997,7 +3997,7 @@
       // Load City Services data
       async function loadToolbarServices() {
         try {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const [statsRes, buildingsRes] = await Promise.all([
             fetch("/api/city/stats", { headers }).then((r) => r.json()),
@@ -4152,7 +4152,7 @@
       let budgetDeptDebounce = null;
 
       async function loadToolbarBudget() {
-        const token = localStorage.getItem("authToken");
+        const token = localStorage.getItem("agentcity_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         try {
           const res = await fetch("/api/economy/budget", { headers });
@@ -4317,7 +4317,7 @@
           if (label) label.textContent = slider.value + "%";
         });
         slider.addEventListener("change", () => {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           if (!token) return;
           budgetTaxDebounce = true;
           fetch("/api/economy/tax-rates", {
@@ -4359,7 +4359,7 @@
           if (label) label.textContent = slider.value + "%";
         });
         slider.addEventListener("change", () => {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           if (!token) return;
           const dept = id.replace("dept-", "");
           budgetDeptDebounce = true;
@@ -4385,7 +4385,7 @@
 
       // Ordinance toggle
       function toggleOrdinance(el, ordId) {
-        const token = localStorage.getItem("authToken");
+        const token = localStorage.getItem("agentcity_token");
         if (!token) return;
         const isOn = el.classList.contains("on");
         el.classList.toggle("on");
@@ -4405,7 +4405,7 @@
       document
         .getElementById("btn-issue-bond")
         ?.addEventListener("click", () => {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           if (!token) return;
           fetch("/api/economy/bonds/issue", {
             method: "POST",
@@ -4427,7 +4427,7 @@
       document
         .getElementById("btn-repay-bond")
         ?.addEventListener("click", () => {
-          const token = localStorage.getItem("authToken");
+          const token = localStorage.getItem("agentcity_token");
           if (!token) return;
           if (!budgetData?.economy?.bonds?.length) return;
           const bondId = budgetData.economy.bonds[0].id;
