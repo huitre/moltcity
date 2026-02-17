@@ -481,8 +481,10 @@ class LegacyCityRepository {
 class LegacyParcelRepository {
   constructor(protected raw: Database.Database) {}
 
-  getParcel(x: number, y: number): Parcel | null {
-    const row = this.raw.prepare('SELECT * FROM parcels WHERE x = ? AND y = ? LIMIT 1').get(x, y);
+  getParcel(x: number, y: number, cityId?: string): Parcel | null {
+    const row = cityId
+      ? this.raw.prepare('SELECT * FROM parcels WHERE x = ? AND y = ? AND city_id = ? LIMIT 1').get(x, y, cityId)
+      : this.raw.prepare('SELECT * FROM parcels WHERE x = ? AND y = ? LIMIT 1').get(x, y);
     return row ? rowToParcel(row) : null;
   }
 
@@ -516,11 +518,11 @@ class LegacyParcelRepository {
   }
 
   getOrCreateParcel(x: number, y: number, cityId?: string): Parcel {
-    const existing = this.getParcel(x, y);
+    const existing = this.getParcel(x, y, cityId);
     if (existing) return existing;
     const id = generateId();
     this.raw.prepare('INSERT INTO parcels (id, x, y, terrain, city_id) VALUES (?, ?, ?, ?, ?)').run(id, x, y, 'land', cityId || null);
-    return this.getParcel(x, y)!;
+    return this.getParcel(x, y, cityId)!;
   }
 
   updateLandValues(updates: { parcelId: string; value: number }[]): void {
@@ -963,6 +965,14 @@ class CityScopedWaterPipeRepository extends LegacyWaterPipeRepository {
 class CityScopedParcelRepository extends LegacyParcelRepository {
   constructor(raw: Database.Database, private cityId: string) {
     super(raw);
+  }
+
+  getParcel(x: number, y: number): Parcel | null {
+    return super.getParcel(x, y, this.cityId);
+  }
+
+  getOrCreateParcel(x: number, y: number): Parcel {
+    return super.getOrCreateParcel(x, y, this.cityId);
   }
 
   getZonedParcelsWithoutBuilding(): Parcel[] {

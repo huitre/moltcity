@@ -14,17 +14,19 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     super(db, parcels);
   }
 
-  async getParcel(x: number, y: number): Promise<Parcel | null> {
+  async getParcel(x: number, y: number, cityId?: string): Promise<Parcel | null> {
+    const conditions = [eq(parcels.x, x), eq(parcels.y, y)];
+    if (cityId) conditions.push(eq(parcels.cityId, cityId));
     const results = await this.db
       .select()
       .from(parcels)
-      .where(and(eq(parcels.x, x), eq(parcels.y, y)))
+      .where(and(...conditions))
       .limit(1);
     return results.length > 0 ? this.rowToParcel(results[0]) : null;
   }
 
   async getOrCreateParcel(x: number, y: number, cityId?: string): Promise<Parcel> {
-    const existing = await this.getParcel(x, y);
+    const existing = await this.getParcel(x, y, cityId);
     if (existing) return existing;
     return this.createParcel(x, y, 'land', cityId);
   }

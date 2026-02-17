@@ -46,8 +46,8 @@ export class ParcelService {
     return this.parcelRepo.getOrCreateParcel(x, y, cityId);
   }
 
-  async getParcel(x: number, y: number): Promise<ParcelWithDetails | null> {
-    const parcel = await this.parcelRepo.getParcel(x, y);
+  async getParcel(x: number, y: number, cityId?: string): Promise<ParcelWithDetails | null> {
+    const parcel = await this.parcelRepo.getParcel(x, y, cityId);
     if (!parcel) return null;
 
     const [building, road] = await Promise.all([

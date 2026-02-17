@@ -88,7 +88,7 @@ export function createDatabase(): Database.Database {
       purchase_price REAL,
       purchase_date INTEGER,
       land_value REAL NOT NULL DEFAULT 50,
-      UNIQUE(x, y)
+      UNIQUE(x, y, city_id)
     );
     CREATE INDEX IF NOT EXISTS idx_parcels_coords ON parcels(x, y);
     CREATE INDEX IF NOT EXISTS idx_parcels_owner ON parcels(owner_id);

@@ -33,7 +33,8 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
   // Get specific parcel with building/road
   fastify.get('/api/parcels/:x/:y', async (request) => {
     const params = parcelCoordsParamsSchema.parse(request.params);
-    const parcel = await parcelService.getParcel(params.x, params.y);
+    const cityId = extractOptionalCityId(request);
+    const parcel = await parcelService.getParcel(params.x, params.y, cityId);
 
     if (!parcel) {
       return { parcel: null };
