@@ -98,6 +98,7 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     const road = await roadRepo.createRoad(parcelId, body.direction, body.lanes, cityData?.id);
 
     reply.status(201);
+    if (cityData?.id) fastify.broadcastToCity(cityData.id, 'buildings_update', { action: 'road_created' });
     return { success: true, road };
   });
 
@@ -130,6 +131,7 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
       throw new NotFoundError('Road', params.id);
     }
 
+    if (cityData?.id) fastify.broadcastToCity(cityData.id, 'buildings_update', { action: 'road_deleted' });
     return { success: true };
   });
 };

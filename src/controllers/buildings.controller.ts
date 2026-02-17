@@ -80,7 +80,7 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
     });
 
     reply.status(201);
-    fastify.broadcast('infrastructure_update', { type: 'building', action: 'created' });
+    if (cityId) fastify.broadcastToCity(cityId, 'buildings_update', { action: 'created' });
     return { success: true, building };
   });
 
@@ -95,8 +95,9 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
   // Demolish building
   fastify.delete('/api/buildings/:id', async (request) => {
     const params = buildingIdParamSchema.parse(request.params);
+    const cityId = extractOptionalCityId(request);
     await buildingService.demolishBuilding(params.id);
-    fastify.broadcast('infrastructure_update', { type: 'building', action: 'deleted' });
+    if (cityId) fastify.broadcastToCity(cityId, 'buildings_update', { action: 'deleted' });
     return { success: true };
   });
 };

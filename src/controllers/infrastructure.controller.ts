@@ -73,7 +73,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
 
     reply.status(201);
     const powerLine = await powerLineRepo.getPowerLine(id);
-    fastify.broadcast('infrastructure_update', { type: 'power_line', action: 'created' });
+    if (city?.id) fastify.broadcastToCity(city.id, 'buildings_update', { action: 'power_line_created' });
     return { success: true, powerLine };
   });
 
@@ -105,7 +105,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
       throw new NotFoundError('Power line', params.id);
     }
 
-    fastify.broadcast('infrastructure_update', { type: 'power_line', action: 'deleted' });
+    if (city?.id) fastify.broadcastToCity(city.id, 'buildings_update', { action: 'power_line_deleted' });
     return { success: true };
   });
 
@@ -163,7 +163,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
 
     reply.status(201);
     const waterPipe = await waterPipeRepo.getWaterPipe(id);
-    fastify.broadcast('infrastructure_update', { type: 'water_pipe', action: 'created' });
+    if (city?.id) fastify.broadcastToCity(city.id, 'buildings_update', { action: 'water_pipe_created' });
     return { success: true, waterPipe };
   });
 
@@ -195,7 +195,7 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
       throw new NotFoundError('Water pipe', params.id);
     }
 
-    fastify.broadcast('infrastructure_update', { type: 'water_pipe', action: 'deleted' });
+    if (city?.id) fastify.broadcastToCity(city.id, 'buildings_update', { action: 'water_pipe_deleted' });
     return { success: true };
   });
 };

@@ -255,19 +255,25 @@ function handleInfrastructureUpdate(data, onMessage) {
  */
 let buildingsUpdateTimer = null;
 function handleBuildingsUpdate(onMessage) {
-  // Debounce to batch multiple zone builds in the same tick
+  // Debounce to batch multiple updates in the same tick
   if (buildingsUpdateTimer) clearTimeout(buildingsUpdateTimer);
   buildingsUpdateTimer = setTimeout(async () => {
     try {
-      const [parcelsResponse, buildingsResponse] = await Promise.all([
+      const [parcelsR, buildingsR, roadsR, powerR, waterR] = await Promise.all([
         api.getParcels(),
         api.getBuildings(),
+        api.getRoads(),
+        api.getPowerLines(),
+        api.getWaterPipes(),
       ]);
-      state.setParcels(parcelsResponse.parcels || []);
-      state.setBuildings(buildingsResponse.buildings || []);
+      state.setParcels(parcelsR.parcels || []);
+      state.setBuildings(buildingsR.buildings || []);
+      state.setRoads(roadsR.roads || []);
+      state.setPowerLines(powerR.powerLines || []);
+      state.setWaterPipes(waterR.waterPipes || []);
       if (onMessage) onMessage("buildings_update", {});
     } catch (e) {
-      console.error("[WebSocket] Failed to refresh buildings after zone build:", e);
+      console.error("[WebSocket] Failed to refresh city data after update:", e);
     }
   }, 500);
 }
