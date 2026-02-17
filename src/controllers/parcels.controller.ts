@@ -99,7 +99,18 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/parcels/zoning', async (request) => {
     const body = setZoningSchema.parse(request.body);
     const cityId = extractOptionalCityId(request);
-    const parcel = await parcelService.setZoning(body.parcelId, body.zoning, cityId);
+
+    // Resolve parcelId from x/y if not provided
+    let parcelId = body.parcelId;
+    if (!parcelId && body.x !== undefined && body.y !== undefined) {
+      const parcel = await parcelService.getOrCreateParcel(body.x, body.y, cityId);
+      parcelId = parcel.id;
+    }
+    if (!parcelId) {
+      return { statusCode: 400, error: 'parcelId or x/y coordinates required' };
+    }
+
+    const parcel = await parcelService.setZoning(parcelId, body.zoning, cityId);
     return { success: true, parcel };
   });
 };

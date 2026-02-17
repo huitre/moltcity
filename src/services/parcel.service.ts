@@ -42,6 +42,10 @@ export class ParcelService {
     this.activityService = new ActivityService(db, fastify);
   }
 
+  async getOrCreateParcel(x: number, y: number, cityId?: string) {
+    return this.parcelRepo.getOrCreateParcel(x, y, cityId);
+  }
+
   async getParcel(x: number, y: number): Promise<ParcelWithDetails | null> {
     const parcel = await this.parcelRepo.getParcel(x, y);
     if (!parcel) return null;

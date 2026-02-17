@@ -513,8 +513,9 @@ async function handleBuild(x, y, buildType) {
       const result = await api.createRoad({ x, y });
       console.log("[MoltCity] Road created:", result);
 
-      // Reload roads and re-render
-      const roadsResponse = await api.getRoads();
+      // Reload parcels + roads and re-render
+      const [parcelsR, roadsResponse] = await Promise.all([api.getParcels(), api.getRoads()]);
+      state.setParcels(parcelsR.parcels || []);
       state.setRoads(roadsResponse.roads || []);
       render();
       showToast(`Road placed at (${x}, ${y})`);
@@ -561,19 +562,13 @@ async function handleBuild(x, y, buildType) {
           return;
         }
 
-        // Find or create parcel
-        const parcel = state.parcels.find((p) => p.x === x && p.y === y);
-        if (!parcel) {
-          showToast(`No parcel at (${x}, ${y})`, true);
-          return;
-        }
-
         const zoning = ZONE_MAPPING[buildType];
-        await api.setZoning(parcel.id, zoning);
+        await api.setZoning(x, y, zoning);
         console.log("[MoltCity] Zoning set:", zoning, "at", x, y);
 
-        // Update local parcel zoning
-        parcel.zoning = zoning;
+        // Reload parcels and re-render
+        const parcelsResp = await api.getParcels();
+        state.setParcels(parcelsResp.parcels || []);
         render();
         showToast(`${buildType} zone placed at (${x}, ${y})`);
         updateUserBalance();
@@ -623,8 +618,9 @@ async function handleBuild(x, y, buildType) {
         });
         console.log("[MoltCity] Building created:", result);
 
-        // Reload buildings and re-render
-        const buildingsResponse = await api.getBuildings();
+        // Reload parcels + buildings and re-render
+        const [parcelsR2, buildingsResponse] = await Promise.all([api.getParcels(), api.getBuildings()]);
+        state.setParcels(parcelsR2.parcels || []);
         state.setBuildings(buildingsResponse.buildings || []);
         render();
         showToast(`${name} placed at (${x}, ${y})`);

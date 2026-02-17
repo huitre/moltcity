@@ -259,7 +259,11 @@ function handleBuildingsUpdate(onMessage) {
   if (buildingsUpdateTimer) clearTimeout(buildingsUpdateTimer);
   buildingsUpdateTimer = setTimeout(async () => {
     try {
-      const buildingsResponse = await api.getBuildings();
+      const [parcelsResponse, buildingsResponse] = await Promise.all([
+        api.getParcels(),
+        api.getBuildings(),
+      ]);
+      state.setParcels(parcelsResponse.parcels || []);
       state.setBuildings(buildingsResponse.buildings || []);
       if (onMessage) onMessage("buildings_update", {});
     } catch (e) {

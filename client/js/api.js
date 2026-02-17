@@ -428,10 +428,14 @@ export async function setDepartmentFunding(funding) {
 // Zoning API
 // ============================================
 
-export async function setZoning(parcelId, zoning) {
+export async function setZoning(parcelIdOrX, zoningOrY, maybeZoning) {
+  // Supports both: setZoning(parcelId, zoning) and setZoning(x, y, zoning)
+  const params = typeof parcelIdOrX === 'number'
+    ? { x: parcelIdOrX, y: zoningOrY, zoning: maybeZoning }
+    : { parcelId: parcelIdOrX, zoning: zoningOrY };
   return fetchApi('/api/parcels/zoning', {
     method: 'POST',
-    body: JSON.stringify(bodyWithCity({ parcelId, zoning })),
+    body: JSON.stringify(bodyWithCity(params)),
   });
 }
 
