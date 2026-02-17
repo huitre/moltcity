@@ -212,7 +212,7 @@ export async function createRoad(params) {
 }
 
 export async function deleteRoad(id) {
-  return fetchApi(`/api/roads/${id}`, { method: 'DELETE' });
+  return fetchApi(withCityId(`/api/roads/${id}`), { method: 'DELETE' });
 }
 
 // ============================================
@@ -265,7 +265,7 @@ export async function createPowerLine(fromX, fromY, toX, toY, capacity) {
 }
 
 export async function deletePowerLine(id) {
-  return fetchApi(`/api/infrastructure/power-lines/${id}`, {
+  return fetchApi(withCityId(`/api/infrastructure/power-lines/${id}`), {
     method: 'DELETE',
   });
 }
@@ -282,7 +282,7 @@ export async function createWaterPipe(fromX, fromY, toX, toY, capacity) {
 }
 
 export async function deleteWaterPipe(id) {
-  return fetchApi(`/api/infrastructure/water-pipes/${id}`, {
+  return fetchApi(withCityId(`/api/infrastructure/water-pipes/${id}`), {
     method: 'DELETE',
   });
 }
