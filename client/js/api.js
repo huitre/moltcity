@@ -110,7 +110,7 @@ export async function getCity() {
 export async function initCity(name) {
   return fetchApi('/api/city/init', {
     method: 'POST',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(bodyWithCity({ name })),
   });
 }
 
@@ -366,11 +366,11 @@ export async function castVote(candidateId) {
 // ============================================
 
 export async function startSimulation() {
-  return fetchApi('/api/simulation/start', { method: 'POST', body: JSON.stringify({}) });
+  return fetchApi('/api/simulation/start', { method: 'POST', body: JSON.stringify(bodyWithCity({})) });
 }
 
 export async function stopSimulation() {
-  return fetchApi('/api/simulation/stop', { method: 'POST', body: JSON.stringify({}) });
+  return fetchApi('/api/simulation/stop', { method: 'POST', body: JSON.stringify(bodyWithCity({})) });
 }
 
 export async function getSimulationState() {
