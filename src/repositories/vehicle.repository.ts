@@ -27,11 +27,8 @@ export class VehicleRepository extends BaseRepository<typeof vehicles, VehicleRo
   }
 
   async getAllVehicles(cityId?: string): Promise<Vehicle[]> {
-    if (cityId) {
-      const results = await this.db.select().from(vehicles).where(eq(vehicles.cityId, cityId));
-      return results.map(row => this.rowToVehicle(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(vehicles).where(eq(vehicles.cityId, cityId));
     return results.map(row => this.rowToVehicle(row));
   }
 

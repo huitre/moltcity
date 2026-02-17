@@ -75,11 +75,8 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
   }
 
   async getAllBuildings(cityId?: string): Promise<Building[]> {
-    if (cityId) {
-      const results = await this.db.select().from(buildings).where(eq(buildings.cityId, cityId));
-      return results.map(row => this.rowToBuilding(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(buildings).where(eq(buildings.cityId, cityId));
     return results.map(row => this.rowToBuilding(row));
   }
 

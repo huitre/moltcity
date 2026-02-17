@@ -22,11 +22,8 @@ export class AgentRepository extends BaseRepository<typeof agents, AgentRow, Age
   }
 
   async getAllAgents(cityId?: string): Promise<Agent[]> {
-    if (cityId) {
-      const results = await this.db.select().from(agents).where(eq(agents.cityId, cityId));
-      return results.map(row => this.rowToAgent(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(agents).where(eq(agents.cityId, cityId));
     return results.map(row => this.rowToAgent(row));
   }
 

@@ -65,11 +65,8 @@ export class PopulationRepository extends BaseRepository<typeof residents, Resid
   }
 
   async getAllResidents(cityId?: string): Promise<Resident[]> {
-    if (cityId) {
-      const results = await this.db.select().from(residents).where(eq(residents.cityId, cityId));
-      return results.map(row => this.rowToResident(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(residents).where(eq(residents.cityId, cityId));
     return results.map(row => this.rowToResident(row));
   }
 

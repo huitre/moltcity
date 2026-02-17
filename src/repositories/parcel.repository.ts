@@ -47,21 +47,11 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
   }
 
   async getZonedParcelsWithoutBuilding(cityId?: string): Promise<Parcel[]> {
-    // This will be used by zone-build simulator
-    // Returns parcels that have zoning set but no building on them
-    const conditions = [
-      parcels.zoning !== null ? undefined : undefined, // zoning is not null is handled differently
-    ];
-    // Simple approach: get all zoned parcels for the city
-    let results;
-    if (cityId) {
-      results = await this.db
-        .select()
-        .from(parcels)
-        .where(and(eq(parcels.cityId, cityId)));
-    } else {
-      results = await this.findAll();
-    }
+    if (!cityId) return [];
+    const results = await this.db
+      .select()
+      .from(parcels)
+      .where(eq(parcels.cityId, cityId));
     return results
       .filter(row => row.zoning !== null)
       .map(row => this.rowToParcel(row));

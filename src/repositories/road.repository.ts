@@ -28,11 +28,8 @@ export class RoadRepository extends BaseRepository<typeof roads, RoadRow, RoadIn
   }
 
   async getAllRoads(cityId?: string): Promise<Road[]> {
-    if (cityId) {
-      const results = await this.db.select().from(roads).where(eq(roads.cityId, cityId));
-      return results.map(row => this.rowToRoad(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(roads).where(eq(roads.cityId, cityId));
     return results.map(row => this.rowToRoad(row));
   }
 

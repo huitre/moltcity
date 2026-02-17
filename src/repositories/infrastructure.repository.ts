@@ -36,11 +36,8 @@ export class PowerLineRepository extends BaseRepository<typeof powerLines, Power
   }
 
   async getAllPowerLines(cityId?: string): Promise<PowerLine[]> {
-    if (cityId) {
-      const results = await this.db.select().from(powerLines).where(eq(powerLines.cityId, cityId));
-      return results.map(row => this.rowToPowerLine(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(powerLines).where(eq(powerLines.cityId, cityId));
     return results.map(row => this.rowToPowerLine(row));
   }
 
@@ -91,11 +88,8 @@ export class WaterPipeRepository extends BaseRepository<typeof waterPipes, Water
   }
 
   async getAllWaterPipes(cityId?: string): Promise<WaterPipe[]> {
-    if (cityId) {
-      const results = await this.db.select().from(waterPipes).where(eq(waterPipes.cityId, cityId));
-      return results.map(row => this.rowToWaterPipe(row));
-    }
-    const results = await this.findAll();
+    if (!cityId) return [];
+    const results = await this.db.select().from(waterPipes).where(eq(waterPipes.cityId, cityId));
     return results.map(row => this.rowToWaterPipe(row));
   }
 
