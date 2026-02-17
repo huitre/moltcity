@@ -497,9 +497,12 @@ class LegacyParcelRepository {
   }
 
   getZonedParcelsWithoutBuilding(cityId?: string): Parcel[] {
+    const sql = cityId
+      ? 'SELECT p.* FROM parcels p WHERE p.city_id = ? AND p.zoning IS NOT NULL AND NOT EXISTS (SELECT 1 FROM buildings b WHERE b.parcel_id = p.id)'
+      : 'SELECT p.* FROM parcels p WHERE p.zoning IS NOT NULL AND NOT EXISTS (SELECT 1 FROM buildings b WHERE b.parcel_id = p.id)';
     const rows = cityId
-      ? this.raw.prepare('SELECT * FROM parcels WHERE city_id = ? AND zoning IS NOT NULL').all(cityId)
-      : this.raw.prepare('SELECT * FROM parcels WHERE zoning IS NOT NULL').all();
+      ? this.raw.prepare(sql).all(cityId)
+      : this.raw.prepare(sql).all();
     return rows.map(row => rowToParcel(row));
   }
 
@@ -963,7 +966,7 @@ class CityScopedParcelRepository extends LegacyParcelRepository {
   }
 
   getZonedParcelsWithoutBuilding(): Parcel[] {
-    const rows = this.raw.prepare('SELECT * FROM parcels WHERE city_id = ? AND zoning IS NOT NULL').all(this.cityId);
+    const rows = this.raw.prepare('SELECT p.* FROM parcels p WHERE p.city_id = ? AND p.zoning IS NOT NULL AND NOT EXISTS (SELECT 1 FROM buildings b WHERE b.parcel_id = p.id)').all(this.cityId);
     return rows.map(row => rowToParcel(row));
   }
 }

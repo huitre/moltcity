@@ -2,9 +2,10 @@
 // MOLTCITY - Parcel Repository
 // ============================================
 
-import { eq, and, gte, lte, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, isNotNull, notExists, sql } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { parcels, type ParcelRow, type ParcelInsert } from '../db/schema/parcels.js';
+import { buildings } from '../db/schema/buildings.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { Parcel, TerrainType, ZoningType } from '../models/types.js';
 
@@ -51,10 +52,14 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     const results = await this.db
       .select()
       .from(parcels)
-      .where(eq(parcels.cityId, cityId));
-    return results
-      .filter(row => row.zoning !== null)
-      .map(row => this.rowToParcel(row));
+      .where(and(
+        eq(parcels.cityId, cityId),
+        isNotNull(parcels.zoning),
+        notExists(
+          this.db.select({ id: buildings.id }).from(buildings).where(eq(buildings.parcelId, parcels.id))
+        ),
+      ));
+    return results.map(row => this.rowToParcel(row));
   }
 
   async getParcelsByOwner(ownerId: string): Promise<Parcel[]> {
