@@ -35,7 +35,11 @@ export class PowerLineRepository extends BaseRepository<typeof powerLines, Power
     super(db, powerLines);
   }
 
-  async getAllPowerLines(): Promise<PowerLine[]> {
+  async getAllPowerLines(cityId?: string): Promise<PowerLine[]> {
+    if (cityId) {
+      const results = await this.db.select().from(powerLines).where(eq(powerLines.cityId, cityId));
+      return results.map(row => this.rowToPowerLine(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToPowerLine(row));
   }
@@ -45,10 +49,11 @@ export class PowerLineRepository extends BaseRepository<typeof powerLines, Power
     return result ? this.rowToPowerLine(result) : null;
   }
 
-  async createPowerLine(fromX: number, fromY: number, toX: number, toY: number, capacity: number = 1000): Promise<string> {
+  async createPowerLine(fromX: number, fromY: number, toX: number, toY: number, capacity: number = 1000, cityId?: string): Promise<string> {
     const id = this.generateId();
     await this.db.insert(powerLines).values({
       id,
+      cityId: cityId || '',
       fromX,
       fromY,
       toX,
@@ -85,7 +90,11 @@ export class WaterPipeRepository extends BaseRepository<typeof waterPipes, Water
     super(db, waterPipes);
   }
 
-  async getAllWaterPipes(): Promise<WaterPipe[]> {
+  async getAllWaterPipes(cityId?: string): Promise<WaterPipe[]> {
+    if (cityId) {
+      const results = await this.db.select().from(waterPipes).where(eq(waterPipes.cityId, cityId));
+      return results.map(row => this.rowToWaterPipe(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToWaterPipe(row));
   }
@@ -95,10 +104,11 @@ export class WaterPipeRepository extends BaseRepository<typeof waterPipes, Water
     return result ? this.rowToWaterPipe(result) : null;
   }
 
-  async createWaterPipe(fromX: number, fromY: number, toX: number, toY: number, capacity: number = 100): Promise<string> {
+  async createWaterPipe(fromX: number, fromY: number, toX: number, toY: number, capacity: number = 100, cityId?: string): Promise<string> {
     const id = this.generateId();
     await this.db.insert(waterPipes).values({
       id,
+      cityId: cityId || '',
       fromX,
       fromY,
       toX,

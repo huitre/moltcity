@@ -21,7 +21,8 @@ export class ActivityService {
     actorId: string | undefined,
     actorName: string,
     message: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    cityId?: string
   ): Promise<Activity> {
     const activity = await this.activityRepo.createActivity({
       type,
@@ -29,6 +30,7 @@ export class ActivityService {
       actorName,
       message,
       metadata,
+      cityId,
     });
 
     // Broadcast via WebSocket if fastify instance is available
@@ -47,8 +49,8 @@ export class ActivityService {
     return activity;
   }
 
-  async getRecentActivities(limit: number = 20): Promise<Activity[]> {
-    return this.activityRepo.getRecentActivities(limit);
+  async getRecentActivities(limit: number = 20, cityId?: string): Promise<Activity[]> {
+    return this.activityRepo.getRecentActivities(limit, cityId);
   }
 
   // Convenience methods for specific activity types
@@ -56,14 +58,16 @@ export class ActivityService {
     actorId: string | undefined,
     actorName: string,
     x: number,
-    y: number
+    y: number,
+    cityId?: string
   ): Promise<Activity> {
     return this.logActivity(
       'parcel_purchase',
       actorId,
       actorName,
       `${actorName} just purchased parcel (${x}, ${y})`,
-      { x, y }
+      { x, y },
+      cityId
     );
   }
 
@@ -73,14 +77,16 @@ export class ActivityService {
     buildingType: string,
     buildingName: string,
     x: number,
-    y: number
+    y: number,
+    cityId?: string
   ): Promise<Activity> {
     return this.logActivity(
       'building_created',
       actorId,
       actorName,
       `${actorName} just built a ${buildingType} "${buildingName}"`,
-      { buildingType, buildingName, x, y }
+      { buildingType, buildingName, x, y },
+      cityId
     );
   }
 

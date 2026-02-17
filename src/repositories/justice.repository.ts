@@ -74,11 +74,13 @@ export class RentWarningRepository extends BaseRepository<typeof rentWarnings, R
     tenantId: string,
     amountOwed: number,
     currentTick: number,
-    dueDateTick: number
+    dueDateTick: number,
+    cityId?: string
   ): Promise<RentWarning> {
     const id = this.generateId();
     await this.db.insert(rentWarnings).values({
       id,
+      cityId: cityId || '',
       unitId,
       tenantId,
       amountOwed,
@@ -153,11 +155,13 @@ export class CourtCaseRepository extends BaseRepository<typeof courtCases, Court
     plaintiffId: string,
     caseType: 'rent_nonpayment',
     amount: number,
-    hearingDateTick: number
+    hearingDateTick: number,
+    cityId?: string
   ): Promise<CourtCase> {
     const id = this.generateId();
     await this.db.insert(courtCases).values({
       id,
+      cityId: cityId || '',
       warningId,
       defendantId,
       plaintiffId,
@@ -250,11 +254,13 @@ export class JailInmateRepository extends BaseRepository<typeof jailInmates, Jai
     agentId: string,
     caseId: string | null,
     currentTick: number,
-    releaseDateTick: number
+    releaseDateTick: number,
+    cityId?: string
   ): Promise<JailInmate> {
     const id = this.generateId();
     await this.db.insert(jailInmates).values({
       id,
+      cityId: cityId || '',
       agentId,
       caseId,
       checkIn: currentTick,

@@ -4,6 +4,7 @@
 
 import { ElectionRepository, type Election, type Candidate } from '../repositories/election.repository.js';
 import { UserRepository, type User } from '../repositories/user.repository.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import { ActivityService } from './activity.service.js';
 import { NotFoundError, ConflictError, ForbiddenError, ValidationError } from '../plugins/error-handler.plugin.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -24,24 +25,26 @@ export interface ElectionStatus {
 export class ElectionService {
   private electionRepo: ElectionRepository;
   private userRepo: UserRepository;
+  private cityRepo: CityRepository;
   private activityService: ActivityService;
   private fastify?: FastifyInstance;
 
   constructor(db: DrizzleDb, fastify?: FastifyInstance) {
     this.electionRepo = new ElectionRepository(db);
     this.userRepo = new UserRepository(db);
+    this.cityRepo = new CityRepository(db);
     this.activityService = new ActivityService(db, fastify);
     this.fastify = fastify;
   }
 
-  async startElection(): Promise<Election> {
+  async startElection(cityId: string): Promise<Election> {
     // Check if there's already an active election
     const existingElection = await this.electionRepo.getCurrentElection();
     if (existingElection) {
       throw new ConflictError('An election is already in progress');
     }
 
-    const election = await this.electionRepo.createElection(NOMINATION_DURATION);
+    const election = await this.electionRepo.createElection(cityId, NOMINATION_DURATION);
 
     // Log activity
     await this.activityService.logElectionStarted();
@@ -58,8 +61,8 @@ export class ElectionService {
     return election;
   }
 
-  async runForMayor(userId: string, platform?: string): Promise<Candidate> {
-    const election = await this.electionRepo.getCurrentElection();
+  async runForMayor(userId: string, platform?: string, cityId?: string): Promise<Candidate> {
+    const election = await this.electionRepo.getCurrentElection(cityId);
     if (!election) {
       throw new NotFoundError('No active election');
     }
@@ -101,8 +104,8 @@ export class ElectionService {
     return { ...candidate, userName: user.name };
   }
 
-  async vote(voterId: string, candidateId: string): Promise<void> {
-    const election = await this.electionRepo.getCurrentElection();
+  async vote(voterId: string, candidateId: string, cityId?: string): Promise<void> {
+    const election = await this.electionRepo.getCurrentElection(cityId);
     if (!election) {
       throw new NotFoundError('No active election');
     }
@@ -160,8 +163,8 @@ export class ElectionService {
     }
   }
 
-  async tallyVotes(): Promise<{ winnerId: string; winnerName: string; voteCount: number } | null> {
-    const election = await this.electionRepo.getCurrentElection();
+  async tallyVotes(cityId?: string): Promise<{ winnerId: string; winnerName: string; voteCount: number } | null> {
+    const election = await this.electionRepo.getCurrentElection(cityId);
     if (!election || election.status !== 'voting') {
       return null;
     }
@@ -187,8 +190,8 @@ export class ElectionService {
       winnerId: winner.userId,
     });
 
-    // Appoint new mayor
-    await this.appointMayor(winner.userId);
+    // Appoint new mayor (use election's cityId)
+    await this.appointMayor(winner.userId, election.cityId);
 
     // Get winner name
     const winnerUser = await this.userRepo.getUser(winner.userId);
@@ -214,28 +217,31 @@ export class ElectionService {
     };
   }
 
-  async appointMayor(userId: string): Promise<void> {
-    // First, revoke previous mayor's role
-    const currentMayor = await this.getCurrentMayor();
-    if (currentMayor) {
-      await this.userRepo.updateRole(currentMayor.id, 'user');
+  async appointMayor(userId: string, cityId?: string): Promise<void> {
+    // Mayor is now per-city, stored in city.mayorId
+    if (cityId) {
+      await this.cityRepo.updateMayor(cityId, userId);
+    } else {
+      // Fallback: update first city
+      const city = await this.cityRepo.getCity();
+      if (city) {
+        await this.cityRepo.updateMayor(city.id, userId);
+      }
     }
-
-    // Set new mayor
-    await this.userRepo.updateRole(userId, 'mayor');
   }
 
-  async getCurrentMayor(): Promise<{ id: string; name: string } | null> {
-    const mayor = await this.userRepo.getUserByRole('mayor');
-    if (mayor) {
-      return { id: mayor.id, name: mayor.name };
+  async getCurrentMayor(cityId?: string): Promise<{ id: string; name: string } | null> {
+    const city = await this.cityRepo.getCity(cityId);
+    if (city?.mayor) {
+      const user = await this.userRepo.getUser(city.mayor);
+      if (user) return { id: user.id, name: user.name };
     }
     return null;
   }
 
-  async getElectionStatus(): Promise<ElectionStatus> {
-    const election = await this.electionRepo.getCurrentElection();
-    const currentMayor = await this.getCurrentMayor();
+  async getElectionStatus(cityId?: string): Promise<ElectionStatus> {
+    const election = await this.electionRepo.getCurrentElection(cityId);
+    const currentMayor = await this.getCurrentMayor(cityId);
 
     if (!election) {
       return {
@@ -266,8 +272,8 @@ export class ElectionService {
     };
   }
 
-  async checkAndTransitionElection(): Promise<void> {
-    const election = await this.electionRepo.getCurrentElection();
+  async checkAndTransitionElection(cityId?: string): Promise<void> {
+    const election = await this.electionRepo.getCurrentElection(cityId);
     if (!election) return;
 
     const now = Date.now();

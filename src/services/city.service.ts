@@ -25,42 +25,34 @@ export class CityService {
     this.agentRepo = new AgentRepository(db);
   }
 
-  async getCity(): Promise<City | null> {
-    const city = await this.cityRepo.getCity();
+  async getCity(cityId?: string): Promise<City | null> {
+    const city = await this.cityRepo.getCity(cityId);
     if (!city) return null;
 
     // Enrich with calculated stats
-    const stats = await this.calculateStats();
+    const stats = await this.calculateStats(city.id);
     city.stats = stats;
 
     return city;
   }
 
-  async initializeCity(name: string, width: number = 50, height: number = 50): Promise<City> {
-    // Check if city already exists
-    const existingCity = await this.cityRepo.getCity();
-    if (existingCity) {
-      throw new Error('City already initialized');
-    }
-
-    // Initialize city
-    const city = await this.cityRepo.initializeCity(name, width, height);
-
-    // Initialize parcel grid
-    await this.parcelRepo.initializeGrid(width, height);
-
-    return city;
+  async getAllCities(): Promise<City[]> {
+    return this.cityRepo.getAllCities();
   }
 
-  async updateTime(tick: number, hour: number, day: number, year: number): Promise<void> {
-    await this.cityRepo.updateTime(tick, hour, day, year);
+  async createCity(name: string, creatorUserId: string): Promise<City> {
+    return this.cityRepo.createCity(name, creatorUserId);
   }
 
-  async calculateStats(): Promise<CityStats> {
+  async updateTime(cityId: string, tick: number, hour: number, day: number, year: number): Promise<void> {
+    await this.cityRepo.updateTime(cityId, tick, hour, day, year);
+  }
+
+  async calculateStats(cityId: string): Promise<CityStats> {
     const [agents, buildings, roads] = await Promise.all([
-      this.agentRepo.getAllAgents(),
-      this.buildingRepo.getAllBuildings(),
-      this.roadRepo.getAllRoads(),
+      this.agentRepo.getAllAgents(cityId),
+      this.buildingRepo.getAllBuildings(cityId),
+      this.roadRepo.getAllRoads(cityId),
     ]);
 
     let powerCapacity = 0;
@@ -70,19 +62,19 @@ export class CityService {
 
     for (const building of buildings) {
       if (building.type === 'power_plant') {
-        powerCapacity += 10000; // Each power plant provides 10,000 watts
+        powerCapacity += 10000;
       } else {
         powerDemand += building.powerRequired;
       }
 
       if (building.type === 'water_tower') {
-        waterCapacity += 1000; // Each water tower provides 1,000 units
+        waterCapacity += 1000;
       } else {
         waterDemand += building.waterRequired;
       }
     }
 
-    const city = await this.cityRepo.getCity();
+    const city = await this.cityRepo.getCity(cityId);
 
     return {
       population: agents.length,

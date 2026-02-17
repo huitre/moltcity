@@ -18,6 +18,25 @@ function getHeaders(hasBody = true) {
 }
 
 /**
+ * Append cityId query param if we have one
+ */
+function withCityId(endpoint) {
+  const cityId = state.currentCityId;
+  if (!cityId) return endpoint;
+  const sep = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${sep}cityId=${encodeURIComponent(cityId)}`;
+}
+
+/**
+ * Add cityId to a request body object
+ */
+function bodyWithCity(obj = {}) {
+  const cityId = state.currentCityId;
+  if (cityId) obj.cityId = cityId;
+  return obj;
+}
+
+/**
  * Generic fetch wrapper with error handling
  */
 async function fetchApi(endpoint, options = {}) {
@@ -58,16 +77,34 @@ export async function logout() {
 }
 
 export async function getMe() {
-  return fetchApi('/api/auth/me');
+  return fetchApi(withCityId('/api/auth/me'));
 }
 
+// ============================================
+// Cities API (multi-city)
+// ============================================
+
+export async function getCities() {
+  return fetchApi('/api/cities');
+}
+
+export async function createCity(name) {
+  return fetchApi('/api/cities', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function getCityById(cityId) {
+  return fetchApi(`/api/cities/${cityId}`);
+}
 
 // ============================================
-// City API
+// City API (legacy compat)
 // ============================================
 
 export async function getCity() {
-  return fetchApi('/api/city');
+  return fetchApi(withCityId('/api/city'));
 }
 
 export async function initCity(name) {
@@ -87,6 +124,7 @@ export async function getGameConfig() {
 
 export async function getParcels(minX, minY, maxX, maxY) {
   const params = new URLSearchParams();
+  if (state.currentCityId) params.append('cityId', state.currentCityId);
   if (minX !== undefined) params.append('minX', minX);
   if (minY !== undefined) params.append('minY', minY);
   if (maxX !== undefined) params.append('maxX', maxX);
@@ -97,26 +135,27 @@ export async function getParcels(minX, minY, maxX, maxY) {
 }
 
 export async function getParcel(x, y) {
-  return fetchApi(`/api/parcels/${x}/${y}`);
+  return fetchApi(withCityId(`/api/parcels/${x}/${y}`));
 }
 
 export async function purchaseParcel(agentId, x, y, price) {
   return fetchApi('/api/parcels/purchase', {
     method: 'POST',
-    body: JSON.stringify({ agentId, x, y, price }),
+    body: JSON.stringify(bodyWithCity({ agentId, x, y, price })),
   });
 }
 
 export async function sellParcel(agentId, x, y, buyerId, price) {
   return fetchApi('/api/parcels/sell', {
     method: 'POST',
-    body: JSON.stringify({ agentId, x, y, buyerId, price }),
+    body: JSON.stringify(bodyWithCity({ agentId, x, y, buyerId, price })),
   });
 }
 
 export async function getParcelPriceQuote(agentId) {
   const params = new URLSearchParams();
   if (agentId) params.append('agentId', agentId);
+  if (state.currentCityId) params.append('cityId', state.currentCityId);
   return fetchApi(`/api/parcels/quote?${params}`);
 }
 
@@ -125,35 +164,35 @@ export async function getParcelPriceQuote(agentId) {
 // ============================================
 
 export async function getBuildings() {
-  return fetchApi('/api/buildings');
+  return fetchApi(withCityId('/api/buildings'));
 }
 
 export async function getBuilding(id) {
-  return fetchApi(`/api/buildings/${id}`);
+  return fetchApi(withCityId(`/api/buildings/${id}`));
 }
 
 export async function getBuildingQuote(type, floors) {
-  return fetchApi(`/api/buildings/quote?type=${type}&floors=${floors || 1}`);
+  return fetchApi(withCityId(`/api/buildings/quote?type=${type}&floors=${floors || 1}`));
 }
 
 export async function createBuilding(params) {
   return fetchApi('/api/buildings', {
     method: 'POST',
-    body: JSON.stringify(params),
+    body: JSON.stringify(bodyWithCity(params)),
   });
 }
 
 export async function updateBuilding(id, updates) {
   return fetchApi(`/api/buildings/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(updates),
+    body: JSON.stringify(bodyWithCity(updates)),
   });
 }
 
 export async function demolishBuilding(id, agentId) {
   return fetchApi(`/api/buildings/${id}`, {
     method: 'DELETE',
-    body: JSON.stringify({ agentId }),
+    body: JSON.stringify(bodyWithCity({ agentId })),
   });
 }
 
@@ -162,13 +201,13 @@ export async function demolishBuilding(id, agentId) {
 // ============================================
 
 export async function getRoads() {
-  return fetchApi('/api/roads');
+  return fetchApi(withCityId('/api/roads'));
 }
 
 export async function createRoad(params) {
   return fetchApi('/api/roads', {
     method: 'POST',
-    body: JSON.stringify(params),
+    body: JSON.stringify(bodyWithCity(params)),
   });
 }
 
@@ -181,24 +220,24 @@ export async function deleteRoad(id) {
 // ============================================
 
 export async function getAgents() {
-  return fetchApi('/api/agents');
+  return fetchApi(withCityId('/api/agents'));
 }
 
 export async function getAgent(id) {
-  return fetchApi(`/api/agents/${id}`);
+  return fetchApi(withCityId(`/api/agents/${id}`));
 }
 
 export async function createAgent(name, x, y) {
   return fetchApi('/api/agents', {
     method: 'POST',
-    body: JSON.stringify({ name, x, y }),
+    body: JSON.stringify(bodyWithCity({ name, x, y })),
   });
 }
 
 export async function moveAgent(id, x, y) {
   return fetchApi(`/api/agents/${id}/move`, {
     method: 'POST',
-    body: JSON.stringify({ x, y }),
+    body: JSON.stringify(bodyWithCity({ x, y })),
   });
 }
 
@@ -207,7 +246,7 @@ export async function moveAgent(id, x, y) {
 // ============================================
 
 export async function getVehicles() {
-  return fetchApi('/api/vehicles');
+  return fetchApi(withCityId('/api/vehicles'));
 }
 
 // ============================================
@@ -215,13 +254,13 @@ export async function getVehicles() {
 // ============================================
 
 export async function getPowerLines() {
-  return fetchApi('/api/infrastructure/power-lines');
+  return fetchApi(withCityId('/api/infrastructure/power-lines'));
 }
 
 export async function createPowerLine(fromX, fromY, toX, toY, capacity) {
   return fetchApi('/api/infrastructure/power-lines', {
     method: 'POST',
-    body: JSON.stringify({ fromX, fromY, toX, toY, capacity }),
+    body: JSON.stringify(bodyWithCity({ fromX, fromY, toX, toY, capacity })),
   });
 }
 
@@ -232,13 +271,13 @@ export async function deletePowerLine(id) {
 }
 
 export async function getWaterPipes() {
-  return fetchApi('/api/infrastructure/water-pipes');
+  return fetchApi(withCityId('/api/infrastructure/water-pipes'));
 }
 
 export async function createWaterPipe(fromX, fromY, toX, toY, capacity) {
   return fetchApi('/api/infrastructure/water-pipes', {
     method: 'POST',
-    body: JSON.stringify({ fromX, fromY, toX, toY, capacity }),
+    body: JSON.stringify(bodyWithCity({ fromX, fromY, toX, toY, capacity })),
   });
 }
 
@@ -253,20 +292,20 @@ export async function deleteWaterPipe(id) {
 // ============================================
 
 export async function getRentalUnits(buildingId) {
-  return fetchApi(`/api/rentals/building/${buildingId}/units`);
+  return fetchApi(withCityId(`/api/rentals/building/${buildingId}/units`));
 }
 
 export async function createRentalUnit(buildingId, floorNumber, unitNumber, monthlyRent, unitType) {
   return fetchApi('/api/rentals/units', {
     method: 'POST',
-    body: JSON.stringify({ buildingId, floorNumber, unitNumber, monthlyRent, unitType }),
+    body: JSON.stringify(bodyWithCity({ buildingId, floorNumber, unitNumber, monthlyRent, unitType })),
   });
 }
 
 export async function signLease(unitId, tenantId) {
   return fetchApi(`/api/rentals/units/${unitId}/lease`, {
     method: 'POST',
-    body: JSON.stringify({ tenantId }),
+    body: JSON.stringify(bodyWithCity({ tenantId })),
   });
 }
 
@@ -281,13 +320,14 @@ export async function getPaymentConfig() {
 export async function getParcelQuote(x, y, buyerId) {
   const params = new URLSearchParams({ x, y });
   if (buyerId) params.append('buyerId', buyerId);
+  if (state.currentCityId) params.append('cityId', state.currentCityId);
   return fetchApi(`/api/payments/quote?${params}`);
 }
 
 export async function processPurchase(agentId, walletAddress, x, y, currency, txHash) {
   return fetchApi('/api/payments/purchase', {
     method: 'POST',
-    body: JSON.stringify({ agentId, walletAddress, x, y, currency, txHash }),
+    body: JSON.stringify(bodyWithCity({ agentId, walletAddress, x, y, currency, txHash })),
   });
 }
 
@@ -296,7 +336,7 @@ export async function processPurchase(agentId, walletAddress, x, y, currency, tx
 // ============================================
 
 export async function getActivities(limit = 20) {
-  return fetchApi(`/api/activity?limit=${limit}`);
+  return fetchApi(withCityId(`/api/activity?limit=${limit}`));
 }
 
 // ============================================
@@ -304,20 +344,20 @@ export async function getActivities(limit = 20) {
 // ============================================
 
 export async function getElectionStatus() {
-  return fetchApi('/api/election/status');
+  return fetchApi(withCityId('/api/election/status'));
 }
 
 export async function registerCandidate(platform) {
   return fetchApi('/api/election/candidates', {
     method: 'POST',
-    body: JSON.stringify({ platform }),
+    body: JSON.stringify(bodyWithCity({ platform })),
   });
 }
 
 export async function castVote(candidateId) {
   return fetchApi('/api/election/vote', {
     method: 'POST',
-    body: JSON.stringify({ candidateId }),
+    body: JSON.stringify(bodyWithCity({ candidateId })),
   });
 }
 
@@ -334,7 +374,7 @@ export async function stopSimulation() {
 }
 
 export async function getSimulationState() {
-  return fetchApi('/api/simulation/state');
+  return fetchApi(withCityId('/api/simulation/state'));
 }
 
 // ============================================
@@ -342,41 +382,41 @@ export async function getSimulationState() {
 // ============================================
 
 export async function getBudget() {
-  return fetchApi('/api/economy/budget');
+  return fetchApi(withCityId('/api/economy/budget'));
 }
 
 export async function setTaxRates(taxRateR, taxRateC, taxRateI) {
   return fetchApi('/api/economy/tax-rates', {
     method: 'PUT',
-    body: JSON.stringify({ taxRateR, taxRateC, taxRateI }),
+    body: JSON.stringify(bodyWithCity({ taxRateR, taxRateC, taxRateI })),
   });
 }
 
 export async function toggleOrdinance(ordinanceId, enabled) {
   return fetchApi('/api/economy/ordinances', {
     method: 'POST',
-    body: JSON.stringify({ ordinanceId, enabled }),
+    body: JSON.stringify(bodyWithCity({ ordinanceId, enabled })),
   });
 }
 
 export async function issueBond() {
   return fetchApi('/api/economy/bonds/issue', {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: JSON.stringify(bodyWithCity({})),
   });
 }
 
 export async function repayBond(bondId) {
   return fetchApi('/api/economy/bonds/repay', {
     method: 'POST',
-    body: JSON.stringify({ bondId }),
+    body: JSON.stringify(bodyWithCity({ bondId })),
   });
 }
 
 export async function setDepartmentFunding(funding) {
   return fetchApi('/api/economy/department-funding', {
     method: 'PUT',
-    body: JSON.stringify(funding),
+    body: JSON.stringify(bodyWithCity(funding)),
   });
 }
 
@@ -391,7 +431,7 @@ export async function setDepartmentFunding(funding) {
 export async function setZoning(parcelId, zoning) {
   return fetchApi('/api/parcels/zoning', {
     method: 'POST',
-    body: JSON.stringify({ parcelId, zoning }),
+    body: JSON.stringify(bodyWithCity({ parcelId, zoning })),
   });
 }
 

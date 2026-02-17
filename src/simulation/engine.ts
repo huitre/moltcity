@@ -4,7 +4,7 @@
 
 import { EventEmitter } from 'events';
 import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
-import { DatabaseManager } from '../models/database.js';
+import { LegacyDatabaseManagerAdapter, CityScopedDatabaseAdapter, type SimulationDb } from './engine.adapter.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
 import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY } from '../config/game.js';
 import type { Bond, DepartmentFunding, BudgetYtd } from '../models/types.js';
@@ -39,6 +39,9 @@ const TICKS_PER_DAY = TICKS_PER_HOUR * 24;
 const WARNING_DEADLINE_DAYS = 3; // Days to pay after warning
 const JAIL_SENTENCE_DAYS = 7; // Days in jail for rent nonpayment
 
+// Large bounds for infinite world pathfinding
+const WORLD_BOUNDS = 10000;
+
 // Population rules per building type
 const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boolean }> = {
   house: { min: 2, max: 4, perFloor: false },
@@ -54,7 +57,7 @@ const POPULATION_RULES: Record<string, { min: number; max: number; perFloor: boo
 export class RentEnforcementSimulator {
   private lastProcessedDay: number = 0;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
+  constructor(private db: SimulationDb, private log?: ActivityLogger) {}
 
   /**
    * Process rent enforcement - runs once per day at midnight
@@ -264,7 +267,7 @@ function addBuildingTiles(set: Set<string>, px: number, py: number, bw: number, 
 }
 
 export class PowerGridSimulator {
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   /**
    * Distribute power from plants to buildings via power lines
@@ -396,7 +399,7 @@ export class PowerGridSimulator {
 // ============================================
 
 export class WaterGridSimulator {
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   private lastStats = { capacity: 0, demand: 0, suppliedTiles: 0, connectedBuildings: 0 };
 
@@ -530,14 +533,10 @@ export class AgentSimulator {
   private pathfinder: Pathfinder;
   private walkingPathfinder: WalkingPathfinder;
 
-  constructor(
-    private db: DatabaseManager,
-    gridWidth: number,
-    gridHeight: number
-  ) {
+  constructor(private db: SimulationDb) {
     const roads = this.db.roads.getAllRoads();
-    this.pathfinder = new Pathfinder(roads, gridWidth, gridHeight);
-    this.walkingPathfinder = new WalkingPathfinder(gridWidth, gridHeight);
+    this.pathfinder = new Pathfinder(roads, WORLD_BOUNDS, WORLD_BOUNDS);
+    this.walkingPathfinder = new WalkingPathfinder(WORLD_BOUNDS, WORLD_BOUNDS);
   }
 
   /**
@@ -655,13 +654,9 @@ export class AgentSimulator {
 export class VehicleSimulator {
   private pathfinder: Pathfinder;
 
-  constructor(
-    private db: DatabaseManager,
-    gridWidth: number,
-    gridHeight: number
-  ) {
+  constructor(private db: SimulationDb) {
     const roads = this.db.roads.getAllRoads();
-    this.pathfinder = new Pathfinder(roads, gridWidth, gridHeight);
+    this.pathfinder = new Pathfinder(roads, WORLD_BOUNDS, WORLD_BOUNDS);
   }
 
   /**
@@ -741,7 +736,7 @@ export class VehicleSimulator {
 // ============================================
 
 export class PopulationSimulator {
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   /**
    * Spawn residents when a residential building is completed
@@ -822,7 +817,7 @@ export class EmploymentSimulator {
   private lastPayrollDay: number = 0;
   private lastJobMatchTick: number = 0;
 
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   /**
    * Main simulation tick
@@ -1016,7 +1011,7 @@ export function calculateCreditRating(treasury: number, bonds: Bond[], buildings
 export class TaxationSimulator {
   private lastProcessedDay: number = 0;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
+  constructor(private db: SimulationDb, private cityId: string, private log?: ActivityLogger) {}
 
   /**
    * Process daily taxation - SC2k style with separate R/C/I rates
@@ -1030,7 +1025,7 @@ export class TaxationSimulator {
     }
     this.lastProcessedDay = time.day;
 
-    const city = this.db.city.getCity();
+    const city = this.db.city.getCity(this.cityId);
     if (!city) return events;
 
     const buildings = this.db.buildings.getAllBuildings();
@@ -1138,7 +1133,7 @@ export class TaxationSimulator {
     const netCashFlow = totalRevenue - totalExpense;
 
     const newTreasury = city.stats.treasury + netCashFlow;
-    this.db.city.updateTreasury(newTreasury);
+    this.db.city.updateTreasury(this.cityId, newTreasury);
 
     // ── 8. Update YTD budget tracking ──
     const ytd = city.economy.budgetYtd;
@@ -1152,17 +1147,17 @@ export class TaxationSimulator {
     ytd.expenses.education += eduExp;
     ytd.expenses.transit += transitExp;
     ytd.expenses.bondInterest += bondInterest;
-    this.db.city.updateBudgetYtd(ytd);
+    this.db.city.updateBudgetYtd(this.cityId, ytd);
 
     // ── 9. Update credit rating ──
     const rating = calculateCreditRating(newTreasury, city.economy.bonds, completedBuildings);
     if (rating !== city.economy.creditRating) {
-      this.db.city.updateCreditRating(rating);
+      this.db.city.updateCreditRating(this.cityId, rating);
     }
 
     // ── 10. Reset YTD on new year (day 1) ──
     if (time.day === 1) {
-      this.db.city.resetBudgetYtd();
+      this.db.city.resetBudgetYtd(this.cityId);
     }
 
     if (Math.abs(netCashFlow) > 0.01) {
@@ -1178,47 +1173,63 @@ export class TaxationSimulator {
 }
 
 // ============================================
+// Per-City Simulator Bundle
+// ============================================
+
+/**
+ * Groups all simulators for a single city, operating on a city-scoped DB adapter.
+ */
+class CitySimulatorBundle {
+  public powerGrid: PowerGridSimulator;
+  public waterGrid: WaterGridSimulator;
+  public agentSimulator: AgentSimulator;
+  public vehicleSimulator: VehicleSimulator;
+  public rentEnforcementSimulator: RentEnforcementSimulator;
+  public populationSimulator: PopulationSimulator;
+  public employmentSimulator: EmploymentSimulator;
+  public taxationSimulator: TaxationSimulator;
+  public landValueSimulator: LandValueSimulator;
+  public zoneEvolutionSimulator: ZoneEvolutionSimulator;
+  public demandCalculator: DemandCalculator;
+  public crimeSimulator: CrimeSimulator;
+  public fireSimulator: FireSimulator;
+  public zoneBuildSimulator: ZoneBuildSimulator;
+
+  constructor(db: CityScopedDatabaseAdapter, logger?: ActivityLogger) {
+    this.powerGrid = new PowerGridSimulator(db);
+    this.waterGrid = new WaterGridSimulator(db);
+    this.agentSimulator = new AgentSimulator(db);
+    this.vehicleSimulator = new VehicleSimulator(db);
+    this.rentEnforcementSimulator = new RentEnforcementSimulator(db, logger);
+    this.populationSimulator = new PopulationSimulator(db);
+    this.employmentSimulator = new EmploymentSimulator(db);
+    this.taxationSimulator = new TaxationSimulator(db, db.cityId, logger);
+    this.landValueSimulator = new LandValueSimulator(db);
+    this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(db, logger);
+    this.demandCalculator = new DemandCalculator(db);
+    this.crimeSimulator = new CrimeSimulator(db, logger);
+    this.fireSimulator = new FireSimulator(db, logger);
+    this.zoneBuildSimulator = new ZoneBuildSimulator(db, logger);
+  }
+}
+
+// ============================================
 // Main Simulation Engine
 // ============================================
 
 export class SimulationEngine extends EventEmitter {
-  private db: DatabaseManager;
-  private powerGrid: PowerGridSimulator;
-  private waterGrid: WaterGridSimulator;
-  private agentSimulator: AgentSimulator;
-  private vehicleSimulator: VehicleSimulator;
-  private rentEnforcementSimulator: RentEnforcementSimulator;
-  private populationSimulator: PopulationSimulator;
-  private employmentSimulator: EmploymentSimulator;
-  private taxationSimulator: TaxationSimulator;
-  private landValueSimulator: LandValueSimulator;
-  private zoneEvolutionSimulator: ZoneEvolutionSimulator;
-  private demandCalculator: DemandCalculator;
-  private crimeSimulator: CrimeSimulator;
-  private fireSimulator: FireSimulator;
-  private zoneBuildSimulator: ZoneBuildSimulator;
+  private db: LegacyDatabaseManagerAdapter;
   private running: boolean = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentTick: number = 0;
   private activityLogger?: ActivityLogger;
 
-  constructor(db: DatabaseManager, gridWidth: number, gridHeight: number) {
+  // Per-city simulator bundles, keyed by cityId
+  private cityBundles = new Map<string, CitySimulatorBundle>();
+
+  constructor(db: LegacyDatabaseManagerAdapter) {
     super();
     this.db = db;
-    this.powerGrid = new PowerGridSimulator(db);
-    this.waterGrid = new WaterGridSimulator(db);
-    this.agentSimulator = new AgentSimulator(db, gridWidth, gridHeight);
-    this.vehicleSimulator = new VehicleSimulator(db, gridWidth, gridHeight);
-    this.rentEnforcementSimulator = new RentEnforcementSimulator(db);
-    this.populationSimulator = new PopulationSimulator(db);
-    this.employmentSimulator = new EmploymentSimulator(db);
-    this.taxationSimulator = new TaxationSimulator(db);
-    this.landValueSimulator = new LandValueSimulator(db);
-    this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(db);
-    this.demandCalculator = new DemandCalculator(db);
-    this.crimeSimulator = new CrimeSimulator(db);
-    this.fireSimulator = new FireSimulator(db);
-    this.zoneBuildSimulator = new ZoneBuildSimulator(db);
   }
 
   /**
@@ -1226,13 +1237,8 @@ export class SimulationEngine extends EventEmitter {
    */
   setActivityLogger(logger: ActivityLogger): void {
     this.activityLogger = logger;
-    // Re-create simulators that use the logger
-    this.rentEnforcementSimulator = new RentEnforcementSimulator(this.db, logger);
-    this.taxationSimulator = new TaxationSimulator(this.db, logger);
-    this.crimeSimulator = new CrimeSimulator(this.db, logger);
-    this.fireSimulator = new FireSimulator(this.db, logger);
-    this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(this.db, logger);
-    this.zoneBuildSimulator = new ZoneBuildSimulator(this.db, logger);
+    // Clear existing bundles so they get recreated with the logger
+    this.cityBundles.clear();
   }
 
   getCurrentTick(): number {
@@ -1241,6 +1247,19 @@ export class SimulationEngine extends EventEmitter {
 
   isRunning(): boolean {
     return this.running;
+  }
+
+  /**
+   * Get or create a simulator bundle for a city
+   */
+  private getBundle(cityId: string): CitySimulatorBundle {
+    let bundle = this.cityBundles.get(cityId);
+    if (!bundle) {
+      const scopedDb = this.db.forCity(cityId);
+      bundle = new CitySimulatorBundle(scopedDb, this.activityLogger);
+      this.cityBundles.set(cityId, bundle);
+    }
+    return bundle;
   }
 
   /**
@@ -1271,73 +1290,33 @@ export class SimulationEngine extends EventEmitter {
   }
 
   /**
-   * Execute one simulation tick
+   * Execute one simulation tick — iterates all cities
    */
   private tick(): void {
     this.currentTick++;
-    const events: CityEvent[] = [];
 
-    // Update city time
-    const time = this.updateTime();
+    // Calculate shared time from ticks
+    const time = this.deriveTime();
 
-    // Simulate power grid (every 10 ticks / 1 minute)
-    if (this.currentTick % 10 === 0) {
-      const powerStatus = this.powerGrid.simulate();
-      this.powerGrid.applyPowerStatus(powerStatus);
+    // Get all cities and simulate each one
+    const cities = this.db.city.getAllCities();
 
-      const waterStatus = this.waterGrid.simulate();
-      this.waterGrid.applyWaterStatus(waterStatus);
+    for (const city of cities) {
+      const events = this.tickCity(city, time);
+
+      // Update time for this city
+      this.db.city.updateTime(city.id, time.tick, time.hour, time.day, time.year);
+
+      // Emit per-city tick event
+      this.emit('tick', {
+        tick: this.currentTick,
+        time,
+        events,
+        cityId: city.id,
+      });
     }
 
-    // Simulate employment (job matching and payroll)
-    const employmentEvents = this.employmentSimulator.simulate(this.currentTick, time);
-    events.push(...employmentEvents);
-
-    // Simulate rent enforcement (runs daily at midnight)
-    this.rentEnforcementSimulator.simulate(this.currentTick, time);
-
-    // Simulate taxation (infrastructure fees, runs daily at midnight)
-    const taxEvents = this.taxationSimulator.simulate(this.currentTick, time);
-    events.push(...taxEvents);
-
-    // Simulate land value recalculation (runs daily at hour 1)
-    this.landValueSimulator.simulate(time);
-
-    // Simulate zone auto-building (every 100 ticks)
-    const zoneBuildCount = this.zoneBuildSimulator.simulate(this.currentTick, time);
-    if (zoneBuildCount > 0) {
-      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { count: zoneBuildCount } });
-    }
-
-    // Simulate zone evolution (runs daily at hour 2)
-    this.zoneEvolutionSimulator.simulate(time);
-
-    // Simulate crime (every 300 ticks / hourly)
-    if (this.currentTick % 300 === 0) {
-      this.crimeSimulator.simulate(time, this.currentTick);
-    }
-
-    // Simulate fire (every 10 ticks)
-    if (this.currentTick % 10 === 0) {
-      this.fireSimulator.simulate(time, this.currentTick);
-    }
-
-    // Simulate agents
-    const agentEvents = this.agentSimulator.simulate(time);
-    events.push(...agentEvents);
-
-    // Simulate vehicles
-    const vehicleEvents = this.vehicleSimulator.simulate();
-    events.push(...vehicleEvents);
-
-    // Emit tick event with all changes
-    this.emit('tick', {
-      tick: this.currentTick,
-      time,
-      events,
-    });
-
-    // Check for day/night transitions
+    // Check for day/night transitions (global, emitted once)
     if (time.hour === 6 && this.currentTick % (TICKS_PER_MINUTE * MINUTES_PER_HOUR) === 0) {
       this.emit('day_started', time);
     }
@@ -1347,45 +1326,107 @@ export class SimulationEngine extends EventEmitter {
   }
 
   /**
-   * Update and return current city time
+   * Run all simulators for a single city
    */
-  private updateTime(): CityTime {
-    const city = this.db.city.getCity();
-    if (!city) {
-      return { tick: 0, hour: 8, day: 1, year: 1, isDaylight: true };
+  private tickCity(city: City, time: CityTime): CityEvent[] {
+    const events: CityEvent[] = [];
+    const bundle = this.getBundle(city.id);
+
+    // Simulate power grid (every 10 ticks / 1 minute)
+    if (this.currentTick % 10 === 0) {
+      const powerStatus = bundle.powerGrid.simulate();
+      bundle.powerGrid.applyPowerStatus(powerStatus);
+
+      const waterStatus = bundle.waterGrid.simulate();
+      bundle.waterGrid.applyWaterStatus(waterStatus);
     }
 
-    let { tick, hour, day, year } = city.time;
-    tick = this.currentTick;
+    // Simulate employment (job matching and payroll)
+    const employmentEvents = bundle.employmentSimulator.simulate(this.currentTick, time);
+    events.push(...employmentEvents);
 
-    // Calculate time from ticks
-    const totalMinutes = Math.floor(this.currentTick / TICKS_PER_MINUTE);
-    hour = (8 + Math.floor(totalMinutes / MINUTES_PER_HOUR)) % HOURS_PER_DAY; // Start at 8am
-    const totalHours = Math.floor(totalMinutes / MINUTES_PER_HOUR);
-    day = 1 + Math.floor(totalHours / HOURS_PER_DAY);
-    year = 1 + Math.floor(day / 365);
-    day = ((day - 1) % 365) + 1;
+    // Simulate rent enforcement (runs daily at midnight)
+    bundle.rentEnforcementSimulator.simulate(this.currentTick, time);
 
-    const isDaylight = hour >= 6 && hour < 20;
+    // Simulate taxation (infrastructure fees, runs daily at midnight)
+    const taxEvents = bundle.taxationSimulator.simulate(this.currentTick, time);
+    events.push(...taxEvents);
 
-    // Update database
-    this.db.city.updateTime(tick, hour, day, year);
+    // Simulate land value recalculation (runs daily at hour 1)
+    bundle.landValueSimulator.simulate(time);
 
-    return { tick, hour, day, year, isDaylight };
+    // Simulate zone auto-building (every 100 ticks)
+    const zoneBuildCount = bundle.zoneBuildSimulator.simulate(this.currentTick, time);
+    if (zoneBuildCount > 0) {
+      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { count: zoneBuildCount } });
+    }
+
+    // Simulate zone evolution (runs daily at hour 2)
+    bundle.zoneEvolutionSimulator.simulate(time);
+
+    // Simulate crime (every 300 ticks / hourly)
+    if (this.currentTick % 300 === 0) {
+      bundle.crimeSimulator.simulate(time, this.currentTick);
+    }
+
+    // Simulate fire (every 10 ticks)
+    if (this.currentTick % 10 === 0) {
+      bundle.fireSimulator.simulate(time, this.currentTick);
+    }
+
+    // Simulate agents
+    const agentEvents = bundle.agentSimulator.simulate(time);
+    events.push(...agentEvents);
+
+    // Simulate vehicles
+    const vehicleEvents = bundle.vehicleSimulator.simulate();
+    events.push(...vehicleEvents);
+
+    return events;
   }
 
   /**
-   * Get current simulation state
+   * Derive time from current tick (shared across all cities)
    */
-  getState() {
-    const city = this.db.city.getCity();
-    const agents = this.db.agents.getAllAgents();
-    const vehicles = this.db.vehicles.getAllVehicles();
-    const buildings = this.db.buildings.getAllBuildings();
-    const populationStats = this.populationSimulator.getPopulationStats();
-    const employmentStats = this.employmentSimulator.getEmploymentStats();
+  private deriveTime(): CityTime {
+    const totalMinutes = Math.floor(this.currentTick / TICKS_PER_MINUTE);
+    const hour = (8 + Math.floor(totalMinutes / MINUTES_PER_HOUR)) % HOURS_PER_DAY; // Start at 8am
+    const totalHours = Math.floor(totalMinutes / MINUTES_PER_HOUR);
+    let day = 1 + Math.floor(totalHours / HOURS_PER_DAY);
+    const year = 1 + Math.floor(day / 365);
+    day = ((day - 1) % 365) + 1;
+    const isDaylight = hour >= 6 && hour < 20;
 
-    const demandStats = this.demandCalculator.calculate();
+    return { tick: this.currentTick, hour, day, year, isDaylight };
+  }
+
+  /**
+   * Get current simulation state for a specific city (or first city)
+   */
+  getState(cityId?: string) {
+    const city = this.db.city.getCity(cityId);
+    if (!city) {
+      return {
+        running: this.running,
+        tick: this.currentTick,
+        city: null,
+        agentCount: 0,
+        vehicleCount: 0,
+        buildingCount: 0,
+        population: { total: 0, employed: 0, unemployed: 0, employmentRate: 0 },
+        employment: { totalJobs: 0, filledJobs: 0, openJobs: 0, averageSalary: 0 },
+        demand: { residential: 0, office: 0, industrial: 0, counts: { residential: 0, office: 0, industrial: 0, total: 0 } },
+      };
+    }
+
+    const bundle = this.getBundle(city.id);
+    const scopedDb = this.db.forCity(city.id);
+    const agents = scopedDb.agents.getAllAgents();
+    const vehicles = scopedDb.vehicles.getAllVehicles();
+    const buildings = scopedDb.buildings.getAllBuildings();
+    const populationStats = bundle.populationSimulator.getPopulationStats();
+    const employmentStats = bundle.employmentSimulator.getEmploymentStats();
+    const demandStats = bundle.demandCalculator.calculate();
 
     return {
       running: this.running,
@@ -1401,24 +1442,39 @@ export class SimulationEngine extends EventEmitter {
   }
 
   /**
-   * Get population statistics
+   * Get population statistics for a specific city
    */
-  getPopulationStats() {
-    return this.populationSimulator.getPopulationStats();
+  getPopulationStats(cityId?: string) {
+    if (!cityId) {
+      const city = this.db.city.getCity();
+      cityId = city?.id;
+    }
+    if (!cityId) return { total: 0, employed: 0, unemployed: 0, employmentRate: 0 };
+    return this.getBundle(cityId).populationSimulator.getPopulationStats();
   }
 
   /**
-   * Get employment statistics
+   * Get employment statistics for a specific city
    */
-  getEmploymentStats() {
-    return this.employmentSimulator.getEmploymentStats();
+  getEmploymentStats(cityId?: string) {
+    if (!cityId) {
+      const city = this.db.city.getCity();
+      cityId = city?.id;
+    }
+    if (!cityId) return { totalJobs: 0, filledJobs: 0, openJobs: 0, averageSalary: 0 };
+    return this.getBundle(cityId).employmentSimulator.getEmploymentStats();
   }
 
   /**
-   * Get water system statistics
+   * Get water system statistics for a specific city
    */
-  getWaterStats() {
-    return this.waterGrid.getStats();
+  getWaterStats(cityId?: string) {
+    if (!cityId) {
+      const city = this.db.city.getCity();
+      cityId = city?.id;
+    }
+    if (!cityId) return { capacity: 0, demand: 0, suppliedTiles: 0, connectedBuildings: 0 };
+    return this.getBundle(cityId).waterGrid.getStats();
   }
 
   /**
@@ -1444,18 +1500,29 @@ export class SimulationEngine extends EventEmitter {
   /**
    * Calculate target vehicle count based on population and time
    */
-  getTargetVehicleCount(time: CityTime): number {
-    const population = this.db.population.getTotalPopulation();
-    const baseCount = Math.floor(population * TRAFFIC.VEHICLE_MULTIPLIER);
+  getTargetVehicleCount(time: CityTime, cityId?: string): number {
+    const stats = this.getPopulationStats(cityId);
+    const baseCount = Math.floor(stats.total * TRAFFIC.VEHICLE_MULTIPLIER);
     const multiplier = this.getTrafficMultiplier(time);
     return Math.max(1, Math.floor(baseCount * multiplier));
   }
 
   /**
-   * Notify engine that roads have changed
+   * Notify engine that roads have changed for a specific city
    */
-  onRoadsChanged(): void {
-    this.agentSimulator.updateRoads();
-    this.vehicleSimulator.updateRoads();
+  onRoadsChanged(cityId?: string): void {
+    if (cityId) {
+      const bundle = this.cityBundles.get(cityId);
+      if (bundle) {
+        bundle.agentSimulator.updateRoads();
+        bundle.vehicleSimulator.updateRoads();
+      }
+    } else {
+      // Update all cities
+      for (const bundle of this.cityBundles.values()) {
+        bundle.agentSimulator.updateRoads();
+        bundle.vehicleSimulator.updateRoads();
+      }
+    }
   }
 }

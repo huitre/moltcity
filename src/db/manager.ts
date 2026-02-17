@@ -13,6 +13,7 @@ import {
   PowerLineRepository,
   WaterPipeRepository,
   RentalUnitRepository,
+  PopulationRepository,
 } from '../repositories/index.js';
 import {
   RentWarningRepository,
@@ -40,6 +41,7 @@ export class NewDatabaseManager {
   public rentWarnings: RentWarningRepository;
   public courtCases: CourtCaseRepository;
   public jailInmates: JailInmateRepository;
+  public population: PopulationRepository;
 
   constructor() {
     this._db = getDrizzleDb();
@@ -57,6 +59,7 @@ export class NewDatabaseManager {
     this.rentWarnings = new RentWarningRepository(this._db);
     this.courtCases = new CourtCaseRepository(this._db);
     this.jailInmates = new JailInmateRepository(this._db);
+    this.population = new PopulationRepository(this._db);
   }
 
   /**

@@ -5,19 +5,22 @@
 import { FastifyPluginAsync } from 'fastify';
 import { BuildingService } from '../services/building.service.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import {
   createBuildingSchema,
   updateBuildingSchema,
   buildingIdParamSchema,
   buildingQuoteQuerySchema,
 } from '../schemas/buildings.schema.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const buildingsController: FastifyPluginAsync = async (fastify) => {
   const buildingService = new BuildingService(fastify.db, fastify);
 
   // List all buildings
-  fastify.get('/api/buildings', async () => {
-    const buildings = await buildingService.getAllBuildings();
+  fastify.get('/api/buildings', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const buildings = await buildingService.getAllBuildings(cityId);
     return { buildings };
   });
 
@@ -41,13 +44,22 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
     await fastify.optionalAuth(request, reply);
 
     const body = createBuildingSchema.parse(request.body);
-    
+    const cityId = extractOptionalCityId(request);
+
     // Fetch current role from database (JWT role may be stale after role changes)
-    let role: 'user' | 'admin' | 'mayor' = 'user';
+    let role: 'user' | 'admin' = 'user';
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as 'user' | 'admin') || 'user';
+    }
+
+    // Check per-city mayor status
+    let isMayor = false;
+    if (cityId && request.user?.userId) {
+      const cityRepo = new CityRepository(fastify.db);
+      const city = await cityRepo.getCity(cityId);
+      isMayor = city?.mayor === request.user.userId;
     }
 
     const building = await buildingService.createBuilding({
@@ -63,6 +75,8 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
       createAgent: body.createAgent,
       agentName: body.agentName,
       role,
+      isMayor,
+      cityId,
     });
 
     reply.status(201);

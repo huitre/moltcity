@@ -5,7 +5,7 @@
 // grows intensity, spreads to adjacent buildings,
 // and dispatches firefighters.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { FIRE, CITY_SERVICES } from '../config/game.js';
 import type { CityTime } from '../models/types.js';
 import type { ActivityLogger } from './engine.js';
@@ -20,7 +20,7 @@ const FIREFIGHTER_NAMES = [
 export class FireSimulator {
   private firefightersSpawned = false;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
+  constructor(private db: SimulationDb, private log?: ActivityLogger) {}
 
   simulate(time: CityTime, currentTick: number): void {
     // Ensure firefighters are spawned at fire stations

@@ -56,7 +56,9 @@ export class AuthService {
     // Generate token
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
-    return { user, token };
+    // Strip sensitive fields
+    const { passwordHash: _, ...safeUser } = user;
+    return { user: safeUser as User, token };
   }
 
   async login(email: string, password: string): Promise<AuthResult> {
@@ -79,7 +81,9 @@ export class AuthService {
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
-    return { user, token };
+    // Strip sensitive fields
+    const { passwordHash: _, ...safeUser } = user;
+    return { user: safeUser as User, token };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {

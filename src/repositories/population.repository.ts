@@ -42,12 +42,13 @@ export class PopulationRepository extends BaseRepository<typeof residents, Resid
     return `${firstName} ${lastName}`;
   }
 
-  async createResident(homeBuildingId: string, name?: string): Promise<Resident> {
+  async createResident(homeBuildingId: string, name?: string, cityId?: string): Promise<Resident> {
     const id = this.generateId();
     const residentName = name || this.generateRandomName();
 
     await this.db.insert(residents).values({
       id,
+      cityId: cityId || '',
       name: residentName,
       homeBuildingId,
       workBuildingId: null,
@@ -63,7 +64,11 @@ export class PopulationRepository extends BaseRepository<typeof residents, Resid
     return result ? this.rowToResident(result) : null;
   }
 
-  async getAllResidents(): Promise<Resident[]> {
+  async getAllResidents(cityId?: string): Promise<Resident[]> {
+    if (cityId) {
+      const results = await this.db.select().from(residents).where(eq(residents.cityId, cityId));
+      return results.map(row => this.rowToResident(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToResident(row));
   }

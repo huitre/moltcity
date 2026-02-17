@@ -4,14 +4,14 @@
 // Runs daily (hour === 1). Calculates land value for each parcel
 // based on nearby parks, water, factories, crime, roads, services, etc.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { HAPPINESS } from '../config/game.js';
 import type { CityTime, Building, Parcel } from '../models/types.js';
 
 export class LandValueSimulator {
   private lastProcessedDay: number = 0;
 
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   simulate(time: CityTime): void {
     if (time.hour !== 1 || this.lastProcessedDay === time.day) return;
@@ -43,11 +43,19 @@ export class LandValueSimulator {
       parcelMap.set(`${p.x},${p.y}`, p);
     }
 
-    // Grid center for distance-to-downtown
-    const city = this.db.city.getCity();
-    const centerX = city ? Math.floor(city.gridWidth / 2) : 25;
-    const centerY = city ? Math.floor(city.gridHeight / 2) : 25;
-    const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+    // Compute bounding box from parcels for distance-to-downtown
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const p of parcels) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const centerX = parcels.length > 0 ? Math.floor((minX + maxX) / 2) : 25;
+    const centerY = parcels.length > 0 ? Math.floor((minY + maxY) / 2) : 25;
+    const halfW = parcels.length > 0 ? (maxX - minX) / 2 : 25;
+    const halfH = parcels.length > 0 ? (maxY - minY) / 2 : 25;
+    const maxDist = Math.sqrt(halfW * halfW + halfH * halfH) || 1;
 
     const updates: { parcelId: string; value: number }[] = [];
 

@@ -2,7 +2,7 @@
 // MOLTCITY - Activity Repository
 // ============================================
 
-import { desc } from 'drizzle-orm';
+import { desc, eq, and } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { activities, type ActivityRow, type ActivityInsert, type ActivityType } from '../db/schema/activity.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -28,6 +28,7 @@ export class ActivityRepository extends BaseRepository<typeof activities, Activi
     actorName: string;
     message: string;
     metadata?: Record<string, unknown>;
+    cityId?: string;
   }): Promise<Activity> {
     const id = this.generateId();
     const now = new Date();
@@ -35,6 +36,7 @@ export class ActivityRepository extends BaseRepository<typeof activities, Activi
     await this.db.insert(activities).values({
       id,
       type: data.type,
+      cityId: data.cityId || null,
       actorId: data.actorId || null,
       actorName: data.actorName,
       message: data.message,
@@ -53,13 +55,18 @@ export class ActivityRepository extends BaseRepository<typeof activities, Activi
     };
   }
 
-  async getRecentActivities(limit: number = 20): Promise<Activity[]> {
-    const results = await this.db
+  async getRecentActivities(limit: number = 20, cityId?: string): Promise<Activity[]> {
+    let query = this.db
       .select()
       .from(activities)
       .orderBy(desc(activities.createdAt))
       .limit(limit);
 
+    if (cityId) {
+      query = query.where(eq(activities.cityId, cityId)) as typeof query;
+    }
+
+    const results = await query;
     return results.map(row => this.rowToActivity(row));
   }
 

@@ -13,44 +13,105 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
     super(db, city);
   }
 
-  async getCity(): Promise<City | null> {
-    const results = await this.db.select().from(city).limit(1);
+  async getCity(cityId?: string): Promise<City | null> {
+    let results;
+    if (cityId) {
+      results = await this.db.select().from(city).where(eq(city.id, cityId)).limit(1);
+    } else {
+      results = await this.db.select().from(city).limit(1);
+    }
     if (results.length === 0) return null;
     return this.rowToCity(results[0]);
   }
 
-  async initializeCity(name: string, width: number, height: number): Promise<City> {
+  async getAllCities(): Promise<City[]> {
+    const results = await this.db.select().from(city);
+    return results.map(row => this.rowToCity(row));
+  }
+
+  async createCity(name: string, creatorUserId: string): Promise<City> {
     const id = this.generateId();
     await this.db.insert(city).values({
       id,
       name,
-      gridWidth: width,
-      gridHeight: height,
+      createdBy: creatorUserId,
+      mayorId: creatorUserId,
     });
-    return (await this.getCity())!;
+    return (await this.getCity(id))!;
   }
 
-  async updateTime(tick: number, hour: number, day: number, year: number): Promise<void> {
+  async updateTime(cityId: string, tick: number, hour: number, day: number, year: number): Promise<void> {
     await this.db.update(city).set({
       tick,
       hour,
       day,
       year,
-    });
+    }).where(eq(city.id, cityId));
   }
 
-  async updateTreasury(amount: number): Promise<void> {
+  async updateTreasury(cityId: string, amount: number): Promise<void> {
     await this.db.update(city).set({
       treasury: amount,
-    });
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateMayor(cityId: string, mayorId: string | null): Promise<void> {
+    await this.db.update(city).set({
+      mayorId,
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateTaxRates(cityId: string, taxRateR: number, taxRateC: number, taxRateI: number): Promise<void> {
+    await this.db.update(city).set({
+      taxRateR,
+      taxRateC,
+      taxRateI,
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateOrdinances(cityId: string, ordinances: string[]): Promise<void> {
+    await this.db.update(city).set({
+      ordinances: JSON.stringify(ordinances),
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateBonds(cityId: string, bonds: Bond[]): Promise<void> {
+    await this.db.update(city).set({
+      bonds: JSON.stringify(bonds),
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateDepartmentFunding(cityId: string, funding: DepartmentFunding): Promise<void> {
+    await this.db.update(city).set({
+      departmentFunding: JSON.stringify(funding),
+    }).where(eq(city.id, cityId));
+  }
+
+  async updateBudgetYtd(cityId: string, budgetYtd: BudgetYtd): Promise<void> {
+    await this.db.update(city).set({
+      budgetYtd: JSON.stringify(budgetYtd),
+    }).where(eq(city.id, cityId));
+  }
+
+  async resetBudgetYtd(cityId: string): Promise<void> {
+    const empty: BudgetYtd = {
+      revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0 },
+      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 },
+    };
+    await this.updateBudgetYtd(cityId, empty);
+  }
+
+  async updateCreditRating(cityId: string, creditRating: string): Promise<void> {
+    await this.db.update(city).set({
+      creditRating,
+    }).where(eq(city.id, cityId));
   }
 
   private rowToCity(row: CityRow): City {
     return {
       id: row.id,
       name: row.name,
-      gridWidth: row.gridWidth,
-      gridHeight: row.gridHeight,
+      createdBy: row.createdBy,
       time: {
         tick: row.tick,
         hour: row.hour,

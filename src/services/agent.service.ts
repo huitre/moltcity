@@ -27,8 +27,8 @@ export class AgentService {
     return this.agentRepo.getAgent(id);
   }
 
-  async getAllAgents(): Promise<Agent[]> {
-    return this.agentRepo.getAllAgents();
+  async getAllAgents(cityId?: string): Promise<Agent[]> {
+    return this.agentRepo.getAllAgents(cityId);
   }
 
   async findAgent(identifier: string): Promise<Agent | null> {

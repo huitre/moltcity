@@ -2,7 +2,7 @@
 // MOLTCITY - Road Repository
 // ============================================
 
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { roads, type RoadRow, type RoadInsert } from '../db/schema/roads.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -27,15 +27,20 @@ export class RoadRepository extends BaseRepository<typeof roads, RoadRow, RoadIn
     return result ? this.rowToRoad(result) : null;
   }
 
-  async getAllRoads(): Promise<Road[]> {
+  async getAllRoads(cityId?: string): Promise<Road[]> {
+    if (cityId) {
+      const results = await this.db.select().from(roads).where(eq(roads.cityId, cityId));
+      return results.map(row => this.rowToRoad(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToRoad(row));
   }
 
-  async createRoad(parcelId: string, direction: RoadDirection, lanes: number = 2): Promise<Road> {
+  async createRoad(parcelId: string, direction: RoadDirection, lanes: number = 2, cityId?: string): Promise<Road> {
     const id = this.generateId();
     await this.db.insert(roads).values({
       id,
+      cityId: cityId || '',
       parcelId,
       direction,
       lanes,

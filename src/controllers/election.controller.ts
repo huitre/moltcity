@@ -6,6 +6,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { ElectionService } from '../services/election.service.js';
 import { runForMayorSchema, voteSchema } from '../schemas/election.schema.js';
 import { ForbiddenError } from '../plugins/error-handler.plugin.js';
+import { extractCityId, extractOptionalCityId } from '../utils/city-context.js';
 
 export const electionController: FastifyPluginAsync = async (fastify) => {
   const electionService = new ElectionService(fastify.db, fastify);
@@ -15,7 +16,8 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
     // Optional auth to check if user has voted
     await fastify.optionalAuth(request, reply);
 
-    const status = await electionService.getElectionStatus();
+    const cityId = extractOptionalCityId(request);
+    const status = await electionService.getElectionStatus(cityId);
 
     // Check if authenticated user has voted
     let hasVoted = false;
@@ -46,8 +48,9 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get current mayor
-  fastify.get('/api/mayor', async () => {
-    const mayor = await electionService.getCurrentMayor();
+  fastify.get('/api/mayor', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const mayor = await electionService.getCurrentMayor(cityId);
     return { mayor };
   });
 
@@ -59,7 +62,8 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
       throw new ForbiddenError('Only admins can start elections');
     }
 
-    const election = await electionService.startElection();
+    const cityId = extractCityId(request);
+    const election = await electionService.startElection(cityId);
 
     reply.status(201);
     return {
@@ -78,8 +82,9 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
   }, async (request, reply) => {
     const body = runForMayorSchema.parse(request.body);
     const userId = request.user!.userId;
+    const cityId = extractOptionalCityId(request);
 
-    const candidate = await electionService.runForMayor(userId, body.platform);
+    const candidate = await electionService.runForMayor(userId, body.platform, cityId);
 
     reply.status(201);
     return {
@@ -99,8 +104,9 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
   }, async (request) => {
     const body = voteSchema.parse(request.body);
     const voterId = request.user!.userId;
+    const cityId = extractOptionalCityId(request);
 
-    await electionService.vote(voterId, body.candidateId);
+    await electionService.vote(voterId, body.candidateId, cityId);
 
     return { success: true };
   });
@@ -113,7 +119,8 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
       throw new ForbiddenError('Only admins can manually transition election phases');
     }
 
-    await electionService.checkAndTransitionElection();
+    const cityId = extractOptionalCityId(request);
+    await electionService.checkAndTransitionElection(cityId);
 
     return { success: true };
   });
@@ -126,7 +133,8 @@ export const electionController: FastifyPluginAsync = async (fastify) => {
       throw new ForbiddenError('Only admins can manually tally votes');
     }
 
-    const result = await electionService.tallyVotes();
+    const cityId = extractOptionalCityId(request);
+    const result = await electionService.tallyVotes(cityId);
 
     return {
       success: true,

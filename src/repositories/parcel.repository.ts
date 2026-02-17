@@ -2,7 +2,7 @@
 // MOLTCITY - Parcel Repository
 // ============================================
 
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { parcels, type ParcelRow, type ParcelInsert } from '../db/schema/parcels.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -22,6 +22,12 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     return results.length > 0 ? this.rowToParcel(results[0]) : null;
   }
 
+  async getOrCreateParcel(x: number, y: number, cityId?: string): Promise<Parcel> {
+    const existing = await this.getParcel(x, y);
+    if (existing) return existing;
+    return this.createParcel(x, y, 'land', cityId);
+  }
+
   async getParcelById(id: string): Promise<Parcel | null> {
     const result = await this.findById(id, parcels.id);
     return result ? this.rowToParcel(result) : null;
@@ -32,6 +38,35 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     return results.map(row => this.rowToParcel(row));
   }
 
+  async getParcelsByCityId(cityId: string): Promise<Parcel[]> {
+    const results = await this.db
+      .select()
+      .from(parcels)
+      .where(eq(parcels.cityId, cityId));
+    return results.map(row => this.rowToParcel(row));
+  }
+
+  async getZonedParcelsWithoutBuilding(cityId?: string): Promise<Parcel[]> {
+    // This will be used by zone-build simulator
+    // Returns parcels that have zoning set but no building on them
+    const conditions = [
+      parcels.zoning !== null ? undefined : undefined, // zoning is not null is handled differently
+    ];
+    // Simple approach: get all zoned parcels for the city
+    let results;
+    if (cityId) {
+      results = await this.db
+        .select()
+        .from(parcels)
+        .where(and(eq(parcels.cityId, cityId)));
+    } else {
+      results = await this.findAll();
+    }
+    return results
+      .filter(row => row.zoning !== null)
+      .map(row => this.rowToParcel(row));
+  }
+
   async getParcelsByOwner(ownerId: string): Promise<Parcel[]> {
     const results = await this.db
       .select()
@@ -40,30 +75,40 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
     return results.map(row => this.rowToParcel(row));
   }
 
-  async getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number): Promise<Parcel[]> {
+  async getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number, cityId?: string): Promise<Parcel[]> {
+    const conditions = [
+      gte(parcels.x, minX),
+      lte(parcels.x, maxX),
+      gte(parcels.y, minY),
+      lte(parcels.y, maxY),
+    ];
+    if (cityId) {
+      conditions.push(eq(parcels.cityId, cityId));
+    }
     const results = await this.db
       .select()
       .from(parcels)
-      .where(
-        and(
-          gte(parcels.x, minX),
-          lte(parcels.x, maxX),
-          gte(parcels.y, minY),
-          lte(parcels.y, maxY)
-        )
-      );
+      .where(and(...conditions));
     return results.map(row => this.rowToParcel(row));
   }
 
-  async createParcel(x: number, y: number, terrain: TerrainType = 'land'): Promise<Parcel> {
+  async createParcel(x: number, y: number, terrain: TerrainType = 'land', cityId?: string): Promise<Parcel> {
     const id = this.generateId();
     await this.db.insert(parcels).values({
       id,
       x,
       y,
       terrain,
+      cityId: cityId || null,
     });
     return (await this.getParcel(x, y))!;
+  }
+
+  async claimParcelForCity(parcelId: string, cityId: string): Promise<void> {
+    await this.db
+      .update(parcels)
+      .set({ cityId })
+      .where(eq(parcels.id, parcelId));
   }
 
   async purchaseParcel(parcelId: string, ownerId: string, price: number): Promise<void> {
@@ -77,10 +122,12 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
       .where(eq(parcels.id, parcelId));
   }
 
-  async setZoning(parcelId: string, zoning: ZoningType): Promise<void> {
+  async setZoning(parcelId: string, zoning: ZoningType, cityId?: string): Promise<void> {
+    const updates: Record<string, unknown> = { zoning };
+    if (cityId) updates.cityId = cityId;
     await this.db
       .update(parcels)
-      .set({ zoning })
+      .set(updates)
       .where(eq(parcels.id, parcelId));
   }
 
@@ -111,28 +158,6 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
         purchaseDate: null,
       })
       .where(eq(parcels.id, parcelId));
-  }
-
-  async initializeGrid(width: number, height: number): Promise<void> {
-    // Use transaction for batch insert
-    const values: ParcelInsert[] = [];
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        values.push({
-          id: `parcel_${x}_${y}`,
-          x,
-          y,
-          terrain: 'land',
-        });
-      }
-    }
-
-    // Insert in batches to avoid SQLite limits
-    const BATCH_SIZE = 500;
-    for (let i = 0; i < values.length; i += BATCH_SIZE) {
-      const batch = values.slice(i, i + BATCH_SIZE);
-      await this.db.insert(parcels).values(batch).onConflictDoNothing();
-    }
   }
 
   async updateLandValue(parcelId: string, value: number): Promise<void> {

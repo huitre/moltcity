@@ -11,7 +11,7 @@ import { UnauthorizedError } from './error-handler.plugin.js';
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: 'user' | 'admin' | 'mayor';
+  role: 'user' | 'admin';
   iat?: number;
   exp?: number;
 }

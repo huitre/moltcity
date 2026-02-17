@@ -62,8 +62,8 @@ export class ParcelService {
     return this.parcelRepo.getParcelById(id);
   }
 
-  async getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number): Promise<Parcel[]> {
-    return this.parcelRepo.getParcelsInRange(minX, minY, maxX, maxY);
+  async getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number, cityId?: string): Promise<Parcel[]> {
+    return this.parcelRepo.getParcelsInRange(minX, minY, maxX, maxY, cityId);
   }
 
   async purchaseParcel(params: {
@@ -76,13 +76,15 @@ export class ParcelService {
     createAgent?: boolean;
     agentName?: string;
     role?: UserRole;
+    isMayor?: boolean;
+    cityId?: string;
   }): Promise<PurchaseResult> {
-    // Get parcel
+    // Get or create parcel (parcels are created on-demand)
     let parcel: Parcel | null = null;
     if (params.parcelId) {
       parcel = await this.parcelRepo.getParcelById(params.parcelId);
     } else if (params.x !== undefined && params.y !== undefined) {
-      parcel = await this.parcelRepo.getParcel(params.x, params.y);
+      parcel = await this.parcelRepo.getOrCreateParcel(params.x, params.y, params.cityId);
     }
 
     if (!parcel) {
@@ -119,7 +121,7 @@ export class ParcelService {
     }
 
     // Check parcel limit
-    const maxParcels = getMaxParcels(params.role || 'user');
+    const maxParcels = getMaxParcels(params.role || 'user', params.isMayor || false);
     const ownedParcels = await this.parcelRepo.getParcelsByOwner(agent.id);
     if (ownedParcels.length >= maxParcels) {
       throw new ForbiddenError(`Parcel limit reached (max ${maxParcels} parcels)`);
@@ -220,7 +222,7 @@ export class ParcelService {
     return { price, parcelsOwned, freeRemaining };
   }
 
-  async setZoning(parcelId: string, zoning: ZoningType | null): Promise<Parcel> {
+  async setZoning(parcelId: string, zoning: ZoningType | null, cityId?: string): Promise<Parcel> {
     const parcel = await this.parcelRepo.getParcelById(parcelId);
     if (!parcel) {
       throw new NotFoundError('Parcel', parcelId);
@@ -229,14 +231,14 @@ export class ParcelService {
     if (zoning) {
       // Deduct zoning cost from city treasury
       const cityRepo = new CityRepository(this.db);
-      const city = await cityRepo.getCity();
+      const city = await cityRepo.getCity(cityId);
       if (city && ZONING_COST > 0) {
         if (city.stats.treasury < ZONING_COST) {
           throw new InsufficientFundsError(ZONING_COST, city.stats.treasury);
         }
-        await cityRepo.updateTreasury(city.stats.treasury - ZONING_COST);
+        await cityRepo.updateTreasury(city.id, city.stats.treasury - ZONING_COST);
       }
-      await this.parcelRepo.setZoning(parcelId, zoning);
+      await this.parcelRepo.setZoning(parcelId, zoning, cityId);
     } else {
       await this.parcelRepo.clearZoning(parcelId);
     }

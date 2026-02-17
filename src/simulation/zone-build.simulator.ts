@@ -4,7 +4,7 @@
 // Runs every 100 ticks. Auto-builds on zoned parcels that have
 // an adjacent road, based on demand and random chance.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { DemandCalculator } from './demand.calculator.js';
 import type { CityTime, BuildingType, ZoningType } from '../models/types.js';
 import type { ActivityLogger } from './engine.js';
@@ -39,7 +39,7 @@ export class ZoneBuildSimulator {
   private lastProcessedTick: number = 0;
   private demandCalculator: DemandCalculator;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {
+  constructor(private db: SimulationDb, private log?: ActivityLogger) {
     this.demandCalculator = new DemandCalculator(db);
   }
 

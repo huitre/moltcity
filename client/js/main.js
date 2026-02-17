@@ -15,6 +15,7 @@ import { loadActivities, addActivity } from './ui/activity.js';
 import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 import { setupLeaderboard } from './ui/leaderboard.js';
 import { showSpriteEditor } from './ui/sprite-editor.js';
+import { subscribeToCityWs } from './websocket.js';
 
 let appInitialized = false;
 
@@ -129,17 +130,45 @@ async function updateUserBalance() {
 }
 
 /**
- * Load all city data
+ * Load all city data for the current city
  */
 async function loadCityData() {
   try {
-    // Load city state (auto-init if not yet created)
-    let cityResponse = await api.getCity();
-    if (!cityResponse.city && !cityResponse.initialized) {
-      console.log("[MoltCity] City not initialized, auto-creating...");
-      await api.initCity("MoltCity");
-      cityResponse = await api.getCity();
+    // Load cities list
+    let citiesResponse;
+    try {
+      citiesResponse = await api.getCities();
+    } catch {
+      citiesResponse = { cities: [] };
     }
+    const cities = citiesResponse.cities || [];
+    state.setCitiesList(cities);
+
+    // Pick a city to load
+    if (!state.currentCityId && cities.length > 0) {
+      // Pick user's first city, or just the first available
+      const userCity = state.currentUser
+        ? cities.find(c => c.createdBy === state.currentUser.id || c.mayorId === state.currentUser.id)
+        : null;
+      state.setCurrentCityId(userCity ? userCity.id : cities[0].id);
+    }
+
+    // If no cities exist, auto-create one
+    if (cities.length === 0) {
+      console.log("[MoltCity] No cities, auto-creating...");
+      const newCity = await api.createCity("MoltCity");
+      const city = newCity.city || newCity;
+      state.setCurrentCityId(city.id);
+      state.setCitiesList([city]);
+    }
+
+    // Subscribe WebSocket to this city
+    if (state.currentCityId) {
+      subscribeToCityWs(state.currentCityId);
+    }
+
+    // Load city details
+    const cityResponse = await api.getCity();
     if (cityResponse.city) {
       state.setCityData(cityResponse.city);
     }
@@ -170,10 +199,127 @@ async function loadCityData() {
     // Update user's agent balance
     updateUserBalance();
 
-    console.log("[MoltCity] City data loaded");
+    // Update city name display
+    updateCityNameDisplay();
+
+    // Build city selector UI
+    buildCitySelectorUI();
+
+    console.log("[MoltCity] City data loaded for", state.currentCityId);
   } catch (error) {
     console.error("[MoltCity] Failed to load city data:", error);
   }
+}
+
+/**
+ * Switch to a different city
+ */
+export async function switchCity(cityId) {
+  if (cityId === state.currentCityId) return;
+  console.log(`[MoltCity] Switching to city ${cityId}`);
+
+  state.setCurrentCityId(cityId);
+
+  // Clear state
+  state.setParcels([]);
+  state.setBuildings([]);
+  state.setRoads([]);
+  state.setAgents([]);
+  state.setPowerLines([]);
+  state.setWaterPipes([]);
+  state.setCityData(null);
+
+  // Re-subscribe WebSocket
+  subscribeToCityWs(cityId);
+
+  // Re-load all data for the new city
+  const cityResponse = await api.getCity();
+  if (cityResponse.city) {
+    state.setCityData(cityResponse.city);
+  }
+
+  const [parcelsR, buildingsR, roadsR, agentsR, powerR, waterR] = await Promise.all([
+    api.getParcels(),
+    api.getBuildings(),
+    api.getRoads(),
+    api.getAgents(),
+    api.getPowerLines(),
+    api.getWaterPipes(),
+  ]);
+
+  state.setParcels(parcelsR.parcels || []);
+  state.setBuildings(buildingsR.buildings || []);
+  state.setRoads(roadsR.roads || []);
+  state.setAgents(agentsR.agents || []);
+  state.setPowerLines(powerR.powerLines || []);
+  state.setWaterPipes(waterR.waterPipes || []);
+
+  updateUserBalance();
+  updateCityNameDisplay();
+
+  // Re-render
+  render();
+  await loadActivities();
+  await loadElectionStatus();
+}
+
+/**
+ * Update the city name display in the toolbar
+ */
+function updateCityNameDisplay() {
+  const nameEl = document.getElementById("city-name-display");
+  if (nameEl && state.cityData) {
+    nameEl.textContent = state.cityData.name || "MoltCity";
+  }
+}
+
+/**
+ * Build city selector dropdown UI
+ */
+function buildCitySelectorUI() {
+  const container = document.getElementById("city-selector");
+  if (!container) return;
+
+  const cities = state.citiesList;
+  container.style.display = "";
+  container.innerHTML = "";
+
+  if (cities.length > 1) {
+    const select = document.createElement("select");
+    select.className = "city-select";
+    select.style.cssText = "background:#2a2a2a;color:#fff;border:1px solid #555;padding:2px 4px;font-size:12px;border-radius:3px;cursor:pointer;";
+    for (const city of cities) {
+      const opt = document.createElement("option");
+      opt.value = city.id;
+      opt.textContent = city.name;
+      if (city.id === state.currentCityId) opt.selected = true;
+      select.appendChild(opt);
+    }
+    select.addEventListener("change", () => {
+      switchCity(select.value);
+    });
+    container.appendChild(select);
+  }
+
+  // "New City" button
+  const btn = document.createElement("button");
+  btn.textContent = "+";
+  btn.title = "Create new city";
+  btn.style.cssText = "background:#4ecdc4;color:#000;border:none;padding:2px 6px;font-size:12px;border-radius:3px;cursor:pointer;margin-left:4px;font-weight:bold;";
+  btn.addEventListener("click", async () => {
+    const name = prompt("Enter a name for your new city:");
+    if (!name || !name.trim()) return;
+    try {
+      const result = await api.createCity(name.trim());
+      const city = result.city || result;
+      state.setCitiesList([...state.citiesList, city]);
+      await switchCity(city.id);
+      buildCitySelectorUI();
+    } catch (e) {
+      alert("Failed to create city: " + e.message);
+    }
+  });
+  container.appendChild(btn);
 }
 
 /**

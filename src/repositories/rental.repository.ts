@@ -60,11 +60,13 @@ export class RentalUnitRepository extends BaseRepository<typeof rentalUnits, Ren
     floorNumber: number,
     unitNumber: number,
     monthlyRent: number,
-    unitType: RentalUnitType = 'residential'
+    unitType: RentalUnitType = 'residential',
+    cityId?: string
   ): Promise<RentalUnit> {
     const id = this.generateId();
     await this.db.insert(rentalUnits).values({
       id,
+      cityId: cityId || '',
       buildingId,
       floorNumber,
       unitNumber,

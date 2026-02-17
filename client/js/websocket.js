@@ -22,6 +22,11 @@ export function connectWebSocket(onMessage) {
     console.log("[WebSocket] Connected");
     reconnectAttempts = 0;
     updateConnectionStatus(true);
+
+    // Subscribe to current city if set
+    if (state.currentCityId) {
+      subscribeToCityWs(state.currentCityId);
+    }
   };
 
   ws.onclose = () => {
@@ -284,5 +289,17 @@ export function sendMessage(type, data) {
   const { ws } = state;
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type, data }));
+  }
+}
+
+/**
+ * Subscribe to a specific city's updates
+ */
+export function subscribeToCityWs(cityId) {
+  sendMessage('subscribe_city', { cityId });
+  // Also set it as a top-level field for server parsing
+  const { ws } = state;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'subscribe_city', cityId }));
   }
 }

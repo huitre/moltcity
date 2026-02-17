@@ -3,6 +3,7 @@
 // ============================================
 
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 
 // Activity types
 export type ActivityType =
@@ -26,6 +27,7 @@ export type ActivityType =
 // Activities
 export const activities = sqliteTable('activities', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').references(() => city.id),
   type: text('type').notNull(), // ActivityType
   actorId: text('actor_id'), // agent or user who performed the action
   actorName: text('actor_name').notNull(),
@@ -35,6 +37,7 @@ export const activities = sqliteTable('activities', {
 }, (table) => [
   index('idx_activities_created_at').on(table.createdAt),
   index('idx_activities_type').on(table.type),
+  index('idx_activities_city').on(table.cityId),
 ]);
 
 // Type exports

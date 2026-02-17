@@ -3,6 +3,7 @@
 // ============================================
 
 import { sqliteTable, text, integer, index, unique } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 import { users } from './auth.js';
 
 // Election status
@@ -11,6 +12,7 @@ export type ElectionStatus = 'nomination' | 'voting' | 'completed';
 // Mayor Elections
 export const mayorElections = sqliteTable('mayor_elections', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   status: text('status').notNull(), // ElectionStatus
   nominationStart: integer('nomination_start', { mode: 'timestamp' }).notNull(),
   votingStart: integer('voting_start', { mode: 'timestamp' }),
@@ -20,6 +22,7 @@ export const mayorElections = sqliteTable('mayor_elections', {
 }, (table) => [
   index('idx_elections_status').on(table.status),
   index('idx_elections_created_at').on(table.createdAt),
+  index('idx_elections_city').on(table.cityId),
 ]);
 
 // Election Candidates

@@ -3333,7 +3333,8 @@
 
     <div id="top-bar">
       <div class="topbar-group">
-        <span class="tb-title">MoltCity</span>
+        <span class="tb-title" id="city-name-display">MoltCity</span>
+        <span id="city-selector" style="display:none"></span>
         <span class="tb-stat dim"
           ><span class="tb-icon">🕐</span
           ><span class="tb-val" id="time-display">08:00</span></span
@@ -3698,6 +3699,20 @@
       // TOOLBAR FUNCTIONALITY
       // ============================================
 
+      // Helper: append cityId query param to a URL
+      function withCityParam(url) {
+        const cid = window.__currentCityId;
+        if (!cid) return url;
+        const sep = url.includes('?') ? '&' : '?';
+        return url + sep + 'cityId=' + encodeURIComponent(cid);
+      }
+      // Helper: add cityId to a request body object
+      function bodyWithCityId(obj) {
+        const cid = window.__currentCityId;
+        if (cid) obj.cityId = cid;
+        return obj;
+      }
+
       let activePopup = null;
 
       function closePopup(popupId) {
@@ -3760,7 +3775,7 @@
           "toolbar-leaderboard-content",
         );
         try {
-          const res = await fetch("/api/leaderboard?sort=netWorth&limit=10");
+          const res = await fetch(withCityParam("/api/leaderboard?sort=netWorth&limit=10"));
           if (!res.ok) throw new Error("Failed to load");
           const data = await res.json();
 
@@ -3795,7 +3810,7 @@
         try {
           const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const res = await fetch("/api/election", { headers });
+          const res = await fetch(withCityParam("/api/election"), { headers });
 
           if (!res.ok) throw new Error("Failed to load");
           const data = await res.json();
@@ -3862,7 +3877,7 @@
       async function loadToolbarActivity() {
         const container = document.getElementById("toolbar-activity-list");
         try {
-          const res = await fetch("/api/activity?limit=20");
+          const res = await fetch(withCityParam("/api/activity?limit=20"));
           if (!res.ok) throw new Error("Failed to load");
           const data = await res.json();
 
@@ -4000,8 +4015,8 @@
           const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const [statsRes, buildingsRes] = await Promise.all([
-            fetch("/api/city/stats", { headers }).then((r) => r.json()),
-            fetch("/api/buildings", { headers }).then((r) => r.json()),
+            fetch(withCityParam("/api/city/stats"), { headers }).then((r) => r.json()),
+            fetch(withCityParam("/api/buildings"), { headers }).then((r) => r.json()),
           ]);
 
           const buildings = buildingsRes.buildings || [];
@@ -4155,7 +4170,7 @@
         const token = localStorage.getItem("agentcity_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         try {
-          const res = await fetch("/api/economy/budget", { headers });
+          const res = await fetch(withCityParam("/api/economy/budget"), { headers });
           if (!res.ok) throw new Error("Failed to load");
           budgetData = await res.json();
           renderBudget(budgetData);
@@ -4326,11 +4341,11 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
+            body: JSON.stringify(bodyWithCityId({
               taxRateR: parseInt(document.getElementById("tax-r").value),
               taxRateC: parseInt(document.getElementById("tax-c").value),
               taxRateI: parseInt(document.getElementById("tax-i").value),
-            }),
+            })),
           })
             .then(() => {
               setTimeout(() => {
@@ -4369,7 +4384,7 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ [dept]: parseInt(slider.value) }),
+            body: JSON.stringify(bodyWithCityId({ [dept]: parseInt(slider.value) })),
           })
             .then(() => {
               setTimeout(() => {
@@ -4395,7 +4410,7 @@
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ordinanceId: ordId, enabled: !isOn }),
+          body: JSON.stringify(bodyWithCityId({ ordinanceId: ordId, enabled: !isOn })),
         })
           .then(() => loadToolbarBudget())
           .catch(() => el.classList.toggle("on"));
@@ -4413,7 +4428,7 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: "{}",
+            body: JSON.stringify(bodyWithCityId({})),
           })
             .then((r) => r.json())
             .then((data) => {
@@ -4437,7 +4452,7 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ bondId }),
+            body: JSON.stringify(bodyWithCityId({ bondId })),
           })
             .then((r) => r.json())
             .then((data) => {

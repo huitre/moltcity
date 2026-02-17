@@ -4,7 +4,7 @@
 // Runs daily (hour === 2). Evolves zone buildings in density
 // based on land value and demand balance.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { ZONE_EVOLUTION } from '../config/game.js';
 import { DemandCalculator } from './demand.calculator.js';
 import type { CityTime, BuildingType } from '../models/types.js';
@@ -14,7 +14,7 @@ export class ZoneEvolutionSimulator {
   private lastProcessedDay: number = 0;
   private demandCalculator: DemandCalculator;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {
+  constructor(private db: SimulationDb, private log?: ActivityLogger) {
     this.demandCalculator = new DemandCalculator(db);
   }
 

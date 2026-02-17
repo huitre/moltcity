@@ -255,12 +255,11 @@ export interface CityEconomy {
 export interface City {
   id: string;
   name: string;
-  gridWidth: number;
-  gridHeight: number;
+  createdBy: string | null;
   time: CityTime;
   stats: CityStats;
   economy: CityEconomy;
-  mayor: string | null; // agentId
+  mayor: string | null; // userId
 }
 
 // === Events ===

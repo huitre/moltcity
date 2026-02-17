@@ -22,19 +22,64 @@ export function createDatabase(): Database.Database {
     CREATE TABLE IF NOT EXISTS city (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      grid_width INTEGER NOT NULL DEFAULT 100,
-      grid_height INTEGER NOT NULL DEFAULT 100,
+      created_by TEXT,
       tick INTEGER NOT NULL DEFAULT 0,
       hour INTEGER NOT NULL DEFAULT 8,
       day INTEGER NOT NULL DEFAULT 1,
       year INTEGER NOT NULL DEFAULT 1,
       mayor_id TEXT,
-      treasury REAL NOT NULL DEFAULT 0
+      treasury REAL NOT NULL DEFAULT 10000,
+      tax_rate_r REAL NOT NULL DEFAULT 7,
+      tax_rate_c REAL NOT NULL DEFAULT 7,
+      tax_rate_i REAL NOT NULL DEFAULT 7,
+      ordinances TEXT NOT NULL DEFAULT '[]',
+      bonds TEXT NOT NULL DEFAULT '[]',
+      department_funding TEXT NOT NULL DEFAULT '{"police":100,"fire":100,"health":100,"education":100,"transit":100}',
+      budget_ytd TEXT NOT NULL DEFAULT '{"revenues":{"propertyTaxR":0,"propertyTaxC":0,"propertyTaxI":0,"ordinances":0},"expenses":{"police":0,"fire":0,"health":0,"education":0,"transit":0,"bondInterest":0}}',
+      credit_rating TEXT NOT NULL DEFAULT 'A'
     );
+
+    -- Auth tables
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT,
+      name TEXT NOT NULL,
+      avatar_url TEXT,
+      email_verified INTEGER NOT NULL DEFAULT 0,
+      google_id TEXT UNIQUE,
+      wallet_address TEXT,
+      moltbook_id TEXT,
+      agent_id TEXT,
+      role TEXT NOT NULL DEFAULT 'user',
+      created_at INTEGER NOT NULL,
+      last_login_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      token TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      revoked_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+
+    CREATE TABLE IF NOT EXISTS token_blacklist (
+      token TEXT PRIMARY KEY,
+      blacklisted_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_blacklist_expires ON token_blacklist(expires_at);
 
     -- Land parcels
     CREATE TABLE IF NOT EXISTS parcels (
       id TEXT PRIMARY KEY,
+      city_id TEXT REFERENCES city(id),
       x INTEGER NOT NULL,
       y INTEGER NOT NULL,
       terrain TEXT NOT NULL DEFAULT 'land',
@@ -42,14 +87,17 @@ export function createDatabase(): Database.Database {
       owner_id TEXT,
       purchase_price REAL,
       purchase_date INTEGER,
+      land_value REAL NOT NULL DEFAULT 50,
       UNIQUE(x, y)
     );
     CREATE INDEX IF NOT EXISTS idx_parcels_coords ON parcels(x, y);
     CREATE INDEX IF NOT EXISTS idx_parcels_owner ON parcels(owner_id);
+    CREATE INDEX IF NOT EXISTS idx_parcels_city ON parcels(city_id);
 
     -- Buildings
     CREATE TABLE IF NOT EXISTS buildings (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       parcel_id TEXT NOT NULL REFERENCES parcels(id),
       type TEXT NOT NULL,
       name TEXT NOT NULL,
@@ -57,6 +105,7 @@ export function createDatabase(): Database.Database {
       width INTEGER NOT NULL DEFAULT 1,
       height INTEGER NOT NULL DEFAULT 1,
       floors INTEGER NOT NULL DEFAULT 1,
+      density INTEGER NOT NULL DEFAULT 1,
       power_required INTEGER NOT NULL DEFAULT 0,
       water_required INTEGER NOT NULL DEFAULT 0,
       powered INTEGER NOT NULL DEFAULT 0,
@@ -70,10 +119,12 @@ export function createDatabase(): Database.Database {
     );
     CREATE INDEX IF NOT EXISTS idx_buildings_parcel ON buildings(parcel_id);
     CREATE INDEX IF NOT EXISTS idx_buildings_owner ON buildings(owner_id);
+    CREATE INDEX IF NOT EXISTS idx_buildings_city ON buildings(city_id);
 
     -- Roads
     CREATE TABLE IF NOT EXISTS roads (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       parcel_id TEXT NOT NULL REFERENCES parcels(id),
       direction TEXT NOT NULL,
       lanes INTEGER NOT NULL DEFAULT 2,
@@ -81,10 +132,12 @@ export function createDatabase(): Database.Database {
       speed_limit INTEGER NOT NULL DEFAULT 50
     );
     CREATE INDEX IF NOT EXISTS idx_roads_parcel ON roads(parcel_id);
+    CREATE INDEX IF NOT EXISTS idx_roads_city ON roads(city_id);
 
     -- Power plants
     CREATE TABLE IF NOT EXISTS power_plants (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       building_id TEXT NOT NULL REFERENCES buildings(id),
       capacity INTEGER NOT NULL,
       current_output INTEGER NOT NULL DEFAULT 0,
@@ -94,6 +147,7 @@ export function createDatabase(): Database.Database {
     -- Power lines
     CREATE TABLE IF NOT EXISTS power_lines (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       from_x INTEGER NOT NULL,
       from_y INTEGER NOT NULL,
       to_x INTEGER NOT NULL,
@@ -102,9 +156,22 @@ export function createDatabase(): Database.Database {
       load INTEGER NOT NULL DEFAULT 0
     );
 
+    -- Water pipes
+    CREATE TABLE IF NOT EXISTS water_pipes (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      from_x INTEGER NOT NULL,
+      from_y INTEGER NOT NULL,
+      to_x INTEGER NOT NULL,
+      to_y INTEGER NOT NULL,
+      capacity INTEGER NOT NULL DEFAULT 100,
+      flow INTEGER NOT NULL DEFAULT 0
+    );
+
     -- Agents (citizens)
     CREATE TABLE IF NOT EXISTS agents (
       id TEXT PRIMARY KEY,
+      city_id TEXT REFERENCES city(id),
       name TEXT NOT NULL,
       avatar TEXT,
       home_building_id TEXT REFERENCES buildings(id),
@@ -113,37 +180,40 @@ export function createDatabase(): Database.Database {
       current_y REAL NOT NULL,
       destination_x REAL,
       destination_y REAL,
-      path TEXT, -- JSON array of coordinates
+      path TEXT,
       state TEXT NOT NULL DEFAULT 'idle',
-      schedule TEXT, -- JSON object
+      schedule TEXT,
       wallet_balance REAL NOT NULL DEFAULT 0,
       wallet_currency TEXT NOT NULL DEFAULT 'MOLT',
       moltbook_id TEXT,
       created_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_agents_location ON agents(current_x, current_y);
+    CREATE INDEX IF NOT EXISTS idx_agents_city ON agents(city_id);
 
     -- Vehicles
     CREATE TABLE IF NOT EXISTS vehicles (
       id TEXT PRIMARY KEY,
+      city_id TEXT REFERENCES city(id),
       owner_id TEXT NOT NULL REFERENCES agents(id),
       type TEXT NOT NULL,
       position_x REAL NOT NULL,
       position_y REAL NOT NULL,
       destination_x REAL,
       destination_y REAL,
-      path TEXT, -- JSON array of coordinates
+      path TEXT,
       speed REAL NOT NULL DEFAULT 1,
       sprite TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_vehicles_position ON vehicles(position_x, position_y);
+    CREATE INDEX IF NOT EXISTS idx_vehicles_city ON vehicles(city_id);
 
     -- City events log
     CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT NOT NULL,
       timestamp INTEGER NOT NULL,
-      data TEXT -- JSON
+      data TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
     CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
@@ -151,6 +221,7 @@ export function createDatabase(): Database.Database {
     -- Rental units
     CREATE TABLE IF NOT EXISTS rental_units (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       building_id TEXT NOT NULL REFERENCES buildings(id),
       floor_number INTEGER NOT NULL,
       unit_number INTEGER NOT NULL,
@@ -168,6 +239,7 @@ export function createDatabase(): Database.Database {
     -- Rent warnings
     CREATE TABLE IF NOT EXISTS rent_warnings (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       unit_id TEXT NOT NULL REFERENCES rental_units(id),
       tenant_id TEXT NOT NULL REFERENCES agents(id),
       amount_owed REAL NOT NULL,
@@ -182,6 +254,7 @@ export function createDatabase(): Database.Database {
     -- Court cases
     CREATE TABLE IF NOT EXISTS court_cases (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       warning_id TEXT REFERENCES rent_warnings(id),
       defendant_id TEXT NOT NULL REFERENCES agents(id),
       plaintiff_id TEXT NOT NULL,
@@ -199,6 +272,7 @@ export function createDatabase(): Database.Database {
     -- Jail inmates
     CREATE TABLE IF NOT EXISTS jail_inmates (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       agent_id TEXT NOT NULL REFERENCES agents(id),
       case_id TEXT REFERENCES court_cases(id),
       check_in INTEGER NOT NULL,
@@ -209,10 +283,11 @@ export function createDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_jail_inmates_status ON jail_inmates(status);
   `);
 
-  // Crime & fire tables
+  // Crime, fire & public safety tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS crimes (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       type TEXT NOT NULL,
       parcel_id TEXT NOT NULL,
       location_x REAL NOT NULL,
@@ -226,21 +301,26 @@ export function createDatabase(): Database.Database {
       status TEXT NOT NULL DEFAULT 'active'
     );
     CREATE INDEX IF NOT EXISTS idx_crimes_status ON crimes(status);
+    CREATE INDEX IF NOT EXISTS idx_crimes_city ON crimes(city_id);
 
     CREATE TABLE IF NOT EXISTS police_officers (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       station_id TEXT NOT NULL,
       name TEXT NOT NULL,
       current_x REAL NOT NULL,
       current_y REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'available',
       assigned_crime_id TEXT,
+      patrol_route TEXT,
       created_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_officers_station ON police_officers(station_id);
+    CREATE INDEX IF NOT EXISTS idx_officers_city ON police_officers(city_id);
 
     CREATE TABLE IF NOT EXISTS fires (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       building_id TEXT NOT NULL,
       parcel_id TEXT NOT NULL,
       intensity INTEGER NOT NULL DEFAULT 1,
@@ -252,9 +332,11 @@ export function createDatabase(): Database.Database {
       cause TEXT NOT NULL DEFAULT 'accident'
     );
     CREATE INDEX IF NOT EXISTS idx_fires_status ON fires(status);
+    CREATE INDEX IF NOT EXISTS idx_fires_city ON fires(city_id);
 
     CREATE TABLE IF NOT EXISTS firefighters (
       id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
       station_id TEXT NOT NULL,
       name TEXT NOT NULL,
       current_x REAL NOT NULL,
@@ -265,20 +347,107 @@ export function createDatabase(): Database.Database {
       created_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_firefighters_station ON firefighters(station_id);
-  `);
+    CREATE INDEX IF NOT EXISTS idx_firefighters_city ON firefighters(city_id);
 
-  // Migrations: add new columns (safe to retry - fails silently if column exists)
-  try { db.exec(`ALTER TABLE parcels ADD COLUMN land_value REAL NOT NULL DEFAULT 50`); } catch (_) {}
-  try { db.exec(`ALTER TABLE buildings ADD COLUMN density INTEGER NOT NULL DEFAULT 1`); } catch (_) {}
-  // Economy migrations
-  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_r REAL NOT NULL DEFAULT 7`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_c REAL NOT NULL DEFAULT 7`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN tax_rate_i REAL NOT NULL DEFAULT 7`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN ordinances TEXT NOT NULL DEFAULT '[]'`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN bonds TEXT NOT NULL DEFAULT '[]'`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN department_funding TEXT NOT NULL DEFAULT '{"police":100,"fire":100,"health":100,"education":100,"transit":100}'`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN budget_ytd TEXT NOT NULL DEFAULT '{"revenues":{"propertyTaxR":0,"propertyTaxC":0,"propertyTaxI":0,"ordinances":0},"expenses":{"police":0,"fire":0,"health":0,"education":0,"transit":0,"bondInterest":0}}'`); } catch (_) {}
-  try { db.exec(`ALTER TABLE city ADD COLUMN credit_rating TEXT NOT NULL DEFAULT 'A'`); } catch (_) {}
+    -- Schools
+    CREATE TABLE IF NOT EXISTS schools (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      building_id TEXT NOT NULL REFERENCES buildings(id),
+      school_type TEXT NOT NULL,
+      capacity INTEGER NOT NULL,
+      enrolled_count INTEGER NOT NULL DEFAULT 0,
+      education_bonus INTEGER NOT NULL DEFAULT 0
+    );
+
+    -- Garbage/Sanitation
+    CREATE TABLE IF NOT EXISTS garbage_depots (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      building_id TEXT NOT NULL REFERENCES buildings(id),
+      truck_count INTEGER NOT NULL DEFAULT 2,
+      collection_routes TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS parcel_sanitation (
+      parcel_id TEXT PRIMARY KEY REFERENCES parcels(id),
+      garbage_level INTEGER NOT NULL DEFAULT 0,
+      last_collected INTEGER
+    );
+
+    -- Life events
+    CREATE TABLE IF NOT EXISTS life_events (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      agent_id TEXT NOT NULL REFERENCES agents(id),
+      type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      effect_amount INTEGER NOT NULL DEFAULT 0,
+      occurred_at INTEGER NOT NULL
+    );
+
+    -- Residents (population)
+    CREATE TABLE IF NOT EXISTS residents (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      name TEXT NOT NULL,
+      home_building_id TEXT REFERENCES buildings(id),
+      work_building_id TEXT,
+      salary REAL NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_residents_home ON residents(home_building_id);
+    CREATE INDEX IF NOT EXISTS idx_residents_work ON residents(work_building_id);
+    CREATE INDEX IF NOT EXISTS idx_residents_city ON residents(city_id);
+
+    -- Activities feed
+    CREATE TABLE IF NOT EXISTS activities (
+      id TEXT PRIMARY KEY,
+      city_id TEXT REFERENCES city(id),
+      type TEXT NOT NULL,
+      actor_id TEXT,
+      actor_name TEXT NOT NULL,
+      message TEXT NOT NULL,
+      metadata TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at);
+    CREATE INDEX IF NOT EXISTS idx_activities_type ON activities(type);
+    CREATE INDEX IF NOT EXISTS idx_activities_city ON activities(city_id);
+
+    -- Elections
+    CREATE TABLE IF NOT EXISTS mayor_elections (
+      id TEXT PRIMARY KEY,
+      city_id TEXT NOT NULL REFERENCES city(id),
+      status TEXT NOT NULL DEFAULT 'nomination',
+      nomination_start INTEGER NOT NULL,
+      voting_start INTEGER,
+      voting_end INTEGER,
+      winner_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_elections_status ON mayor_elections(status);
+    CREATE INDEX IF NOT EXISTS idx_elections_city ON mayor_elections(city_id);
+
+    CREATE TABLE IF NOT EXISTS election_candidates (
+      id TEXT PRIMARY KEY,
+      election_id TEXT NOT NULL REFERENCES mayor_elections(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      platform TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_candidates_election ON election_candidates(election_id);
+
+    CREATE TABLE IF NOT EXISTS votes (
+      id TEXT PRIMARY KEY,
+      election_id TEXT NOT NULL REFERENCES mayor_elections(id),
+      voter_id TEXT NOT NULL REFERENCES users(id),
+      candidate_id TEXT NOT NULL REFERENCES election_candidates(id),
+      created_at INTEGER NOT NULL,
+      UNIQUE(election_id, voter_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_votes_election ON votes(election_id);
+  `);
 
   return db;
 }
@@ -309,8 +478,7 @@ export class CityRepository {
     return {
       id: row.id,
       name: row.name,
-      gridWidth: row.grid_width,
-      gridHeight: row.grid_height,
+      createdBy: row.created_by || null,
       time: {
         tick: row.tick,
         hour: row.hour,
@@ -1385,7 +1553,7 @@ export class PopulationRepository {
 // ============================================
 
 export class CrimeRepository {
-  constructor(private db: Database.Database) {}
+  constructor(protected db: Database.Database) {}
 
   getCrime(id: string): Crime | null {
     const row = this.db.prepare('SELECT * FROM crimes WHERE id = ?').get(id) as any;
@@ -1398,12 +1566,12 @@ export class CrimeRepository {
     return rows.map(r => this.rowToCrime(r));
   }
 
-  createCrime(type: CrimeType, parcelId: string, x: number, y: number, buildingId: string | null, damageAmount: number, tick: number): Crime {
+  createCrime(type: CrimeType, parcelId: string, x: number, y: number, buildingId: string | null, damageAmount: number, tick: number, cityId?: string): Crime {
     const id = crypto.randomUUID();
     this.db.prepare(`
-      INSERT INTO crimes (id, type, parcel_id, location_x, location_y, building_id, damage_amount, reported_at, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
-    `).run(id, type, parcelId, x, y, buildingId, damageAmount, tick);
+      INSERT INTO crimes (id, city_id, type, parcel_id, location_x, location_y, building_id, damage_amount, reported_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+    `).run(id, cityId || '', type, parcelId, x, y, buildingId, damageAmount, tick);
     return this.getCrime(id)!;
   }
 
@@ -1415,7 +1583,7 @@ export class CrimeRepository {
     this.db.prepare('UPDATE crimes SET status = ?, resolved_at = ? WHERE id = ?').run('resolved', tick, crimeId);
   }
 
-  private rowToCrime(row: any): Crime {
+  protected rowToCrime(row: any): Crime {
     return {
       id: row.id,
       type: row.type as CrimeType,
@@ -1437,7 +1605,7 @@ export class CrimeRepository {
 // ============================================
 
 export class PoliceOfficerRepository {
-  constructor(private db: Database.Database) {}
+  constructor(protected db: Database.Database) {}
 
   getOfficer(id: string): PoliceOfficer | null {
     const row = this.db.prepare('SELECT * FROM police_officers WHERE id = ?').get(id) as any;
@@ -1460,12 +1628,12 @@ export class PoliceOfficerRepository {
     return rows.map(r => this.rowToOfficer(r));
   }
 
-  createOfficer(stationId: string, name: string, x: number, y: number): PoliceOfficer {
+  createOfficer(stationId: string, name: string, x: number, y: number, cityId?: string): PoliceOfficer {
     const id = crypto.randomUUID();
     this.db.prepare(`
-      INSERT INTO police_officers (id, station_id, name, current_x, current_y, status, created_at)
-      VALUES (?, ?, ?, ?, ?, 'available', ?)
-    `).run(id, stationId, name, x, y, Date.now());
+      INSERT INTO police_officers (id, city_id, station_id, name, current_x, current_y, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'available', ?)
+    `).run(id, cityId || '', stationId, name, x, y, Date.now());
     return this.getOfficer(id)!;
   }
 
@@ -1481,7 +1649,7 @@ export class PoliceOfficerRepository {
     this.db.prepare('UPDATE police_officers SET current_x = ?, current_y = ? WHERE id = ?').run(x, y, officerId);
   }
 
-  private rowToOfficer(row: any): PoliceOfficer {
+  protected rowToOfficer(row: any): PoliceOfficer {
     return {
       id: row.id,
       stationId: row.station_id,
@@ -1499,7 +1667,7 @@ export class PoliceOfficerRepository {
 // ============================================
 
 export class FireRepository {
-  constructor(private db: Database.Database) {}
+  constructor(protected db: Database.Database) {}
 
   getFire(id: string): Fire | null {
     const row = this.db.prepare('SELECT * FROM fires WHERE id = ?').get(id) as any;
@@ -1512,12 +1680,12 @@ export class FireRepository {
     return rows.map(r => this.rowToFire(r));
   }
 
-  createFire(buildingId: string, parcelId: string, cause: string, tick: number): Fire {
+  createFire(buildingId: string, parcelId: string, cause: string, tick: number, cityId?: string): Fire {
     const id = crypto.randomUUID();
     this.db.prepare(`
-      INSERT INTO fires (id, building_id, parcel_id, intensity, spread_chance, started_at, status, cause)
-      VALUES (?, ?, ?, 1, 20, ?, 'burning', ?)
-    `).run(id, buildingId, parcelId, tick, cause);
+      INSERT INTO fires (id, city_id, building_id, parcel_id, intensity, spread_chance, started_at, status, cause)
+      VALUES (?, ?, ?, ?, 1, 20, ?, 'burning', ?)
+    `).run(id, cityId || '', buildingId, parcelId, tick, cause);
     return this.getFire(id)!;
   }
 
@@ -1533,7 +1701,7 @@ export class FireRepository {
     this.db.prepare('UPDATE fires SET status = ?, contained_at = ? WHERE id = ?').run('contained', tick, fireId);
   }
 
-  private rowToFire(row: any): Fire {
+  protected rowToFire(row: any): Fire {
     return {
       id: row.id,
       buildingId: row.building_id,
@@ -1554,7 +1722,7 @@ export class FireRepository {
 // ============================================
 
 export class FirefighterRepository {
-  constructor(private db: Database.Database) {}
+  constructor(protected db: Database.Database) {}
 
   getFirefighter(id: string): Firefighter | null {
     const row = this.db.prepare('SELECT * FROM firefighters WHERE id = ?').get(id) as any;
@@ -1577,12 +1745,12 @@ export class FirefighterRepository {
     return rows.map(r => this.rowToFirefighter(r));
   }
 
-  createFirefighter(stationId: string, name: string, x: number, y: number): Firefighter {
+  createFirefighter(stationId: string, name: string, x: number, y: number, cityId?: string): Firefighter {
     const id = crypto.randomUUID();
     this.db.prepare(`
-      INSERT INTO firefighters (id, station_id, name, current_x, current_y, status, created_at)
-      VALUES (?, ?, ?, ?, ?, 'available', ?)
-    `).run(id, stationId, name, x, y, Date.now());
+      INSERT INTO firefighters (id, city_id, station_id, name, current_x, current_y, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'available', ?)
+    `).run(id, cityId || '', stationId, name, x, y, Date.now());
     return this.getFirefighter(id)!;
   }
 
@@ -1602,7 +1770,7 @@ export class FirefighterRepository {
     this.db.prepare('UPDATE firefighters SET current_x = ?, current_y = ? WHERE id = ?').run(x, y, firefighterId);
   }
 
-  private rowToFirefighter(row: any): Firefighter {
+  protected rowToFirefighter(row: any): Firefighter {
     return {
       id: row.id,
       stationId: row.station_id,

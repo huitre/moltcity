@@ -11,6 +11,8 @@ declare module 'fastify' {
   interface FastifyInstance {
     wsClients: Set<WebSocket>;
     broadcast: (event: string, data: unknown) => void;
+    broadcastToCity: (cityId: string, event: string, data: unknown) => void;
+    clientCities: Map<WebSocket, string>;
   }
 }
 
@@ -26,11 +28,25 @@ const websocketPluginImpl: FastifyPluginAsync = async (fastify) => {
   const wsClients = new Set<WebSocket>();
   fastify.decorate('wsClients', wsClients);
 
-  // Broadcast helper
+  // Track which city each client is subscribed to
+  const clientCities = new Map<WebSocket, string>();
+  fastify.decorate('clientCities', clientCities);
+
+  // Broadcast to ALL clients (global events like players_update)
   fastify.decorate('broadcast', (event: string, data: unknown) => {
     const message = JSON.stringify({ event, data });
     for (const client of wsClients) {
       if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(message);
+      }
+    }
+  });
+
+  // Broadcast to clients subscribed to a specific city
+  fastify.decorate('broadcastToCity', (cityId: string, event: string, data: unknown) => {
+    const message = JSON.stringify({ event, data: { ...data as Record<string, unknown>, cityId } });
+    for (const client of wsClients) {
+      if (client.readyState === 1 && clientCities.get(client) === cityId) {
         client.send(message);
       }
     }
@@ -49,6 +65,7 @@ const websocketPluginImpl: FastifyPluginAsync = async (fastify) => {
 
     socket.on('close', () => {
       wsClients.delete(socket);
+      clientCities.delete(socket);
       fastify.log.info(`WebSocket client disconnected. Total: ${wsClients.size}`);
       broadcastPlayerCount();
     });
@@ -56,6 +73,7 @@ const websocketPluginImpl: FastifyPluginAsync = async (fastify) => {
     socket.on('error', (err) => {
       fastify.log.error({ err }, 'WebSocket error');
       wsClients.delete(socket);
+      clientCities.delete(socket);
     });
 
     // Handle incoming messages
@@ -63,9 +81,20 @@ const websocketPluginImpl: FastifyPluginAsync = async (fastify) => {
       try {
         const data = JSON.parse(message.toString());
         fastify.log.debug('WebSocket message received:', data);
+
         // Handle ping/pong for keepalive
         if (data.type === 'ping') {
           socket.send(JSON.stringify({ type: 'pong' }));
+        }
+
+        // Handle city subscription
+        if (data.type === 'subscribe_city' && data.cityId) {
+          clientCities.set(socket, data.cityId);
+          fastify.log.info(`Client subscribed to city ${data.cityId}`);
+          socket.send(JSON.stringify({
+            event: 'city_subscribed',
+            data: { cityId: data.cityId },
+          }));
         }
       } catch {
         fastify.log.warn('Invalid WebSocket message received');

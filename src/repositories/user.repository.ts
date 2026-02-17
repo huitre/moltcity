@@ -7,7 +7,7 @@ import { BaseRepository } from './base.repository.js';
 import { users, tokenBlacklist, type UserRow, type UserInsert } from '../db/schema/auth.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 
-export type UserRole = 'user' | 'admin' | 'mayor';
+export type UserRole = 'user' | 'admin';
 
 export interface User {
   id: string;

@@ -4,6 +4,7 @@
 
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import {
   registerSchema,
   loginSchema,
@@ -62,10 +63,12 @@ export const authController: FastifyPluginAsync = async (fastify) => {
     // Strip sensitive fields before returning
     const { passwordHash, ...safeUser } = user;
 
-    // Include city treasury for mayor/admin
+    // Include city treasury for admin (mayor is per-city, checked on client)
     let treasury: number | undefined;
-    if (user.role === 'mayor' || user.role === 'admin') {
-      const city = fastify.legacyDb.city.getCity();
+    if (user.role === 'admin') {
+      const cityRepo = new CityRepository(fastify.db);
+      const cityId = (request.query as Record<string, string>)?.cityId;
+      const city = await cityRepo.getCity(cityId);
       if (city) treasury = city.stats.treasury;
     }
 

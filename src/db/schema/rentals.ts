@@ -3,12 +3,14 @@
 // ============================================
 
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 import { buildings } from './buildings.js';
 import { agents } from './agents.js';
 
 // Rental Units
 export const rentalUnits = sqliteTable('rental_units', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   buildingId: text('building_id').notNull().references(() => buildings.id),
   floorNumber: integer('floor_number').notNull(),
   unitNumber: integer('unit_number').notNull(),
@@ -22,11 +24,13 @@ export const rentalUnits = sqliteTable('rental_units', {
   index('idx_rental_units_building').on(table.buildingId),
   index('idx_rental_units_tenant').on(table.tenantId),
   index('idx_rental_units_status').on(table.status),
+  index('idx_rental_units_city').on(table.cityId),
 ]);
 
 // Rent Warnings
 export const rentWarnings = sqliteTable('rent_warnings', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   unitId: text('unit_id').notNull().references(() => rentalUnits.id),
   tenantId: text('tenant_id').notNull().references(() => agents.id),
   amountOwed: real('amount_owed').notNull(),
@@ -37,11 +41,13 @@ export const rentWarnings = sqliteTable('rent_warnings', {
 }, (table) => [
   index('idx_rent_warnings_tenant').on(table.tenantId),
   index('idx_rent_warnings_status').on(table.status),
+  index('idx_rent_warnings_city').on(table.cityId),
 ]);
 
 // Court Cases
 export const courtCases = sqliteTable('court_cases', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   warningId: text('warning_id').references(() => rentWarnings.id),
   defendantId: text('defendant_id').notNull().references(() => agents.id),
   plaintiffId: text('plaintiff_id').notNull(),
@@ -55,11 +61,13 @@ export const courtCases = sqliteTable('court_cases', {
 }, (table) => [
   index('idx_court_cases_defendant').on(table.defendantId),
   index('idx_court_cases_status').on(table.status),
+  index('idx_court_cases_city').on(table.cityId),
 ]);
 
 // Jail Inmates
 export const jailInmates = sqliteTable('jail_inmates', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   agentId: text('agent_id').notNull().references(() => agents.id),
   caseId: text('case_id').references(() => courtCases.id),
   checkIn: integer('check_in').notNull(),
@@ -68,6 +76,7 @@ export const jailInmates = sqliteTable('jail_inmates', {
 }, (table) => [
   index('idx_jail_inmates_agent').on(table.agentId),
   index('idx_jail_inmates_status').on(table.status),
+  index('idx_jail_inmates_city').on(table.cityId),
 ]);
 
 // Type exports

@@ -5,6 +5,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { ActivityService } from '../services/activity.service.js';
 import { getActivitiesQuerySchema } from '../schemas/activity.schema.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const activityController: FastifyPluginAsync = async (fastify) => {
   const activityService = new ActivityService(fastify.db, fastify);
@@ -12,7 +13,8 @@ export const activityController: FastifyPluginAsync = async (fastify) => {
   // Get recent activities
   const getActivities = async (request: any) => {
     const query = getActivitiesQuerySchema.parse(request.query);
-    const activities = await activityService.getRecentActivities(query.limit);
+    const cityId = extractOptionalCityId(request);
+    const activities = await activityService.getRecentActivities(query.limit, cityId);
 
     return {
       activities: activities.map(a => ({

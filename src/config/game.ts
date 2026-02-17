@@ -314,27 +314,27 @@ export const ADMIN_ONLY_BUILDING_TYPES = MAYOR_ONLY_BUILDING_TYPES;
 // Helper Functions
 // ============================================
 
-export type UserRole = 'user' | 'admin' | 'mayor';
+export type UserRole = 'user' | 'admin';
 
 export function isAdminOnlyBuilding(type: BuildingType): boolean {
   return MAYOR_ONLY_BUILDING_TYPES.includes(type);
 }
 
-export function canUserBuild(type: BuildingType, role: UserRole): boolean {
-  if (role === 'admin' || role === 'mayor') return true;
+export function canUserBuild(type: BuildingType, role: UserRole, isMayor: boolean): boolean {
+  if (role === 'admin' || isMayor) return true;
   return USER_BUILDING_TYPES.includes(type);
 }
 
-export function hasElevatedPrivileges(role: UserRole): boolean {
-  return role === 'admin' || role === 'mayor';
+export function hasElevatedPrivileges(role: UserRole, isMayor: boolean = false): boolean {
+  return role === 'admin' || isMayor;
 }
 
-export function getMaxParcels(role: UserRole): number {
-  return hasElevatedPrivileges(role) ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER;
+export function getMaxParcels(role: UserRole, isMayor: boolean = false): number {
+  return hasElevatedPrivileges(role, isMayor) ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER;
 }
 
-export function getBuildingLimit(type: BuildingType, role: UserRole): number {
-  if (hasElevatedPrivileges(role)) return 1000;
+export function getBuildingLimit(type: BuildingType, role: UserRole, isMayor: boolean = false): number {
+  if (hasElevatedPrivileges(role, isMayor)) return 1000;
   return BUILDING_LIMITS[type] ?? 10;
 }
 

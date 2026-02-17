@@ -11,14 +11,14 @@ import { getDrizzleDb, type DrizzleDb } from './db/drizzle.js';
 import { corsPlugin, websocketPlugin, errorHandlerPlugin, authPlugin, simulationPlugin } from './plugins/index.js';
 import { registerControllers } from './controllers/index.js';
 import type { SimulationEngine } from './simulation/engine.js';
-import type { DatabaseManager } from './models/database.js';
+import type { LegacyDatabaseManagerAdapter } from './simulation/engine.adapter.js';
 
 // Extend Fastify types
 declare module 'fastify' {
   interface FastifyInstance {
     db: DrizzleDb;
     simulationEngine: SimulationEngine;
-    legacyDb: DatabaseManager;
+    legacyDb: LegacyDatabaseManagerAdapter;
   }
 }
 

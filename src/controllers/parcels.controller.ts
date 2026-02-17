@@ -11,6 +11,7 @@ import {
   sellParcelSchema,
   setZoningSchema,
 } from '../schemas/parcels.schema.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const parcelsController: FastifyPluginAsync = async (fastify) => {
   const parcelService = new ParcelService(fastify.db, fastify);
@@ -18,11 +19,13 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
   // Get parcels in range
   fastify.get('/api/parcels', async (request) => {
     const query = parcelsRangeQuerySchema.parse(request.query);
+    const cityId = extractOptionalCityId(request);
     const parcels = await parcelService.getParcelsInRange(
       query.minX,
       query.minY,
       query.maxX,
-      query.maxY
+      query.maxY,
+      cityId
     );
     return { parcels };
   });
@@ -55,6 +58,7 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
 
     const body = purchaseParcelSchema.parse(request.body);
     const role = request.user?.role || 'user';
+    const cityId = extractOptionalCityId(request);
 
     const result = await parcelService.purchaseParcel({
       parcelId: body.parcelId,
@@ -66,6 +70,7 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
       createAgent: body.createAgent,
       agentName: body.agentName,
       role,
+      cityId,
     });
 
     reply.status(201);
@@ -93,7 +98,8 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
   // Set zoning
   fastify.post('/api/parcels/zoning', async (request) => {
     const body = setZoningSchema.parse(request.body);
-    const parcel = await parcelService.setZoning(body.parcelId, body.zoning);
+    const cityId = extractOptionalCityId(request);
+    const parcel = await parcelService.setZoning(body.parcelId, body.zoning, cityId);
     return { success: true, parcel };
   });
 };

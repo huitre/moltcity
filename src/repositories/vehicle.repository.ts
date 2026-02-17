@@ -26,12 +26,16 @@ export class VehicleRepository extends BaseRepository<typeof vehicles, VehicleRo
     return results.map(row => this.rowToVehicle(row));
   }
 
-  async getAllVehicles(): Promise<Vehicle[]> {
+  async getAllVehicles(cityId?: string): Promise<Vehicle[]> {
+    if (cityId) {
+      const results = await this.db.select().from(vehicles).where(eq(vehicles.cityId, cityId));
+      return results.map(row => this.rowToVehicle(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToVehicle(row));
   }
 
-  async createVehicle(ownerId: string, type: VehicleType, x: number, y: number): Promise<Vehicle> {
+  async createVehicle(ownerId: string, type: VehicleType, x: number, y: number, cityId?: string): Promise<Vehicle> {
     const id = this.generateId();
     await this.db.insert(vehicles).values({
       id,
@@ -39,6 +43,7 @@ export class VehicleRepository extends BaseRepository<typeof vehicles, VehicleRo
       type,
       positionX: x,
       positionY: y,
+      cityId: cityId || null,
     });
     return (await this.getVehicle(id))!;
   }

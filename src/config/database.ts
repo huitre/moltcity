@@ -7,9 +7,11 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import path from 'path';
 import { env } from './env.js';
 import * as schema from '../db/schema/index.js';
+import { createDatabase } from '../models/database.js';
 
 let db: ReturnType<typeof drizzle> | null = null;
 let sqlite: Database.Database | null = null;
+let tablesInitialized = false;
 
 export function getDbPath(): string {
   return path.isAbsolute(env.DB_PATH)
@@ -17,8 +19,20 @@ export function getDbPath(): string {
     : path.join(process.cwd(), env.DB_PATH);
 }
 
+/**
+ * Ensure legacy tables exist (CREATE TABLE IF NOT EXISTS).
+ * Called once before Drizzle uses the database.
+ */
+function ensureTablesExist(): void {
+  if (tablesInitialized) return;
+  const legacyDb = createDatabase();
+  legacyDb.close();
+  tablesInitialized = true;
+}
+
 export function getSqliteConnection(): Database.Database {
   if (!sqlite) {
+    ensureTablesExist();
     const dbPath = getDbPath();
     sqlite = new Database(dbPath);
     sqlite.pragma('journal_mode = WAL');

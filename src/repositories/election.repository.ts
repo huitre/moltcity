@@ -18,6 +18,7 @@ import type { DrizzleDb } from '../db/drizzle.js';
 
 export interface Election {
   id: string;
+  cityId: string;
   status: ElectionStatus;
   nominationStart: Date;
   votingStart: Date | null;
@@ -46,12 +47,13 @@ export class ElectionRepository extends BaseRepository<typeof mayorElections, Ma
     super(db, mayorElections);
   }
 
-  async createElection(nominationDurationHours: number = 72): Promise<Election> {
+  async createElection(cityId: string, nominationDurationHours: number = 72): Promise<Election> {
     const id = this.generateId();
     const now = new Date();
 
     await this.db.insert(mayorElections).values({
       id,
+      cityId,
       status: 'nomination',
       nominationStart: now,
       createdAt: now,
@@ -59,6 +61,7 @@ export class ElectionRepository extends BaseRepository<typeof mayorElections, Ma
 
     return {
       id,
+      cityId,
       status: 'nomination',
       nominationStart: now,
       votingStart: null,
@@ -68,13 +71,15 @@ export class ElectionRepository extends BaseRepository<typeof mayorElections, Ma
     };
   }
 
-  async getCurrentElection(): Promise<Election | null> {
+  async getCurrentElection(cityId?: string): Promise<Election | null> {
+    const conditions = [sql`${mayorElections.status} IN ('nomination', 'voting')`];
+    if (cityId) {
+      conditions.push(sql`${mayorElections.cityId} = ${cityId}`);
+    }
     const results = await this.db
       .select()
       .from(mayorElections)
-      .where(
-        sql`${mayorElections.status} IN ('nomination', 'voting')`
-      )
+      .where(and(...conditions))
       .orderBy(desc(mayorElections.createdAt))
       .limit(1);
 
@@ -239,6 +244,7 @@ export class ElectionRepository extends BaseRepository<typeof mayorElections, Ma
   private rowToElection(row: MayorElectionRow): Election {
     return {
       id: row.id,
+      cityId: row.cityId,
       status: row.status as ElectionStatus,
       nominationStart: row.nominationStart,
       votingStart: row.votingStart,

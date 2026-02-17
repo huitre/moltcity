@@ -3,9 +3,11 @@
 // ============================================
 
 import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 
 export const parcels = sqliteTable('parcels', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').references(() => city.id),
   x: integer('x').notNull(),
   y: integer('y').notNull(),
   terrain: text('terrain').notNull().default('land'),
@@ -17,6 +19,7 @@ export const parcels = sqliteTable('parcels', {
 }, (table) => [
   uniqueIndex('idx_parcels_coords_unique').on(table.x, table.y),
   index('idx_parcels_owner').on(table.ownerId),
+  index('idx_parcels_city').on(table.cityId),
 ]);
 
 export type ParcelRow = typeof parcels.$inferSelect;

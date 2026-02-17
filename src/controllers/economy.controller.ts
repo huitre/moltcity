@@ -7,33 +7,45 @@ import { SC2K_ECONOMY } from '../config/game.js';
 import type { Bond } from '../models/types.js';
 import { calculateCreditRating } from '../simulation/engine.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import { CityRepository } from '../repositories/city.repository.js';
+import { BuildingRepository } from '../repositories/building.repository.js';
+import { RoadRepository } from '../repositories/road.repository.js';
+import { PowerLineRepository } from '../repositories/infrastructure.repository.js';
+import { WaterPipeRepository } from '../repositories/infrastructure.repository.js';
+import { PopulationRepository } from '../repositories/population.repository.js';
+import { isMayorOfCity, extractCityId, extractOptionalCityId } from '../utils/city-context.js';
 
-// Helper: fetch fresh role from DB (JWT role may be stale after role changes)
-async function getFreshRole(fastify: any, request: any): Promise<string | undefined> {
-  if (request.user?.userId) {
-    const userRepo = new UserRepository(fastify.db);
-    const dbUser = await userRepo.getUser(request.user.userId);
-    return dbUser?.role;
-  }
-  return request.user?.role;
+// Helper: check if user is mayor of city or admin
+async function checkMayorOrAdmin(fastify: any, request: any, city: any): Promise<boolean> {
+  if (!request.user?.userId) return false;
+  const userRepo = new UserRepository(fastify.db);
+  const dbUser = await userRepo.getUser(request.user.userId);
+  if (dbUser?.role === 'admin') return true;
+  return isMayorOfCity(city?.mayor, request.user.userId);
 }
 
 export const economyController: FastifyPluginAsync = async (fastify) => {
+  const cityRepo = new CityRepository(fastify.db);
+  const buildingRepo = new BuildingRepository(fastify.db);
+  const roadRepo = new RoadRepository(fastify.db);
+  const powerLineRepo = new PowerLineRepository(fastify.db);
+  const waterPipeRepo = new WaterPipeRepository(fastify.db);
+  const populationRepo = new PopulationRepository(fastify.db);
 
   // GET /api/economy/budget - Get full budget data
   fastify.get('/api/economy/budget', async (request, reply) => {
     await fastify.optionalAuth(request, reply);
 
-    const city = fastify.legacyDb.city.getCity();
+    const cityId = extractOptionalCityId(request);
+    const city = await cityRepo.getCity(cityId);
     if (!city) return { error: 'City not initialized' };
 
-    const role = await getFreshRole(fastify, request);
-    const isMayor = role === 'mayor' || role === 'admin';
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
 
     // Calculate daily projections for display
-    const buildings = fastify.legacyDb.buildings.getAllBuildings();
+    const buildings = await buildingRepo.getAllBuildings(city.id);
     const completedBuildings = buildings.filter(b => b.constructionProgress >= 100);
-    const residents = fastify.legacyDb.population.getAllResidents();
+    const residents = await populationRepo.getAllResidents(city.id);
     const buildingMap = new Map<string, typeof buildings[0]>();
     for (const b of completedBuildings) buildingMap.set(b.id, b);
 
@@ -72,9 +84,9 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
     const projHealth = countType('hospital') * SC2K_ECONOMY.DEPARTMENTS.health.costPerBuilding * (funding.health / 100) / 365;
     const projEdu = (countType('school') * SC2K_ECONOMY.DEPARTMENTS.education_school.costPerBuilding + countType('university') * SC2K_ECONOMY.DEPARTMENTS.education_university.costPerBuilding) * (funding.education / 100) / 365;
 
-    const roads = fastify.legacyDb.roads.getAllRoads();
-    const powerLines = fastify.legacyDb.powerLines.getAllPowerLines();
-    const waterPipes = fastify.legacyDb.waterPipes.getAllWaterPipes();
+    const roads = await roadRepo.getAllRoads(city.id);
+    const powerLines = await powerLineRepo.getAllPowerLines(city.id);
+    const waterPipes = await waterPipeRepo.getAllWaterPipes(city.id);
     const projTransit = (roads.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.road + powerLines.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.power_line + waterPipes.length * SC2K_ECONOMY.TRANSIT_MAINTENANCE.water_pipe) * (funding.transit / 100) / 365;
 
     let projBondInterest = 0;
@@ -114,13 +126,17 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.put('/api/economy/tax-rates', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = await getFreshRole(fastify, request);
-    if (role !== 'mayor' && role !== 'admin') {
+    const cityId = extractCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) return { error: 'City not initialized' };
+
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
+    if (!isMayor) {
       return { error: 'Only the mayor can set tax rates' };
     }
     const { taxRateR, taxRateC, taxRateI } = request.body as { taxRateR: number; taxRateC: number; taxRateI: number };
     const clamp = (v: number) => Math.max(SC2K_ECONOMY.TAX.MIN_RATE, Math.min(SC2K_ECONOMY.TAX.MAX_RATE, v));
-    fastify.legacyDb.city.updateTaxRates(clamp(taxRateR), clamp(taxRateC), clamp(taxRateI));
+    await cityRepo.updateTaxRates(city.id, clamp(taxRateR), clamp(taxRateC), clamp(taxRateI));
     return { success: true };
   });
 
@@ -128,8 +144,12 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/ordinances', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = await getFreshRole(fastify, request);
-    if (role !== 'mayor' && role !== 'admin') {
+    const cityId = extractCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) return { error: 'City not initialized' };
+
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
+    if (!isMayor) {
       return { error: 'Only the mayor can manage ordinances' };
     }
     const { ordinanceId, enabled } = request.body as { ordinanceId: string; enabled: boolean };
@@ -137,14 +157,11 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
       return { error: 'Unknown ordinance' };
     }
 
-    const city = fastify.legacyDb.city.getCity();
-    if (!city) return { error: 'City not initialized' };
-
     const ordinances = new Set(city.economy.ordinances);
     if (enabled) ordinances.add(ordinanceId);
     else ordinances.delete(ordinanceId);
 
-    fastify.legacyDb.city.updateOrdinances([...ordinances]);
+    await cityRepo.updateOrdinances(city.id, [...ordinances]);
     return { success: true, ordinances: [...ordinances] };
   });
 
@@ -152,13 +169,14 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/bonds/issue', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = await getFreshRole(fastify, request);
-    if (role !== 'mayor' && role !== 'admin') {
+    const cityId = extractCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) return { error: 'City not initialized' };
+
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
+    if (!isMayor) {
       return { error: 'Only the mayor can issue bonds' };
     }
-
-    const city = fastify.legacyDb.city.getCity();
-    if (!city) return { error: 'City not initialized' };
 
     if (city.economy.bonds.length >= SC2K_ECONOMY.BONDS.MAX_BONDS) {
       return { error: `Maximum ${SC2K_ECONOMY.BONDS.MAX_BONDS} bonds allowed` };
@@ -176,15 +194,15 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
     };
 
     const bonds = [...city.economy.bonds, bond];
-    fastify.legacyDb.city.updateBonds(bonds);
+    await cityRepo.updateBonds(city.id, bonds);
 
     // Add bond amount to treasury
-    fastify.legacyDb.city.updateTreasury(city.stats.treasury + bond.amount);
+    await cityRepo.updateTreasury(city.id, city.stats.treasury + bond.amount);
 
     // Recalculate credit rating
-    const buildings = fastify.legacyDb.buildings.getAllBuildings().filter(b => b.constructionProgress >= 100);
+    const buildings = (await buildingRepo.getAllBuildings(city.id)).filter(b => b.constructionProgress >= 100);
     const newRating = calculateCreditRating(city.stats.treasury + bond.amount, bonds, buildings);
-    fastify.legacyDb.city.updateCreditRating(newRating);
+    await cityRepo.updateCreditRating(city.id, newRating);
 
     return { success: true, bond, creditRating: newRating };
   });
@@ -193,14 +211,15 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/economy/bonds/repay', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = await getFreshRole(fastify, request);
-    if (role !== 'mayor' && role !== 'admin') {
+    const cityId = extractCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) return { error: 'City not initialized' };
+
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
+    if (!isMayor) {
       return { error: 'Only the mayor can repay bonds' };
     }
     const { bondId } = request.body as { bondId: string };
-
-    const city = fastify.legacyDb.city.getCity();
-    if (!city) return { error: 'City not initialized' };
 
     const bondIdx = city.economy.bonds.findIndex(b => b.id === bondId);
     if (bondIdx === -1) return { error: 'Bond not found' };
@@ -212,12 +231,12 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
 
     // Remove bond and deduct from treasury
     const bonds = city.economy.bonds.filter(b => b.id !== bondId);
-    fastify.legacyDb.city.updateBonds(bonds);
-    fastify.legacyDb.city.updateTreasury(city.stats.treasury - bond.amount);
+    await cityRepo.updateBonds(city.id, bonds);
+    await cityRepo.updateTreasury(city.id, city.stats.treasury - bond.amount);
 
-    const buildings = fastify.legacyDb.buildings.getAllBuildings().filter(b => b.constructionProgress >= 100);
+    const buildings = (await buildingRepo.getAllBuildings(city.id)).filter(b => b.constructionProgress >= 100);
     const newRating = calculateCreditRating(city.stats.treasury - bond.amount, bonds, buildings);
-    fastify.legacyDb.city.updateCreditRating(newRating);
+    await cityRepo.updateCreditRating(city.id, newRating);
 
     return { success: true, repaid: bond, creditRating: newRating };
   });
@@ -226,13 +245,15 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
   fastify.put('/api/economy/department-funding', {
     preHandler: [fastify.authenticate],
   }, async (request) => {
-    const role = await getFreshRole(fastify, request);
-    if (role !== 'mayor' && role !== 'admin') {
+    const cityId = extractCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) return { error: 'City not initialized' };
+
+    const isMayor = await checkMayorOrAdmin(fastify, request, city);
+    if (!isMayor) {
       return { error: 'Only the mayor can set department funding' };
     }
     const body = request.body as Partial<Record<string, number>>;
-    const city = fastify.legacyDb.city.getCity();
-    if (!city) return { error: 'City not initialized' };
 
     const funding = { ...city.economy.departmentFunding };
     const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
@@ -243,7 +264,7 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
     if (body.education !== undefined) funding.education = clamp(body.education);
     if (body.transit !== undefined) funding.transit = clamp(body.transit);
 
-    fastify.legacyDb.city.updateDepartmentFunding(funding);
+    await cityRepo.updateDepartmentFunding(city.id, funding);
     return { success: true, funding };
   });
 };

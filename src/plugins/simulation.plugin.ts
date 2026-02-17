@@ -5,26 +5,21 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import { SimulationEngine } from '../simulation/engine.js';
-import { DatabaseManager } from '../models/database.js';
+import { LegacyDatabaseManagerAdapter } from '../simulation/engine.adapter.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import { ElectionService } from '../services/election.service.js';
 import { ActivityService } from '../services/activity.service.js';
 import type { ActivityType } from '../db/schema/activity.js';
 import type { CityTime, CityEvent } from '../models/types.js';
 
-// Default grid size
-const DEFAULT_GRID_WIDTH = 50;
-const DEFAULT_GRID_HEIGHT = 50;
-
 declare module 'fastify' {
   interface FastifyInstance {
     simulationEngine: SimulationEngine;
-    legacyDb: DatabaseManager;
+    legacyDb: LegacyDatabaseManagerAdapter;
   }
 }
 
 export interface SimulationPluginOptions {
-  gridWidth?: number;
-  gridHeight?: number;
   autoStart?: boolean;
 }
 
@@ -32,19 +27,16 @@ export interface TickData {
   tick: number;
   time: CityTime;
   events: CityEvent[];
+  cityId: string;
 }
 
 const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async (fastify, options) => {
-  const gridWidth = options.gridWidth || DEFAULT_GRID_WIDTH;
-  const gridHeight = options.gridHeight || DEFAULT_GRID_HEIGHT;
-
-  // Create the legacy DatabaseManager for the simulation engine
-  // This uses the same database file as the Drizzle-based system
-  const legacyDb = new DatabaseManager();
+  // Create the adapter-based DatabaseManager for the simulation engine
+  const legacyDb = new LegacyDatabaseManagerAdapter();
   fastify.decorate('legacyDb', legacyDb);
 
-  // Create the simulation engine
-  const engine = new SimulationEngine(legacyDb, gridWidth, gridHeight);
+  // Create the simulation engine (no gridWidth/gridHeight needed)
+  const engine = new SimulationEngine(legacyDb);
   fastify.decorate('simulationEngine', engine);
 
   // Wire simulation activity logger to the activity feed
@@ -65,9 +57,9 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
   engine.on('tick', (data: TickData) => {
     // Only broadcast every 10 ticks to reduce traffic
     if (data.tick % 10 === 0) {
-      const populationStats = engine.getPopulationStats();
+      const populationStats = engine.getPopulationStats(data.cityId);
 
-      fastify.broadcast('tick', {
+      fastify.broadcastToCity(data.cityId, 'tick', {
         tick: data.tick,
         time: data.time,
         eventCount: data.events.length,
@@ -79,11 +71,11 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
       // Broadcast full population update every 60 ticks (6 seconds)
       if (data.tick - lastPopulationBroadcast >= 60) {
         lastPopulationBroadcast = data.tick;
-        const targetVehicles = engine.getTargetVehicleCount(data.time);
+        const targetVehicles = engine.getTargetVehicleCount(data.time, data.cityId);
 
-        const waterStats = engine.getWaterStats();
+        const waterStats = engine.getWaterStats(data.cityId);
 
-        fastify.broadcast('population_update', {
+        fastify.broadcastToCity(data.cityId, 'population_update', {
           total: populationStats.total,
           employed: populationStats.employed,
           unemployed: populationStats.unemployed,
@@ -93,9 +85,9 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
         });
 
         // Broadcast economy snapshot
-        const city = legacyDb.city.getCity();
+        const city = legacyDb.city.getCity(data.cityId);
         if (city?.economy) {
-          fastify.broadcast('economy_update', {
+          fastify.broadcastToCity(data.cityId, 'economy_update', {
             treasury: city.stats.treasury,
             taxRateR: city.economy.taxRateR,
             taxRateC: city.economy.taxRateC,
@@ -116,13 +108,13 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
       }
     }
 
-    // Broadcast significant events immediately
+    // Broadcast significant events immediately (city-scoped)
     for (const event of data.events) {
       if (event.type === 'agent_arrived' || event.type === 'building_powered') {
-        fastify.broadcast('event', event);
+        fastify.broadcastToCity(data.cityId, 'event', event);
       }
       if (event.type === 'buildings_updated') {
-        fastify.broadcast('buildings_update', event.data);
+        fastify.broadcastToCity(data.cityId, 'buildings_update', event.data);
       }
     }
   });
@@ -131,16 +123,18 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
     fastify.broadcast('day_started', { time });
     fastify.log.info(`Day ${time.day} started (Year ${time.year})`);
 
-    // Auto-start election every 30 days if none is active
+    // Auto-start election every 30 days if none is active — per city
     if (time.day % 30 === 1) {
       try {
-        const status = await electionService.getElectionStatus();
-        if (status.phase === 'none') {
-          await electionService.startElection();
-          fastify.log.info('New election automatically started');
+        const cities = legacyDb.city.getAllCities();
+        for (const city of cities) {
+          const status = await electionService.getElectionStatus(city.id);
+          if (status.phase === 'none') {
+            await electionService.startElection(city.id);
+            fastify.log.info(`New election automatically started for city ${city.name}`);
+          }
         }
       } catch (err) {
-        // Election already in progress or other error - ignore
         fastify.log.debug({ err }, 'Auto-start election skipped');
       }
     }
@@ -163,11 +157,12 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
 
   // Auto-start if configured
   if (options.autoStart) {
-    const city = legacyDb.city.getCity();
-    if (city) {
+    const cityRepo = new CityRepository(fastify.db);
+    const cities = await cityRepo.getAllCities();
+    if (cities.length > 0) {
       engine.start();
     } else {
-      fastify.log.info('City not initialized, simulation will start when city is created');
+      fastify.log.info('No cities exist, simulation will start when a city is created');
     }
   }
 

@@ -17,6 +17,10 @@ export let worldContainer = null;
 // WebSocket
 export let ws = null;
 
+// Multi-city
+export let currentCityId = null;
+export let citiesList = [];
+
 // City data
 export let cityData = null;
 export let parcels = [];
@@ -97,6 +101,8 @@ export let electionCandidates = [];
 export let economyData = null;
 
 // State setters
+export function setCurrentCityId(id) { currentCityId = id; window.__currentCityId = id; }
+export function setCitiesList(list) { citiesList = list; }
 export function setCurrentUser(user) { currentUser = user; }
 export function setCurrentToken(token) { currentToken = token; }
 export function setGameConfig(config) { gameConfig = config; }

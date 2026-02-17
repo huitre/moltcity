@@ -13,6 +13,7 @@ import { NotFoundError, ForbiddenError, InsufficientFundsError } from '../plugin
 import { UserRepository } from '../repositories/user.repository.js';
 import { CityRepository } from '../repositories/city.repository.js';
 import { hasElevatedPrivileges, BUILDING_COSTS, type UserRole } from '../config/game.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   const powerLineRepo = new PowerLineRepository(fastify.db);
@@ -23,8 +24,9 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   // ==========================================
 
   // List power lines
-  fastify.get('/api/infrastructure/power-lines', async () => {
-    const powerLines = await powerLineRepo.getAllPowerLines();
+  fastify.get('/api/infrastructure/power-lines', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const powerLines = await powerLineRepo.getAllPowerLines(cityId);
     return { powerLines };
   });
 
@@ -32,34 +34,41 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/infrastructure/power-lines', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
+    const body = createPowerLineSchema.parse(request.body);
+    const cityId = extractOptionalCityId(request);
+
     let role: UserRole = 'user';
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of this city
+    const cityRepo = new CityRepository(fastify.db);
+    const city = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(city && request.user?.userId && city.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can create power lines');
     }
 
     // Deduct cost from city treasury
     const cost = BUILDING_COSTS.power_line;
-    const cityRepo = new CityRepository(fastify.db);
-    const city = await cityRepo.getCity();
     if (city && cost > 0) {
       if (city.stats.treasury < cost) {
         throw new InsufficientFundsError(cost, city.stats.treasury);
       }
-      await cityRepo.updateTreasury(city.stats.treasury - cost);
+      await cityRepo.updateTreasury(city.id, city.stats.treasury - cost);
     }
 
-    const body = createPowerLineSchema.parse(request.body);
     const id = await powerLineRepo.createPowerLine(
       body.fromX,
       body.fromY,
       body.toX,
       body.toY,
-      body.capacity
+      body.capacity,
+      city?.id
     );
 
     reply.status(201);
@@ -76,9 +85,16 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of this city
+    const cityId = extractOptionalCityId(request);
+    const cityRepo = new CityRepository(fastify.db);
+    const city = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(city && request.user?.userId && city.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can delete power lines');
     }
 
@@ -98,8 +114,9 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   // ==========================================
 
   // List water pipes
-  fastify.get('/api/infrastructure/water-pipes', async () => {
-    const waterPipes = await waterPipeRepo.getAllWaterPipes();
+  fastify.get('/api/infrastructure/water-pipes', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const waterPipes = await waterPipeRepo.getAllWaterPipes(cityId);
     return { waterPipes };
   });
 
@@ -107,34 +124,41 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/infrastructure/water-pipes', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
+    const body = createWaterPipeSchema.parse(request.body);
+    const cityId = extractOptionalCityId(request);
+
     let role: UserRole = 'user';
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of this city
+    const cityRepo = new CityRepository(fastify.db);
+    const city = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(city && request.user?.userId && city.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can create water pipes');
     }
 
     // Deduct cost from city treasury
     const cost = BUILDING_COSTS.water_pipe;
-    const cityRepo = new CityRepository(fastify.db);
-    const city = await cityRepo.getCity();
     if (city && cost > 0) {
       if (city.stats.treasury < cost) {
         throw new InsufficientFundsError(cost, city.stats.treasury);
       }
-      await cityRepo.updateTreasury(city.stats.treasury - cost);
+      await cityRepo.updateTreasury(city.id, city.stats.treasury - cost);
     }
 
-    const body = createWaterPipeSchema.parse(request.body);
     const id = await waterPipeRepo.createWaterPipe(
       body.fromX,
       body.fromY,
       body.toX,
       body.toY,
-      body.capacity
+      body.capacity,
+      city?.id
     );
 
     reply.status(201);
@@ -151,9 +175,16 @@ export const infrastructureController: FastifyPluginAsync = async (fastify) => {
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of this city
+    const cityId = extractOptionalCityId(request);
+    const cityRepo = new CityRepository(fastify.db);
+    const city = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(city && request.user?.userId && city.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can delete water pipes');
     }
 

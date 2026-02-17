@@ -3,10 +3,12 @@
 // ============================================
 
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 import { parcels } from './parcels.js';
 
 export const buildings = sqliteTable('buildings', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   parcelId: text('parcel_id').notNull().references(() => parcels.id),
   type: text('type').notNull(),
   name: text('name').notNull(),
@@ -28,6 +30,7 @@ export const buildings = sqliteTable('buildings', {
 }, (table) => [
   index('idx_buildings_parcel').on(table.parcelId),
   index('idx_buildings_owner').on(table.ownerId),
+  index('idx_buildings_city').on(table.cityId),
 ]);
 
 export type BuildingRow = typeof buildings.$inferSelect;

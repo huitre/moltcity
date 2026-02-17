@@ -12,13 +12,15 @@ import {
   addFundsSchema,
   transferFundsSchema,
 } from '../schemas/agents.schema.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const agentsController: FastifyPluginAsync = async (fastify) => {
   const agentService = new AgentService(fastify.db);
 
   // List all agents
-  fastify.get('/api/agents', async () => {
-    const agents = await agentService.getAllAgents();
+  fastify.get('/api/agents', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const agents = await agentService.getAllAgents(cityId);
     return { agents };
   });
 

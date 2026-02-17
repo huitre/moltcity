@@ -7,20 +7,23 @@ import { VehicleRepository } from '../repositories/vehicle.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { createVehicleSchema, vehicleIdParamSchema, moveVehicleSchema } from '../schemas/vehicles.schema.js';
 import { NotFoundError } from '../plugins/error-handler.plugin.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const vehiclesController: FastifyPluginAsync = async (fastify) => {
   const vehicleRepo = new VehicleRepository(fastify.db);
   const agentRepo = new AgentRepository(fastify.db);
 
   // List all vehicles
-  fastify.get('/api/vehicles', async () => {
-    const vehicles = await vehicleRepo.getAllVehicles();
+  fastify.get('/api/vehicles', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const vehicles = await vehicleRepo.getAllVehicles(cityId);
     return { vehicles };
   });
 
   // Create vehicle
   fastify.post('/api/vehicles', async (request, reply) => {
     const body = createVehicleSchema.parse(request.body);
+    const cityId = extractOptionalCityId(request);
 
     // Verify owner exists
     const owner = await agentRepo.getAgent(body.ownerId);
@@ -32,7 +35,8 @@ export const vehiclesController: FastifyPluginAsync = async (fastify) => {
       body.ownerId,
       body.type,
       body.x,
-      body.y
+      body.y,
+      cityId
     );
 
     if (body.sprite) {

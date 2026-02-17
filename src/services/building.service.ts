@@ -50,8 +50,8 @@ export class BuildingService {
     return this.buildingRepo.getBuilding(id);
   }
 
-  async getAllBuildings(): Promise<Building[]> {
-    return this.buildingRepo.getAllBuildings();
+  async getAllBuildings(cityId?: string): Promise<Building[]> {
+    return this.buildingRepo.getAllBuildings(cityId);
   }
 
   async getBuildingAtParcel(parcelId: string): Promise<Building | null> {
@@ -91,6 +91,8 @@ export class BuildingService {
     createAgent?: boolean;
     agentName?: string;
     role?: UserRole;
+    isMayor?: boolean;
+    cityId?: string;
     internal?: boolean; // true when called by simulation engine (bypasses zone restriction)
   }): Promise<Building> {
     const role: UserRole = params.role || 'user';
@@ -102,7 +104,8 @@ export class BuildingService {
     }
 
     // Check building type restrictions
-    if (!canUserBuild(params.type, role)) {
+    const isMayor = params.isMayor || false;
+    if (!canUserBuild(params.type, role, isMayor)) {
       throw new ForbiddenError(`Building type '${params.type}' requires elevated privileges`);
     }
 
@@ -111,7 +114,7 @@ export class BuildingService {
     if (params.parcelId) {
       parcel = await this.parcelRepo.getParcelById(params.parcelId);
     } else if (params.x !== undefined && params.y !== undefined) {
-      parcel = await this.parcelRepo.getParcel(params.x, params.y);
+      parcel = await this.parcelRepo.getOrCreateParcel(params.x, params.y, params.cityId);
     }
 
     if (!parcel) {
@@ -158,17 +161,17 @@ export class BuildingService {
     const ownerId = agent?.id || parcel.ownerId || 'system';
 
     // Check building limit for this type (only for regular users)
-    if (!hasElevatedPrivileges(role) && agent) {
+    if (!hasElevatedPrivileges(role, isMayor) && agent) {
       const existingBuildings = await this.buildingRepo.getBuildingsByOwner(agent.id);
       const sameTypeCount = existingBuildings.filter(b => b.type === params.type).length;
-      const limit = getBuildingLimit(params.type, role);
+      const limit = getBuildingLimit(params.type, role, isMayor);
       if (sameTypeCount >= limit) {
         throw new ForbiddenError(`Building limit reached for '${params.type}' (max ${limit})`);
       }
     }
 
     // Verify owner permission (unless admin/mayor)
-    if (!hasElevatedPrivileges(role) && agent && parcel.ownerId !== agent.id) {
+    if (!hasElevatedPrivileges(role, isMayor) && agent && parcel.ownerId !== agent.id) {
       throw new ForbiddenError('Agent does not own this parcel');
     }
 
@@ -187,7 +190,7 @@ export class BuildingService {
 
         let tileParcel = (dx === 0 && dy === 0)
           ? parcel
-          : await this.parcelRepo.getParcel(tileX, tileY);
+          : await this.parcelRepo.getOrCreateParcel(tileX, tileY, params.cityId);
 
         if (!tileParcel) {
           throw new ValidationError(`Tile (${tileX}, ${tileY}) doesn't exist`);
@@ -242,14 +245,14 @@ export class BuildingService {
 
     // Get building cost and deduct from treasury (mayor/admin) or agent wallet (user)
     const quote = this.getQuote(params.type, floors);
-    if (hasElevatedPrivileges(role)) {
+    if (hasElevatedPrivileges(role, isMayor)) {
       // Mayor/admin: deduct from city treasury
-      const cityData = await this.cityRepo.getCity();
+      const cityData = await this.cityRepo.getCity(params.cityId);
       if (cityData && quote.totalCost > 0) {
         if (cityData.stats.treasury < quote.totalCost) {
           throw new InsufficientFundsError(quote.totalCost, cityData.stats.treasury);
         }
-        await this.cityRepo.updateTreasury(cityData.stats.treasury - quote.totalCost);
+        await this.cityRepo.updateTreasury(cityData.id, cityData.stats.treasury - quote.totalCost);
         console.log(`[Building] Deducted ${quote.totalCost} from treasury for ${params.type}`);
       }
     } else if (agent) {
@@ -265,7 +268,7 @@ export class BuildingService {
     }
 
     // Get current tick for construction
-    const city = await this.cityRepo.getCity();
+    const city = await this.cityRepo.getCity(params.cityId);
     const currentTick = city?.time.tick || 0;
 
     // Create building with footprint dimensions
@@ -278,18 +281,20 @@ export class BuildingService {
       floors,
       currentTick,
       footprint.w,
-      footprint.h
+      footprint.h,
+      params.cityId || city?.id
     );
 
     // Log activity
-    const actorName = agent?.name || (hasElevatedPrivileges(role) ? 'MoltCity' : 'Unknown');
+    const actorName = agent?.name || (hasElevatedPrivileges(role, isMayor) ? 'MoltCity' : 'Unknown');
     await this.activityService.logBuildingCreated(
       agent?.id,
       actorName,
       params.type,
       params.name,
       parcel.x,
-      parcel.y
+      parcel.y,
+      params.cityId || city?.id
     );
 
     return building;

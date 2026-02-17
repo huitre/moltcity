@@ -4,7 +4,7 @@
 // Runs hourly (every 300 ticks). Generates random crimes
 // near buildings, dispatches officers, and resolves crimes.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { CRIME, CITY_SERVICES } from '../config/game.js';
 import type { CityTime, CrimeType } from '../models/types.js';
 import type { ActivityLogger } from './engine.js';
@@ -21,7 +21,7 @@ const CRIME_TYPES: CrimeType[] = ['theft', 'robbery', 'vandalism', 'arson'];
 export class CrimeSimulator {
   private officersSpawned = false;
 
-  constructor(private db: DatabaseManager, private log?: ActivityLogger) {}
+  constructor(private db: SimulationDb, private log?: ActivityLogger) {}
 
   simulate(time: CityTime, currentTick: number): void {
     // Ensure officers are spawned at police stations

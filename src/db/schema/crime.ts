@@ -3,6 +3,7 @@
 // ============================================
 
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { city } from './city.js';
 import { agents } from './agents.js';
 import { buildings } from './buildings.js';
 import { parcels } from './parcels.js';
@@ -10,6 +11,7 @@ import { parcels } from './parcels.js';
 // === Crime Events ===
 export const crimes = sqliteTable('crimes', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   type: text('type').notNull(), // theft, robbery, vandalism, arson
   parcelId: text('parcel_id').notNull().references(() => parcels.id),
   locationX: real('location_x').notNull(),
@@ -26,6 +28,7 @@ export const crimes = sqliteTable('crimes', {
   index('idx_crimes_location').on(table.locationX, table.locationY),
   index('idx_crimes_parcel').on(table.parcelId),
   index('idx_crimes_reported').on(table.reportedAt),
+  index('idx_crimes_city').on(table.cityId),
 ]);
 
 export type CrimeRow = typeof crimes.$inferSelect;
@@ -34,6 +37,7 @@ export type CrimeInsert = typeof crimes.$inferInsert;
 // === Police Officers ===
 export const policeOfficers = sqliteTable('police_officers', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   stationId: text('station_id').notNull().references(() => buildings.id),
   name: text('name').notNull(),
   currentX: real('current_x').notNull(),
@@ -46,6 +50,7 @@ export const policeOfficers = sqliteTable('police_officers', {
   index('idx_officers_station').on(table.stationId),
   index('idx_officers_status').on(table.status),
   index('idx_officers_location').on(table.currentX, table.currentY),
+  index('idx_officers_city').on(table.cityId),
 ]);
 
 export type PoliceOfficerRow = typeof policeOfficers.$inferSelect;
@@ -54,6 +59,7 @@ export type PoliceOfficerInsert = typeof policeOfficers.$inferInsert;
 // === Fires ===
 export const fires = sqliteTable('fires', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   buildingId: text('building_id').notNull().references(() => buildings.id),
   parcelId: text('parcel_id').notNull().references(() => parcels.id),
   intensity: integer('intensity').notNull().default(1), // 1-5
@@ -67,6 +73,7 @@ export const fires = sqliteTable('fires', {
   index('idx_fires_status').on(table.status),
   index('idx_fires_building').on(table.buildingId),
   index('idx_fires_started').on(table.startedAt),
+  index('idx_fires_city').on(table.cityId),
 ]);
 
 export type FireRow = typeof fires.$inferSelect;
@@ -75,6 +82,7 @@ export type FireInsert = typeof fires.$inferInsert;
 // === Firefighters ===
 export const firefighters = sqliteTable('firefighters', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   stationId: text('station_id').notNull().references(() => buildings.id),
   name: text('name').notNull(),
   currentX: real('current_x').notNull(),
@@ -86,6 +94,7 @@ export const firefighters = sqliteTable('firefighters', {
 }, (table) => [
   index('idx_firefighters_station').on(table.stationId),
   index('idx_firefighters_status').on(table.status),
+  index('idx_firefighters_city').on(table.cityId),
 ]);
 
 export type FirefighterRow = typeof firefighters.$inferSelect;
@@ -94,6 +103,7 @@ export type FirefighterInsert = typeof firefighters.$inferInsert;
 // === Schools ===
 export const schools = sqliteTable('schools', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   buildingId: text('building_id').notNull().references(() => buildings.id),
   schoolType: text('school_type').notNull(), // elementary, high_school, university
   capacity: integer('capacity').notNull(),
@@ -110,6 +120,7 @@ export type SchoolInsert = typeof schools.$inferInsert;
 // === Garbage/Sanitation ===
 export const garbageDepots = sqliteTable('garbage_depots', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   buildingId: text('building_id').notNull().references(() => buildings.id),
   truckCount: integer('truck_count').notNull().default(2),
   collectionRoutes: text('collection_routes'), // JSON array of coordinate arrays
@@ -135,6 +146,7 @@ export type ParcelSanitationInsert = typeof parcelSanitation.$inferInsert;
 // === Life Events ===
 export const lifeEvents = sqliteTable('life_events', {
   id: text('id').primaryKey(),
+  cityId: text('city_id').notNull().references(() => city.id),
   agentId: text('agent_id').notNull().references(() => agents.id),
   type: text('type').notNull(),
   description: text('description').notNull(),

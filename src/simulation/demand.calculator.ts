@@ -5,7 +5,7 @@
 // Positive values = undersupplied, negative = oversupplied.
 // Tax rates and ordinances shift demand per SC2k mechanics.
 
-import { DatabaseManager } from '../models/database.js';
+import type { SimulationDb } from './engine.adapter.js';
 import { DEMAND_BALANCE, SC2K_ECONOMY } from '../config/game.js';
 import type { BuildingType } from '../models/types.js';
 
@@ -17,7 +17,7 @@ export interface DemandResult {
 }
 
 export class DemandCalculator {
-  constructor(private db: DatabaseManager) {}
+  constructor(private db: SimulationDb) {}
 
   calculate(): DemandResult {
     const buildings = this.db.buildings.getAllBuildings();

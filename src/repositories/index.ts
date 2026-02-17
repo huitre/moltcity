@@ -13,3 +13,4 @@ export { PowerLineRepository, WaterPipeRepository, type PowerLine, type WaterPip
 export { RentalUnitRepository } from './rental.repository.js';
 export { RentWarningRepository, CourtCaseRepository, JailInmateRepository } from './justice.repository.js';
 export { UserRepository, type User } from './user.repository.js';
+export { PopulationRepository } from './population.repository.js';

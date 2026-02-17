@@ -4,13 +4,15 @@
 
 import { FastifyPluginAsync } from 'fastify';
 import { CityService } from '../services/city.service.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 export const simulationController: FastifyPluginAsync = async (fastify) => {
   const cityService = new CityService(fastify.db);
 
   // Get simulation status
-  fastify.get('/api/simulation/status', async () => {
-    const city = await cityService.getCity();
+  fastify.get('/api/simulation/status', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const city = await cityService.getCity(cityId);
     const isRunning = fastify.simulationEngine.isRunning();
     const currentTick = fastify.simulationEngine.getCurrentTick();
 

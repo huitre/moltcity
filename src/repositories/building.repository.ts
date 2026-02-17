@@ -2,7 +2,7 @@
 // MOLTCITY - Building Repository
 // ============================================
 
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { BaseRepository } from './base.repository.js';
 import { buildings, type BuildingRow, type BuildingInsert } from '../db/schema/buildings.js';
 import type { DrizzleDb } from '../db/drizzle.js';
@@ -74,7 +74,11 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     return results.length > 0 ? this.rowToBuilding(results[0]) : null;
   }
 
-  async getAllBuildings(): Promise<Building[]> {
+  async getAllBuildings(cityId?: string): Promise<Building[]> {
+    if (cityId) {
+      const results = await this.db.select().from(buildings).where(eq(buildings.cityId, cityId));
+      return results.map(row => this.rowToBuilding(row));
+    }
     const results = await this.findAll();
     return results.map(row => this.rowToBuilding(row));
   }
@@ -96,7 +100,8 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     floors: number = 1,
     currentTick: number = 0,
     width: number = 1,
-    height: number = 1
+    height: number = 1,
+    cityId?: string
   ): Promise<Building> {
     const id = this.generateId();
     const basePower = this.getPowerRequirement(type);
@@ -106,6 +111,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
 
     await this.db.insert(buildings).values({
       id,
+      cityId: cityId || '',
       parcelId,
       type,
       name,
@@ -166,6 +172,13 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
 
   getWaterRequirement(type: BuildingType): number {
     return WATER_REQUIREMENTS[type] || 50;
+  }
+
+  async updateWaterStatus(buildingId: string, hasWater: boolean): Promise<void> {
+    await this.db
+      .update(buildings)
+      .set({ hasWater })
+      .where(eq(buildings.id, buildingId));
   }
 
   async updateDensityAndFloors(buildingId: string, density: number, floors: number): Promise<void> {

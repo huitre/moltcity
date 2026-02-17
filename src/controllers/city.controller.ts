@@ -18,62 +18,83 @@ import {
 } from '../config/game.js';
 import { z } from 'zod';
 
-const initCitySchema = z.object({
-  name: z.string().min(1).max(100).default('MoltCity'),
-  width: z.number().int().min(10).max(200).default(50),
-  height: z.number().int().min(10).max(200).default(50),
+const createCitySchema = z.object({
+  name: z.string().min(1).max(100),
 });
 
 export const cityController: FastifyPluginAsync = async (fastify) => {
   const cityService = new CityService(fastify.db);
 
-  // Get city state
-  fastify.get('/api/city', async () => {
-    const city = await cityService.getCity();
+  // Get city state (backward-compat: returns first city or specific city with ?cityId=)
+  fastify.get('/api/city', async (request) => {
+    const cityId = (request.query as Record<string, string>)?.cityId;
+    const city = await cityService.getCity(cityId);
     if (!city) {
       return { initialized: false };
     }
     return { initialized: true, city };
   });
 
-  // Initialize city
-  fastify.post('/api/city/init', async (request, reply) => {
-    const body = initCitySchema.parse(request.body || {});
+  // List all cities
+  fastify.get('/api/cities', async () => {
+    const cities = await cityService.getAllCities();
+    return { cities };
+  });
 
-    try {
-      const city = await cityService.initializeCity(body.name, body.width, body.height);
-      reply.status(201);
-      return { success: true, city };
-    } catch (error: any) {
-      if (error.message === 'City already initialized') {
-        const city = await cityService.getCity();
-        return { success: true, city, message: 'City was already initialized' };
-      }
-      throw error;
+  // Create city (requires authentication)
+  fastify.post('/api/cities', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    const body = createCitySchema.parse(request.body);
+    const city = await cityService.createCity(body.name, request.user!.userId);
+
+    // Start simulation engine if not already running
+    if (fastify.simulationEngine && !fastify.simulationEngine.isRunning()) {
+      fastify.simulationEngine.start();
+      fastify.log.info('Simulation engine started after city creation');
     }
+
+    reply.status(201);
+    return { success: true, city };
+  });
+
+  // Get city by ID
+  fastify.get('/api/cities/:cityId', async (request) => {
+    const { cityId } = request.params as { cityId: string };
+    const city = await cityService.getCity(cityId);
+    if (!city) {
+      return { initialized: false };
+    }
+    return { initialized: true, city };
   });
 
   // Get city stats
-  fastify.get('/api/city/stats', async () => {
-    const stats = await cityService.calculateStats();
+  fastify.get('/api/city/stats', async (request) => {
+    const cityId = (request.query as Record<string, string>)?.cityId;
+    const city = await cityService.getCity(cityId);
+    if (!city) {
+      return { population: 0, totalBuildings: 0, totalRoads: 0, powerCapacity: 0, powerDemand: 0, waterCapacity: 0, waterDemand: 0, treasury: 0 };
+    }
+    const stats = await cityService.calculateStats(city.id);
     return stats;
   });
 
   // Get game configuration and rules
   fastify.get('/api/game/config', async (request) => {
     await fastify.optionalAuth(request, {} as any);
-    const role = request.user?.role || 'guest';
-    const hasElevatedPrivileges = role === 'admin' || role === 'mayor';
+    const role = request.user?.role || 'user';
+    // Note: isMayor is per-city, not a global role. Config returns base limits.
+    const isAdmin = role === 'admin';
 
     return {
       limits: {
-        maxParcelsPerUser: hasElevatedPrivileges ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER,
+        maxParcelsPerUser: isAdmin ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER,
         buildingLimits: BUILDING_LIMITS,
       },
       buildingTypes: {
         user: USER_BUILDING_TYPES,
         adminOnly: ADMIN_ONLY_BUILDING_TYPES,
-        allowed: hasElevatedPrivileges ? [...USER_BUILDING_TYPES, ...ADMIN_ONLY_BUILDING_TYPES] : USER_BUILDING_TYPES,
+        allowed: isAdmin ? [...USER_BUILDING_TYPES, ...ADMIN_ONLY_BUILDING_TYPES] : USER_BUILDING_TYPES,
       },
       costs: BUILDING_COSTS,
       zoningCost: ZONING_COST,
@@ -83,8 +104,9 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
   });
 
   // Spectator mode - full city state without authentication
-  fastify.get('/api/spectate', async () => {
-    const city = await cityService.getCity();
+  fastify.get('/api/spectate', async (request) => {
+    const cityId = (request.query as Record<string, string>)?.cityId;
+    const city = await cityService.getCity(cityId);
     if (!city) {
       return { initialized: false };
     }
@@ -93,10 +115,10 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
     const agentRepo = new AgentRepository(fastify.db);
     const roadRepo = new RoadRepository(fastify.db);
 
-    const buildings = await buildingRepo.getAllBuildings();
-    const agents = await agentRepo.getAllAgents();
-    const roads = await roadRepo.getAllRoads();
-    const stats = await cityService.calculateStats();
+    const buildings = await buildingRepo.getAllBuildings(city.id);
+    const agents = await agentRepo.getAllAgents(city.id);
+    const roads = await roadRepo.getAllRoads(city.id);
+    const stats = await cityService.calculateStats(city.id);
 
     return {
       initialized: true,

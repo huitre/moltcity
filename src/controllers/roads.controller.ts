@@ -11,14 +11,16 @@ import { createRoadSchema, roadIdParamSchema } from '../schemas/roads.schema.js'
 import { NotFoundError, ConflictError, ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
 import { hasElevatedPrivileges, BUILDING_COSTS, type UserRole } from '../config/game.js';
 import { CityRepository } from '../repositories/city.repository.js';
+import { extractCityId, extractOptionalCityId } from '../utils/city-context.js';
 
 export const roadsController: FastifyPluginAsync = async (fastify) => {
   const roadRepo = new RoadRepository(fastify.db);
   const parcelRepo = new ParcelRepository(fastify.db);
 
   // List all roads
-  fastify.get('/api/roads', async () => {
-    const roads = await roadRepo.getAllRoads();
+  fastify.get('/api/roads', async (request) => {
+    const cityId = extractOptionalCityId(request);
+    const roads = await roadRepo.getAllRoads(cityId);
     return { roads };
   });
 
@@ -31,21 +33,25 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of the city
+    const cityId = extractOptionalCityId(request);
+    const cityRepo = new CityRepository(fastify.db);
+    const cityData = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(cityData && request.user?.userId && cityData.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can create roads');
     }
 
     const body = createRoadSchema.parse(request.body);
 
-    // Get parcel
+    // Get or create parcel (parcels are created on-demand)
     let parcelId = body.parcelId;
     if (!parcelId && body.x !== undefined && body.y !== undefined) {
-      const parcel = await parcelRepo.getParcel(body.x, body.y);
-      if (!parcel) {
-        throw new NotFoundError('Parcel');
-      }
+      const parcel = await parcelRepo.getOrCreateParcel(body.x, body.y, cityData?.id);
       parcelId = parcel.id;
     }
 
@@ -68,7 +74,7 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     // Check multi-tile buildings whose footprint covers this tile
     const parcel = await parcelRepo.getParcelById(parcelId);
     if (parcel) {
-      const allBuildings = await buildingRepo.getAllBuildings();
+      const allBuildings = await buildingRepo.getAllBuildings(cityData?.id);
       for (const b of allBuildings) {
         if (b.width <= 1 && b.height <= 1) continue;
         const bParcel = await parcelRepo.getParcelById(b.parcelId);
@@ -82,16 +88,14 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
 
     // Deduct road cost from city treasury
     const cost = BUILDING_COSTS.road;
-    const cityRepo = new CityRepository(fastify.db);
-    const city = await cityRepo.getCity();
-    if (city && cost > 0) {
-      if (city.stats.treasury < cost) {
-        throw new InsufficientFundsError(cost, city.stats.treasury);
+    if (cityData && cost > 0) {
+      if (cityData.stats.treasury < cost) {
+        throw new InsufficientFundsError(cost, cityData.stats.treasury);
       }
-      await cityRepo.updateTreasury(city.stats.treasury - cost);
+      await cityRepo.updateTreasury(cityData.id, cityData.stats.treasury - cost);
     }
 
-    const road = await roadRepo.createRoad(parcelId, body.direction, body.lanes);
+    const road = await roadRepo.createRoad(parcelId, body.direction, body.lanes, cityData?.id);
 
     reply.status(201);
     return { success: true, road };
@@ -106,9 +110,16 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     if (request.user?.userId) {
       const userRepo = new UserRepository(fastify.db);
       const dbUser = await userRepo.getUser(request.user.userId);
-      role = dbUser?.role || 'user';
+      role = (dbUser?.role as UserRole) || 'user';
     }
-    if (!hasElevatedPrivileges(role)) {
+
+    // Check if user is mayor of the city
+    const cityId = extractOptionalCityId(request);
+    const cityRepo = new CityRepository(fastify.db);
+    const cityData = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(cityData && request.user?.userId && cityData.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
       throw new ForbiddenError('Only mayors and admins can delete roads');
     }
 

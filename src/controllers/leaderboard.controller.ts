@@ -3,12 +3,13 @@
 // ============================================
 
 import { FastifyPluginAsync } from 'fastify';
-import { eq, desc, sql, count } from 'drizzle-orm';
+import { eq, desc, sql, count, and } from 'drizzle-orm';
 import { agents } from '../db/schema/agents.js';
 import { buildings } from '../db/schema/buildings.js';
 import { parcels } from '../db/schema/parcels.js';
 import { residents } from '../db/schema/population.js';
 import { users } from '../db/schema/auth.js';
+import { extractOptionalCityId } from '../utils/city-context.js';
 
 interface LeaderboardEntry {
   rank: number;
@@ -29,18 +30,21 @@ export const leaderboardController: FastifyPluginAsync = async (fastify) => {
     const query = request.query as { limit?: string; sort?: string };
     const limit = Math.min(parseInt(query.limit || '10'), 50);
     const sortBy = query.sort || 'netWorth'; // netWorth, wealth, buildings, population
+    const cityId = extractOptionalCityId(request);
 
-    // Get all agents with their wallet balance
-    const allAgents = await db.select().from(agents);
+    // Build building filter conditions
+    const buildingConditions = [eq(buildings.constructionProgress, 100)];
+    if (cityId) buildingConditions.push(eq(buildings.cityId, cityId));
+    const buildingFilter = and(...buildingConditions);
 
-    // Get building counts and values per owner
+    // Get building counts per owner
     const buildingStats = await db
       .select({
         ownerId: buildings.ownerId,
         buildingCount: count(buildings.id),
       })
       .from(buildings)
-      .where(eq(buildings.constructionProgress, 100))
+      .where(buildingFilter)
       .groupBy(buildings.ownerId);
 
     // Get population counts per building owner (residents in their buildings)
@@ -51,34 +55,16 @@ export const leaderboardController: FastifyPluginAsync = async (fastify) => {
       })
       .from(buildings)
       .leftJoin(residents, eq(residents.homeBuildingId, buildings.id))
-      .where(eq(buildings.constructionProgress, 100))
+      .where(buildingFilter)
       .groupBy(buildings.ownerId);
 
-    // Also get user accounts (they can own buildings too)
-    const allUsers = await db.select({
-      id: users.id,
-      name: users.name,
-      agentId: users.agentId,
-    }).from(users);
-
-    // Create lookup maps
-    const buildingMap = new Map(buildingStats.map(b => [b.ownerId, b.buildingCount]));
-    const populationMap = new Map(populationStats.map(p => [p.ownerId, p.populationCount]));
-    const userAgentMap = new Map(allUsers.map(u => [u.agentId, u]));
-
-    // Building value estimates
+    // Get detailed building info for value calculation
     const BUILDING_VALUES: Record<string, number> = {
-      house: 250,
-      apartment: 600,
-      shop: 500,
-      office: 800,
-      factory: 2000,
-      park: 200,
-      power_plant: 500,
-      water_tower: 300,
+      house: 250, apartment: 600, shop: 500, office: 800, factory: 2000,
+      park: 200, power_plant: 500, water_tower: 300, fire_station: 2000,
+      school: 800, hospital: 8000, police_station: 1500,
     };
 
-    // Get detailed building info for value calculation
     const allBuildings = await db
       .select({
         ownerId: buildings.ownerId,
@@ -86,7 +72,7 @@ export const leaderboardController: FastifyPluginAsync = async (fastify) => {
         floors: buildings.floors,
       })
       .from(buildings)
-      .where(eq(buildings.constructionProgress, 100));
+      .where(buildingFilter);
 
     // Calculate property value per owner
     const propertyValueMap = new Map<string, number>();
@@ -96,48 +82,47 @@ export const leaderboardController: FastifyPluginAsync = async (fastify) => {
       propertyValueMap.set(b.ownerId, (propertyValueMap.get(b.ownerId) || 0) + value);
     }
 
-    // Build leaderboard entries for agents
-    const entries: LeaderboardEntry[] = allAgents.map(agent => {
-      const buildingCount = buildingMap.get(agent.id) || 0;
-      const populationCount = populationMap.get(agent.id) || 0;
-      const propertyValue = propertyValueMap.get(agent.id) || 0;
-      const wealth = agent.walletBalance || 0;
+    // Create lookup maps
+    const buildingMap = new Map(buildingStats.map(b => [b.ownerId, b.buildingCount]));
+    const populationMap = new Map(populationStats.map(p => [p.ownerId, p.populationCount]));
+
+    // Derive unique owner IDs from buildings (agents are global, not per-city)
+    const ownerIds = [...new Set(allBuildings.map(b => b.ownerId))];
+
+    // Look up agents and users for those owners
+    const allAgents = ownerIds.length > 0
+      ? await db.select().from(agents)
+      : [];
+    const agentMap = new Map(allAgents.map(a => [a.id, a]));
+
+    const allUsers = await db.select({
+      id: users.id,
+      name: users.name,
+      agentId: users.agentId,
+    }).from(users);
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+
+    // Build leaderboard entries from building owners
+    const entries: LeaderboardEntry[] = [];
+    for (const ownerId of ownerIds) {
+      const agent = agentMap.get(ownerId);
+      const user = userMap.get(ownerId);
+      const buildingCount = buildingMap.get(ownerId) || 0;
+      const populationCount = populationMap.get(ownerId) || 0;
+      const propertyValue = propertyValueMap.get(ownerId) || 0;
+      const wealth = agent?.walletBalance || 0;
       const netWorth = wealth + propertyValue;
 
-      return {
+      entries.push({
         rank: 0,
-        id: agent.id,
-        name: agent.name,
-        avatar: agent.avatar || undefined,
+        id: ownerId,
+        name: agent?.name || user?.name || 'Unknown',
+        avatar: agent?.avatar || undefined,
         wealth,
         buildingCount,
         populationCount,
         netWorth,
-      };
-    });
-
-    // Also add users who own buildings but aren't agents
-    const agentIds = new Set(allAgents.map(a => a.id));
-    const userOwners = [...new Set(allBuildings.map(b => b.ownerId))].filter(id => !agentIds.has(id));
-    
-    for (const userId of userOwners) {
-      const user = allUsers.find(u => u.id === userId);
-      if (user) {
-        const buildingCount = buildingMap.get(userId) || 0;
-        const populationCount = populationMap.get(userId) || 0;
-        const propertyValue = propertyValueMap.get(userId) || 0;
-
-        entries.push({
-          rank: 0,
-          id: userId,
-          name: user.name || 'Unknown',
-          avatar: undefined,
-          wealth: 0, // Users don't have wallet in agents table
-          buildingCount,
-          populationCount,
-          netWorth: propertyValue,
-        });
-      }
+      });
     }
 
     // Sort based on requested criteria
