@@ -63,13 +63,13 @@ export const authController: FastifyPluginAsync = async (fastify) => {
     // Strip sensitive fields before returning
     const { passwordHash, ...safeUser } = user;
 
-    // Include city treasury for admin (mayor is per-city, checked on client)
+    // Include city treasury for admin or city mayor
     let treasury: number | undefined;
-    if (user.role === 'admin') {
-      const cityRepo = new CityRepository(fastify.db);
-      const cityId = (request.query as Record<string, string>)?.cityId;
-      const city = await cityRepo.getCity(cityId);
-      if (city) treasury = city.stats.treasury;
+    const cityRepo = new CityRepository(fastify.db);
+    const cityId = (request.query as Record<string, string>)?.cityId;
+    const city = cityId ? await cityRepo.getCity(cityId) : null;
+    if (city && (user.role === 'admin' || city.mayor === user.id)) {
+      treasury = city.stats.treasury;
     }
 
     return {

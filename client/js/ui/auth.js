@@ -102,8 +102,9 @@ export function showUserInfo() {
     const userInfo = document.getElementById("user-info");
     if (userInfo) userInfo.style.display = "flex";
 
-    // Show admin-only build options for admins and mayors
-    if (currentUser.role === "admin" || currentUser.role === "mayor") {
+    // Show admin-only build options for admins and city mayors
+    const isMayor = state.cityData && state.cityData.mayor === currentUser.id;
+    if (currentUser.role === "admin" || isMayor) {
       document.body.classList.add("is-admin");
     } else {
       document.body.classList.remove("is-admin");

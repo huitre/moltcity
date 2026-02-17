@@ -99,13 +99,8 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
         }
       }
 
-      // Check and transition elections every 100 ticks (10 seconds)
-      if (data.tick - lastElectionCheck >= 100) {
-        lastElectionCheck = data.tick;
-        electionService.checkAndTransitionElection().catch((err) => {
-          fastify.log.error({ err }, 'Election transition check failed');
-        });
-      }
+      // Elections disabled — creator is mayor by default
+      // TODO: re-enable when election feature is refined
     }
 
     // Broadcast significant events immediately (city-scoped)
@@ -123,21 +118,8 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
     fastify.broadcast('day_started', { time });
     fastify.log.info(`Day ${time.day} started (Year ${time.year})`);
 
-    // Auto-start election every 30 days if none is active — per city
-    if (time.day % 30 === 1) {
-      try {
-        const cities = legacyDb.city.getAllCities();
-        for (const city of cities) {
-          const status = await electionService.getElectionStatus(city.id);
-          if (status.phase === 'none') {
-            await electionService.startElection(city.id);
-            fastify.log.info(`New election automatically started for city ${city.name}`);
-          }
-        }
-      } catch (err) {
-        fastify.log.debug({ err }, 'Auto-start election skipped');
-      }
-    }
+    // Elections disabled — creator is mayor by default
+    // TODO: re-enable when election feature is refined for multi-city
   });
 
   engine.on('night_started', (time: CityTime) => {

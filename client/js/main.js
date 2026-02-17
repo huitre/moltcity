@@ -10,7 +10,7 @@ import { initGame, render } from './game.js';
 import { connectWebSocket } from './websocket.js';
 import { loadSprites } from './sprites.js';
 import { drawHighlight } from './render/tiles.js';
-import { setupAuthUI, checkAuth, setOnAuthSuccess } from './ui/auth.js';
+import { setupAuthUI, checkAuth, setOnAuthSuccess, showUserInfo } from './ui/auth.js';
 import { loadActivities, addActivity } from './ui/activity.js';
 import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 import { setupLeaderboard } from './ui/leaderboard.js';
@@ -61,8 +61,9 @@ async function initializeApp() {
 
     // Load social features
     await loadActivities();
-    await loadElectionStatus();
-    setupElectionUI();
+    // Elections disabled — creator is mayor by default
+    // await loadElectionStatus();
+    // setupElectionUI();
     setupLeaderboard();
 
     // Setup build menu
@@ -173,6 +174,9 @@ async function loadCityData() {
       state.setCityData(cityResponse.city);
     }
 
+    // Re-evaluate mayor status now that city data is loaded
+    showUserInfo();
+
     // Load parcels
     const parcelsResponse = await api.getParcels();
     state.setParcels(parcelsResponse.parcels || []);
@@ -238,6 +242,9 @@ export async function switchCity(cityId) {
     state.setCityData(cityResponse.city);
   }
 
+  // Re-evaluate mayor status for the new city
+  showUserInfo();
+
   const [parcelsR, buildingsR, roadsR, agentsR, powerR, waterR] = await Promise.all([
     api.getParcels(),
     api.getBuildings(),
@@ -260,7 +267,6 @@ export async function switchCity(cityId) {
   // Re-render
   render();
   await loadActivities();
-  await loadElectionStatus();
 }
 
 /**
@@ -705,7 +711,7 @@ function handleWebSocketMessage(type, data) {
       break;
 
     case "election":
-      loadElectionStatus();
+      // Elections disabled — creator is mayor by default
       break;
 
     case "infrastructure_update":
