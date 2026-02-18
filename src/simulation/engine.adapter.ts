@@ -567,12 +567,12 @@ class LegacyBuildingRepository {
     const powerRequired = (POWER_REQUIREMENTS[type] || 100) * floors;
     const waterRequired = (WATER_REQUIREMENTS[type] || 50) * floors;
     this.raw.prepare(`
-      INSERT INTO buildings (id, city_id, parcel_id, type, name, sprite, floors, width, height,
+      INSERT OR IGNORE INTO buildings (id, city_id, parcel_id, type, name, sprite, floors, width, height,
         power_required, water_required, built_at, owner_id, construction_progress,
         construction_started_at, construction_time_ticks, density)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 100, NULL, 0, 1)
     `).run(id, cityId || '', parcelId, type, name, sprite || '', floors, width, height, powerRequired, waterRequired, now(), ownerId);
-    return this.getBuilding(id)!;
+    return this.getBuilding(id) || this.getBuildingAtParcel(parcelId)!;
   }
 
   deleteBuilding(buildingId: string): boolean {

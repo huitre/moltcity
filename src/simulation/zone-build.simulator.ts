@@ -74,6 +74,10 @@ export class ZoneBuildSimulator {
       // Random chance so buildings don't all appear at once
       if (Math.random() > BUILD_CHANCE) continue;
 
+      // Double-check no building exists (prevents duplicates from concurrent processes)
+      const existingBuilding = this.db.buildings.getBuildingAtParcel(parcel.id);
+      if (existingBuilding) continue;
+
       // Create the building
       const name = BUILDING_NAMES[buildingType] || buildingType;
       const ownerId = parcel.ownerId || 'system';

@@ -117,7 +117,7 @@ export function createDatabase(): Database.Database {
       construction_started_at INTEGER,
       construction_time_ticks INTEGER NOT NULL DEFAULT 0
     );
-    CREATE INDEX IF NOT EXISTS idx_buildings_parcel ON buildings(parcel_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_buildings_parcel ON buildings(parcel_id);
     CREATE INDEX IF NOT EXISTS idx_buildings_owner ON buildings(owner_id);
     CREATE INDEX IF NOT EXISTS idx_buildings_city ON buildings(city_id);
 
