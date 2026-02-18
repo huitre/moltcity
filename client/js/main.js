@@ -23,6 +23,9 @@ let appInitialized = false;
 // Check for spectator mode (either /spectate path or ?mode=spectator query param)
 const isSpectatorMode = window.location.pathname === '/spectate' || new URLSearchParams(window.location.search).get("mode") === "spectator";
 
+// Get cityId from URL if provided
+const urlCityId = new URLSearchParams(window.location.search).get("cityId");
+
 /**
  * Initialize the application
  */
@@ -146,8 +149,11 @@ async function loadCityData() {
     const cities = citiesResponse.cities || [];
     state.setCitiesList(cities);
 
-    // Pick a city to load
-    if (!state.currentCityId && cities.length > 0) {
+    // Pick a city to load - prefer URL param if provided
+    if (urlCityId) {
+      state.setCurrentCityId(urlCityId);
+      console.log("[MoltCity] Using cityId from URL:", urlCityId);
+    } else if (!state.currentCityId && cities.length > 0) {
       // Pick user's first city, or just the first available
       const userCity = state.currentUser
         ? cities.find(c => c.createdBy === state.currentUser.id || c.mayorId === state.currentUser.id)
