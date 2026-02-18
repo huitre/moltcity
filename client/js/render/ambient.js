@@ -16,6 +16,24 @@ import * as state from "../state.js";
 const SHADOW_OFFSET_X = 80;
 const SHADOW_OFFSET_Y = 60;
 
+// Sunset gradient overlay sprite (lazy-initialized)
+let sunsetSprite = null;
+
+function getSunsetSprite() {
+  if (!sunsetSprite) {
+    const texture = PIXI.Texture.from("/sprites/sliced/sunset_gradient_01.png");
+    sunsetSprite = new PIXI.Sprite(texture);
+    sunsetSprite.anchor.set(0, 0);
+    sunsetSprite.alpha = 0;
+    sunsetSprite.zIndex = 19999; // Just below dayNightOverlay (20000)
+    state.app.stage.addChild(sunsetSprite);
+  }
+  // Stretch to fill the screen
+  sunsetSprite.width = state.app.screen.width;
+  sunsetSprite.height = state.app.screen.height;
+  return sunsetSprite;
+}
+
 /**
  * Initialize cloud sprites with shadows
  */
@@ -212,18 +230,10 @@ export function updateDayNightOverlay() {
   // 21-5: Night (dark blue)
 
   if (currentHour >= 5 && currentHour < 7) {
-    // Sunrise - golden/orange gradient
+    // Sunrise - use gradient sprite, fading out as sun rises
     const progress = (currentHour - 5) / 2; // 0 to 1
-    const alpha = 0.3 - progress * 0.2; // Fade out as sun rises
-
-    // Orange-gold gradient from bottom
-    dayNightOverlay.beginFill(0xff8c00, alpha * 0.5);
-    dayNightOverlay.drawRect(0, height * 0.5, width, height * 0.5);
-    dayNightOverlay.endFill();
-
-    dayNightOverlay.beginFill(0xffd700, alpha * 0.3);
-    dayNightOverlay.drawRect(0, height * 0.3, width, height * 0.4);
-    dayNightOverlay.endFill();
+    const sprite = getSunsetSprite();
+    sprite.alpha = 0.3 - progress * 0.2;
 
     // Fading stars
     if (currentHour < 6) {
@@ -242,31 +252,21 @@ export function updateDayNightOverlay() {
     dayNightOverlay.drawRect(0, 0, width, height);
     dayNightOverlay.endFill();
 
+    getSunsetSprite().alpha = 0;
     cloudsContainer.alpha = 1;
     cloudShadowsContainer.alpha = 1;
     birdsContainer.alpha = 1;
   } else if (currentHour >= 8 && currentHour < 17) {
     // Daytime - no overlay, full visibility
+    getSunsetSprite().alpha = 0;
     cloudsContainer.alpha = 1;
     cloudShadowsContainer.alpha = 1;
     birdsContainer.alpha = 1;
   } else if (currentHour >= 17 && currentHour < 19) {
-    // Sunset - orange/red gradient
+    // Sunset - use gradient sprite overlay
     const progress = (currentHour - 17) / 2; // 0 to 1
-    const alpha = 0.1 + progress * 0.25;
-
-    // Red-orange gradient from bottom
-    dayNightOverlay.beginFill(0xff4500, alpha * 0.4);
-    dayNightOverlay.drawRect(0, height * 0.6, width, height * 0.4);
-    dayNightOverlay.endFill();
-
-    dayNightOverlay.beginFill(0xff8c00, alpha * 0.3);
-    dayNightOverlay.drawRect(0, height * 0.3, width, height * 0.5);
-    dayNightOverlay.endFill();
-
-    dayNightOverlay.beginFill(0xffd700, alpha * 0.15);
-    dayNightOverlay.drawRect(0, 0, width, height * 0.5);
-    dayNightOverlay.endFill();
+    const sprite = getSunsetSprite();
+    sprite.alpha = 0.1 + progress * 0.25;
 
     cloudsContainer.alpha = 1 - progress * 0.3;
     cloudShadowsContainer.alpha = 1 - progress; // Shadows fade out at sunset
@@ -275,6 +275,8 @@ export function updateDayNightOverlay() {
     // Dusk - purple/blue transition
     const progress = (currentHour - 19) / 2; // 0 to 1
     const alpha = 0.25 + progress * 0.15;
+
+    getSunsetSprite().alpha = 0;
 
     // Purple-blue gradient
     dayNightOverlay.beginFill(0x4a235a, alpha * 0.5);
@@ -295,6 +297,8 @@ export function updateDayNightOverlay() {
     birdsContainer.alpha = 0.7 - progress * 0.5;
   } else {
     // Night (21-5) - dark blue tint with stars
+    getSunsetSprite().alpha = 0;
+
     dayNightOverlay.beginFill(0x0a1128, 0.4);
     dayNightOverlay.drawRect(0, 0, width, height);
     dayNightOverlay.endFill();
