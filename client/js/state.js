@@ -42,6 +42,7 @@ export let infraStartPoint = null;
 
 // Containers
 export let cloudsContainer = null;
+export let cloudShadowsContainer = null;
 export let birdsContainer = null;
 export let dayNightOverlay = null;
 export let vehiclesContainer = null;
@@ -50,6 +51,7 @@ export let sceneLayer = null;
 
 // Ambient elements
 export const clouds = [];
+export const cloudShadows = [];
 export const birds = [];
 
 // Animated entities
@@ -132,6 +134,7 @@ export function setSelectionGraphics(graphics) { selectionGraphics = graphics; }
 export function setHighlightGraphics(graphics) { highlightGraphics = graphics; }
 export function setInfraStartPoint(point) { infraStartPoint = point; }
 export function setCloudsContainer(container) { cloudsContainer = container; }
+export function setCloudShadowsContainer(container) { cloudShadowsContainer = container; }
 export function setBirdsContainer(container) { birdsContainer = container; }
 export function setDayNightOverlay(overlay) { dayNightOverlay = overlay; }
 export function setVehiclesContainer(container) { vehiclesContainer = container; }

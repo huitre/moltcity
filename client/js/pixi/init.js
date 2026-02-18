@@ -45,6 +45,12 @@ export async function initPixi() {
   worldContainer.addChild(sceneLayer);
   state.setSceneLayer(sceneLayer);
 
+  // Cloud shadows container (at ground level, below buildings)
+  const cloudShadowsContainer = new PIXI.Container();
+  cloudShadowsContainer.zIndex = 650;
+  worldContainer.addChild(cloudShadowsContainer);
+  state.setCloudShadowsContainer(cloudShadowsContainer);
+
   // Birds container
   const birdsContainer = new PIXI.Container();
   birdsContainer.zIndex = 800;

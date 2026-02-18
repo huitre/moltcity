@@ -2,14 +2,26 @@
 // MOLTCITY - Ambient Effects (Clouds, Birds, Day/Night)
 // ============================================
 
-import { CLOUD_COUNT, BIRD_COUNT, WORLD_MIN_X, WORLD_MAX_X, WORLD_MIN_Y, WORLD_MAX_Y } from '../config.js';
-import * as state from '../state.js';
+import {
+  CLOUD_COUNT,
+  BIRD_COUNT,
+  WORLD_MIN_X,
+  WORLD_MAX_X,
+  WORLD_MIN_Y,
+  WORLD_MAX_Y,
+} from "../config.js";
+import * as state from "../state.js";
+
+// Shadow offset from cloud (simulates sun angle)
+const SHADOW_OFFSET_X = 80;
+const SHADOW_OFFSET_Y = 60;
 
 /**
- * Initialize cloud sprites
+ * Initialize cloud sprites with shadows
  */
 export function initClouds() {
-  const { cloudsContainer, clouds } = state;
+  const { cloudsContainer, clouds, cloudShadowsContainer, cloudShadows } =
+    state;
 
   for (let i = 0; i < CLOUD_COUNT; i++) {
     const cloud = createCloud();
@@ -18,27 +30,40 @@ export function initClouds() {
     cloud.speed = 0.2 + Math.random() * 0.3;
     clouds.push(cloud);
     cloudsContainer.addChild(cloud);
+
+    // Create matching shadow
+    const shadow = createCloudShadow(cloud);
+    shadow.x = cloud.x + SHADOW_OFFSET_X;
+    shadow.y = cloud.y + SHADOW_OFFSET_Y;
+    cloudShadows.push(shadow);
+    cloudsContainer.addChild(shadow);
   }
 }
 
 /**
- * Create a single cloud sprite
+ * Create a single cloud sprite using cloud_01–05 images
  */
 function createCloud() {
-  const cloud = new PIXI.Graphics();
-  cloud.beginFill(0xffffff, 0.8);
-
-  // Random cloud shape
-  const numCircles = 3 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < numCircles; i++) {
-    const cx = i * 15 - (numCircles * 7);
-    const cy = Math.random() * 10 - 5;
-    const r = 10 + Math.random() * 15;
-    cloud.drawCircle(cx, cy, r);
-  }
-  cloud.endFill();
-
+  const index = Math.floor(Math.random() * 5) + 1;
+  const padded = String(index).padStart(2, "0");
+  const texture = PIXI.Texture.from(`/sprites/sliced/cloud_${padded}.png`);
+  const cloud = new PIXI.Sprite(texture);
+  cloud.anchor.set(0.5);
+  cloud.alpha = 0.8;
+  cloud.scale.set(0.4 + Math.random() * 0.3);
   return cloud;
+}
+
+/**
+ * Create a shadow sprite matching a cloud (black tinted, ground-level)
+ */
+function createCloudShadow(cloud) {
+  const shadow = new PIXI.Sprite(cloud.texture);
+  shadow.anchor.set(0.5);
+  shadow.scale.set(cloud.scale.x);
+  shadow.tint = 0x000000;
+  shadow.alpha = 0.15;
+  return shadow;
 }
 
 /**
@@ -76,10 +101,11 @@ function createBird() {
  * Animate clouds and birds
  */
 export function animateAmbient(delta) {
-  const { clouds, birds } = state;
+  const { clouds, cloudShadows, birds } = state;
 
   // Animate clouds - move along isometric axis
-  for (const cloud of clouds) {
+  for (let i = 0; i < clouds.length; i++) {
+    const cloud = clouds[i];
     cloud.x += cloud.speed * delta;
     cloud.y += cloud.speed * 0.5 * delta;
 
@@ -87,6 +113,12 @@ export function animateAmbient(delta) {
     if (cloud.x > WORLD_MAX_X + 100 || cloud.y > WORLD_MAX_Y * 0.4) {
       cloud.x = WORLD_MIN_X - 100 + Math.random() * 400;
       cloud.y = WORLD_MIN_Y - 100;
+    }
+
+    // Sync shadow position
+    if (cloudShadows[i]) {
+      cloudShadows[i].x = cloud.x + SHADOW_OFFSET_X;
+      cloudShadows[i].y = cloud.y + SHADOW_OFFSET_Y;
     }
   }
 
@@ -157,7 +189,14 @@ function drawStars(overlay, width, height, alpha = 1) {
  * Update day/night overlay with time-based color cycle
  */
 export function updateDayNightOverlay() {
-  const { app, dayNightOverlay, cloudsContainer, birdsContainer, currentHour } = state;
+  const {
+    app,
+    dayNightOverlay,
+    cloudsContainer,
+    cloudShadowsContainer,
+    birdsContainer,
+    currentHour,
+  } = state;
 
   dayNightOverlay.clear();
 
@@ -192,8 +231,8 @@ export function updateDayNightOverlay() {
     }
 
     cloudsContainer.alpha = 0.5 + progress * 0.5;
+    cloudShadowsContainer.alpha = progress * 0.8; // Shadows fade in with sunrise
     birdsContainer.alpha = 0.5 + progress * 0.5;
-
   } else if (currentHour >= 7 && currentHour < 8) {
     // Early morning - light golden warmth fading
     const progress = currentHour - 7; // 0 to 1
@@ -204,13 +243,13 @@ export function updateDayNightOverlay() {
     dayNightOverlay.endFill();
 
     cloudsContainer.alpha = 1;
+    cloudShadowsContainer.alpha = 1;
     birdsContainer.alpha = 1;
-
   } else if (currentHour >= 8 && currentHour < 17) {
     // Daytime - no overlay, full visibility
     cloudsContainer.alpha = 1;
+    cloudShadowsContainer.alpha = 1;
     birdsContainer.alpha = 1;
-
   } else if (currentHour >= 17 && currentHour < 19) {
     // Sunset - orange/red gradient
     const progress = (currentHour - 17) / 2; // 0 to 1
@@ -230,8 +269,8 @@ export function updateDayNightOverlay() {
     dayNightOverlay.endFill();
 
     cloudsContainer.alpha = 1 - progress * 0.3;
+    cloudShadowsContainer.alpha = 1 - progress; // Shadows fade out at sunset
     birdsContainer.alpha = 1 - progress * 0.3;
-
   } else if (currentHour >= 19 && currentHour < 21) {
     // Dusk - purple/blue transition
     const progress = (currentHour - 19) / 2; // 0 to 1
@@ -252,8 +291,8 @@ export function updateDayNightOverlay() {
     }
 
     cloudsContainer.alpha = 0.7 - progress * 0.5;
+    cloudShadowsContainer.alpha = 0; // No shadows at dusk
     birdsContainer.alpha = 0.7 - progress * 0.5;
-
   } else {
     // Night (21-5) - dark blue tint with stars
     dayNightOverlay.beginFill(0x0a1128, 0.4);
@@ -265,6 +304,7 @@ export function updateDayNightOverlay() {
 
     // Hide clouds at night, show fewer birds
     cloudsContainer.alpha = 0.2;
+    cloudShadowsContainer.alpha = 0; // No shadows at night
     birdsContainer.alpha = 0.3;
   }
 }
@@ -277,17 +317,24 @@ export function updateTrafficLimits() {
 
   // Traffic multiplier based on time
   let multiplier = 1.0;
-  if ((currentHour >= 7 && currentHour < 9) || (currentHour >= 17 && currentHour < 19)) {
+  if (
+    (currentHour >= 7 && currentHour < 9) ||
+    (currentHour >= 17 && currentHour < 19)
+  ) {
     multiplier = 2.0; // Rush hours
   } else if (currentHour >= 22 || currentHour < 5) {
     multiplier = 0.2; // Night
   }
 
   const baseVehicles = Math.max(5, Math.floor(currentPopulation * 0.2));
-  state.setMaxAnimatedVehicles(Math.min(50, Math.max(5, Math.floor(baseVehicles * multiplier))));
+  state.setMaxAnimatedVehicles(
+    Math.min(50, Math.max(5, Math.floor(baseVehicles * multiplier))),
+  );
 
   // Pedestrians
   const basePedestrians = Math.max(3, Math.floor(currentPopulation * 0.15));
-  const pedMultiplier = (currentHour >= 22 || currentHour < 6) ? 0.3 : 1.0;
-  state.setMaxPedestrians(Math.min(30, Math.max(3, Math.floor(basePedestrians * pedMultiplier))));
+  const pedMultiplier = currentHour >= 22 || currentHour < 6 ? 0.3 : 1.0;
+  state.setMaxPedestrians(
+    Math.min(30, Math.max(3, Math.floor(basePedestrians * pedMultiplier))),
+  );
 }
