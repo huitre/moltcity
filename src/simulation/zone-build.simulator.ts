@@ -6,7 +6,7 @@
 
 import type { SimulationDb } from './engine.adapter.js';
 import { DemandCalculator } from './demand.calculator.js';
-import type { CityTime, BuildingType, ZoningType } from '../models/types.js';
+import type { CityTime, Building, BuildingType, ZoningType } from '../models/types.js';
 import type { ActivityLogger } from './engine.js';
 
 const BUILD_INTERVAL_TICKS = 100;
@@ -43,15 +43,15 @@ export class ZoneBuildSimulator {
     this.demandCalculator = new DemandCalculator(db);
   }
 
-  simulate(currentTick: number, time: CityTime): number {
-    if (currentTick - this.lastProcessedTick < BUILD_INTERVAL_TICKS) return 0;
+  simulate(currentTick: number, time: CityTime): Building[] {
+    if (currentTick - this.lastProcessedTick < BUILD_INTERVAL_TICKS) return [];
     this.lastProcessedTick = currentTick;
 
     const zonedParcels = this.db.parcels.getZonedParcelsWithoutBuilding();
-    if (zonedParcels.length === 0) return 0;
+    if (zonedParcels.length === 0) return [];
 
     const demand = this.demandCalculator.calculate();
-    let built = 0;
+    const newBuildings: Building[] = [];
 
     for (const parcel of zonedParcels) {
       const zoning = parcel.zoning;
@@ -82,7 +82,7 @@ export class ZoneBuildSimulator {
       const name = BUILDING_NAMES[buildingType] || buildingType;
       const ownerId = parcel.ownerId || 'system';
 
-      this.db.buildings.createBuilding(
+      const building = this.db.buildings.createBuilding(
         parcel.id,
         buildingType,
         name,
@@ -92,17 +92,17 @@ export class ZoneBuildSimulator {
         currentTick
       );
 
-      built++;
+      if (building) newBuildings.push(building);
       console.log(`[ZoneBuild] Auto-built ${buildingType} at (${parcel.x}, ${parcel.y})`);
       this.log?.('zone_build', `${name} auto-built at (${parcel.x}, ${parcel.y})`, {
         type: buildingType, x: parcel.x, y: parcel.y,
       });
     }
 
-    if (built > 0) {
-      console.log(`[ZoneBuild] ${built} buildings auto-constructed on tick ${currentTick}`);
+    if (newBuildings.length > 0) {
+      console.log(`[ZoneBuild] ${newBuildings.length} buildings auto-constructed on tick ${currentTick}`);
     }
-    return built;
+    return newBuildings;
   }
 
   private hasAdjacentRoad(x: number, y: number): boolean {

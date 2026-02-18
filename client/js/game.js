@@ -645,4 +645,14 @@ function updateUI() {
   if (powerDisplay) {
     powerDisplay.textContent = `${totalDemand.toFixed(1)} / ${totalCapacity} kW`;
   }
+
+  // Water stats
+  const waterTowers = buildings.filter((b) => b.type === "water_tower");
+  const waterCapacity = waterTowers.length * 1000;
+  const waterDemand = buildings.reduce((sum, b) => b.type === "water_tower" ? sum : sum + (b.waterRequired || 0), 0);
+  const waterDisplay = document.getElementById("water-display");
+  if (waterDisplay) {
+    waterDisplay.textContent = `${waterDemand} / ${waterCapacity}`;
+    waterDisplay.style.color = waterDemand > waterCapacity ? '#ff6b6b' : '#4ecdc4';
+  }
 }

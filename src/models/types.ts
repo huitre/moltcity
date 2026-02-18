@@ -198,6 +198,8 @@ export interface CityTime {
 
 export interface CityStats {
   population: number;
+  employed?: number;
+  totalJobs?: number;
   totalBuildings: number;
   totalRoads: number;
   powerCapacity: number;

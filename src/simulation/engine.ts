@@ -1356,9 +1356,14 @@ export class SimulationEngine extends EventEmitter {
     bundle.landValueSimulator.simulate(time);
 
     // Simulate zone auto-building (every 100 ticks)
-    const zoneBuildCount = bundle.zoneBuildSimulator.simulate(this.currentTick, time);
-    if (zoneBuildCount > 0) {
-      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { count: zoneBuildCount } });
+    const newBuildings = bundle.zoneBuildSimulator.simulate(this.currentTick, time);
+    if (newBuildings.length > 0) {
+      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { count: newBuildings.length } });
+      // Spawn residents for newly built residential buildings
+      for (const building of newBuildings) {
+        const popEvents = bundle.populationSimulator.onBuildingCompleted(building);
+        events.push(...popEvents);
+      }
     }
 
     // Simulate zone evolution (runs daily at hour 2)

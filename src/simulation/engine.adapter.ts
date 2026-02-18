@@ -993,6 +993,36 @@ class CityScopedPopulationRepository extends LegacyPopulationRepository {
   getAllResidents(): Resident[] {
     return super.getAllResidents(this.cityId);
   }
+
+  getTotalPopulation(): number {
+    const row = this.raw.prepare('SELECT count(*) as count FROM residents WHERE city_id = ?').get(this.cityId) as any;
+    return row?.count || 0;
+  }
+
+  getEmployedCount(): number {
+    const row = this.raw.prepare('SELECT count(*) as count FROM residents WHERE city_id = ? AND work_building_id IS NOT NULL').get(this.cityId) as any;
+    return row?.count || 0;
+  }
+
+  getUnemployedResidents(): Resident[] {
+    const rows = this.raw.prepare('SELECT * FROM residents WHERE city_id = ? AND work_building_id IS NULL').all(this.cityId);
+    return rows.map(row => rowToResident(row));
+  }
+
+  getEmployedResidents(): Resident[] {
+    const rows = this.raw.prepare('SELECT * FROM residents WHERE city_id = ? AND work_building_id IS NOT NULL').all(this.cityId);
+    return rows.map(row => rowToResident(row));
+  }
+
+  getResidentsByHome(homeBuildingId: string): Resident[] {
+    const rows = this.raw.prepare('SELECT * FROM residents WHERE city_id = ? AND home_building_id = ?').all(this.cityId, homeBuildingId);
+    return rows.map(row => rowToResident(row));
+  }
+
+  getResidentsByWork(workBuildingId: string): Resident[] {
+    const rows = this.raw.prepare('SELECT * FROM residents WHERE city_id = ? AND work_building_id = ?').all(this.cityId, workBuildingId);
+    return rows.map(row => rowToResident(row));
+  }
 }
 
 // ============================================
