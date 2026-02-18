@@ -28,7 +28,16 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
   async getOrCreateParcel(x: number, y: number, cityId?: string): Promise<Parcel> {
     const existing = await this.getParcel(x, y, cityId);
     if (existing) return existing;
-    return this.createParcel(x, y, 'land', cityId);
+    try {
+      return await this.createParcel(x, y, 'land', cityId);
+    } catch (err: unknown) {
+      // Handle race condition: another request may have created it between our check and insert
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        const retry = await this.getParcel(x, y, cityId);
+        if (retry) return retry;
+      }
+      throw err;
+    }
   }
 
   async getParcelById(id: string): Promise<Parcel | null> {
@@ -98,7 +107,7 @@ export class ParcelRepository extends BaseRepository<typeof parcels, ParcelRow, 
       terrain,
       cityId: cityId || null,
     });
-    return (await this.getParcel(x, y))!;
+    return (await this.getParcel(x, y, cityId))!;
   }
 
   async claimParcelForCity(parcelId: string, cityId: string): Promise<void> {

@@ -22,6 +22,16 @@ export const roadIdParamSchema = z.object({
   id: z.string(),
 });
 
+// Batch create roads schema
+export const createRoadsBatchSchema = z.object({
+  tiles: z.array(z.object({
+    x: z.number().int(),
+    y: z.number().int(),
+  })).min(1).max(500),
+  cityId: z.string().optional(),
+});
+
 // Type exports
 export type CreateRoadInput = z.infer<typeof createRoadSchema>;
+export type CreateRoadsBatchInput = z.infer<typeof createRoadsBatchSchema>;
 export type RoadIdParams = z.infer<typeof roadIdParamSchema>;

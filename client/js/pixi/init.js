@@ -74,11 +74,16 @@ export async function initPixi() {
 /**
  * Setup mouse/keyboard interactions
  */
-export function setupInteractions(onTileClick, onTileHover) {
+const DRAWABLE_TYPES = ["road", "residential", "offices", "industrial", "suburban"];
+
+export function setupInteractions(onTileClick, onTileHover, onDragStart, onDragMove, onDragEnd) {
   const { app, worldContainer } = state;
 
   // Drag state
   let isDragging = false;
+  let isPendingDragDraw = false;
+  let isInDragDraw = false;
+  let startPos = { x: 0, y: 0 };
   let lastPos = { x: 0, y: 0 };
 
   // Make stage interactive
@@ -87,14 +92,42 @@ export function setupInteractions(onTileClick, onTileHover) {
 
   // Mouse down - start drag or select
   app.stage.on("pointerdown", (e) => {
-    isDragging = true;
+    startPos = { x: e.global.x, y: e.global.y };
     lastPos = { x: e.global.x, y: e.global.y };
+
+    if (state.selectedBuildType && DRAWABLE_TYPES.includes(state.selectedBuildType)) {
+      // Potential drag-draw — defer until threshold exceeded
+      isPendingDragDraw = true;
+      isDragging = false;
+    } else {
+      isDragging = true;
+      isPendingDragDraw = false;
+    }
   });
 
-  // Mouse move - drag camera or hover
+  // Mouse move - drag camera, drag-draw, or hover
   app.stage.on("pointermove", (e) => {
     const localPos = worldContainer.toLocal(e.global);
     const gridPos = isoToCart(localPos.x, localPos.y);
+
+    if (isPendingDragDraw) {
+      const dx = Math.abs(e.global.x - startPos.x);
+      const dy = Math.abs(e.global.y - startPos.y);
+      if (dx > 5 || dy > 5) {
+        // Threshold exceeded: commit to drag-draw mode
+        isPendingDragDraw = false;
+        isInDragDraw = true;
+        const startLocal = worldContainer.toLocal(startPos);
+        const startGrid = isoToCart(startLocal.x, startLocal.y);
+        if (onDragStart) onDragStart(startGrid.x, startGrid.y);
+      }
+      return;
+    }
+
+    if (isInDragDraw) {
+      if (onDragMove) onDragMove(gridPos.x, gridPos.y, e.global);
+      return;
+    }
 
     if (isDragging) {
       const dx = e.global.x - lastPos.x;
@@ -118,11 +151,27 @@ export function setupInteractions(onTileClick, onTileHover) {
     }
   });
 
-  // Mouse up - end drag or click
+  // Mouse up - end drag-draw, click, or camera pan
   app.stage.on("pointerup", (e) => {
+    if (isInDragDraw) {
+      if (onDragEnd) onDragEnd();
+      isInDragDraw = false;
+      isPendingDragDraw = false;
+      return;
+    }
+
+    if (isPendingDragDraw) {
+      // Never exceeded threshold — treat as single click
+      isPendingDragDraw = false;
+      const localPos = worldContainer.toLocal(e.global);
+      const gridPos = isoToCart(localPos.x, localPos.y);
+      if (onTileClick) onTileClick(gridPos.x, gridPos.y);
+      return;
+    }
+
     if (isDragging) {
-      const dx = Math.abs(e.global.x - lastPos.x);
-      const dy = Math.abs(e.global.y - lastPos.y);
+      const dx = Math.abs(e.global.x - startPos.x);
+      const dy = Math.abs(e.global.y - startPos.y);
 
       // If barely moved, treat as click
       if (dx < 5 && dy < 5) {
@@ -144,7 +193,10 @@ export function setupInteractions(onTileClick, onTileHover) {
   });
 
   app.stage.on("pointerupoutside", () => {
+    if (isInDragDraw && onDragEnd) onDragEnd();
     isDragging = false;
+    isInDragDraw = false;
+    isPendingDragDraw = false;
   });
 
   // Mouse wheel zoom

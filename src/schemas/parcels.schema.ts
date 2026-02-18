@@ -47,9 +47,20 @@ export const setZoningSchema = z.object({
   cityId: z.string().optional(),
 });
 
+// Batch set zoning schema
+export const setZoningBatchSchema = z.object({
+  tiles: z.array(z.object({
+    x: z.number().int(),
+    y: z.number().int(),
+  })).min(1).max(500),
+  zoning: zoningTypeSchema.nullable(),
+  cityId: z.string().optional(),
+});
+
 // Type exports
 export type ParcelCoordsParams = z.infer<typeof parcelCoordsParamsSchema>;
 export type ParcelsRangeQuery = z.infer<typeof parcelsRangeQuerySchema>;
 export type PurchaseParcelInput = z.infer<typeof purchaseParcelSchema>;
 export type SellParcelInput = z.infer<typeof sellParcelSchema>;
 export type SetZoningInput = z.infer<typeof setZoningSchema>;
+export type SetZoningBatchInput = z.infer<typeof setZoningBatchSchema>;

@@ -10,8 +10,13 @@ import {
   purchaseParcelSchema,
   sellParcelSchema,
   setZoningSchema,
+  setZoningBatchSchema,
 } from '../schemas/parcels.schema.js';
 import { extractOptionalCityId } from '../utils/city-context.js';
+import { UserRepository } from '../repositories/user.repository.js';
+import { CityRepository } from '../repositories/city.repository.js';
+import { ForbiddenError, InsufficientFundsError } from '../plugins/error-handler.plugin.js';
+import { hasElevatedPrivileges, ZONING_COST, type UserRole } from '../config/game.js';
 
 export const parcelsController: FastifyPluginAsync = async (fastify) => {
   const parcelService = new ParcelService(fastify.db, fastify);
@@ -113,5 +118,58 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
 
     const parcel = await parcelService.setZoning(parcelId, body.zoning, cityId);
     return { success: true, parcel };
+  });
+
+  // Batch set zoning (requires mayor/admin)
+  fastify.post('/api/parcels/zoning/batch', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    let role: UserRole = 'user';
+    if (request.user?.userId) {
+      const userRepo = new UserRepository(fastify.db);
+      const dbUser = await userRepo.getUser(request.user.userId);
+      role = (dbUser?.role as UserRole) || 'user';
+    }
+
+    const cityId = extractOptionalCityId(request);
+    const cityRepo = new CityRepository(fastify.db);
+    const cityData = cityId ? await cityRepo.getCity(cityId) : await cityRepo.getCity();
+    const isMayor = !!(cityData && request.user?.userId && cityData.mayor === request.user.userId);
+
+    if (!hasElevatedPrivileges(role, isMayor)) {
+      throw new ForbiddenError('Only mayors and admins can set zoning');
+    }
+
+    const body = setZoningBatchSchema.parse(request.body);
+
+    // Determine valid tiles (skip if already same zoning)
+    const validParcels: { id: string }[] = [];
+    for (const tile of body.tiles) {
+      const parcel = await parcelService.getOrCreateParcel(tile.x, tile.y, cityId);
+      if (parcel.zoning === body.zoning) continue;
+      validParcels.push({ id: parcel.id });
+    }
+
+    if (validParcels.length === 0) {
+      return { success: true, zoned: 0, skipped: body.tiles.length };
+    }
+
+    // Treasury check
+    const totalCost = validParcels.length * ZONING_COST;
+    if (cityData && totalCost > 0) {
+      if (cityData.stats.treasury < totalCost) {
+        throw new InsufficientFundsError(totalCost, cityData.stats.treasury);
+      }
+      await cityRepo.updateTreasury(cityData.id, cityData.stats.treasury - totalCost);
+    }
+
+    // Apply zoning to all valid parcels
+    for (const p of validParcels) {
+      await parcelService.setZoningDirect(p.id, body.zoning, cityId);
+    }
+
+    reply.status(201);
+    if (cityId) fastify.broadcastToCity(cityId, 'buildings_update', { action: 'zoning_batch_set' });
+    return { success: true, zoned: validParcels.length, skipped: body.tiles.length - validParcels.length };
   });
 };

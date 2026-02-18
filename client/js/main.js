@@ -5,6 +5,7 @@
 import * as state from './state.js';
 import * as api from './api.js';
 import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS } from './config.js';
+import { bresenhamLine } from './utils.js';
 import { initPixi, setupInteractions } from './pixi/init.js';
 import { initGame, render } from './game.js';
 import { connectWebSocket } from './websocket.js';
@@ -45,7 +46,7 @@ async function initializeApp() {
     await loadCityData();
 
     // Setup interactions
-    setupInteractions(handleTileClick, handleTileHover);
+    setupInteractions(handleTileClick, handleTileHover, handleDragStart, handleDragMove, handleDragEnd);
 
     // Initialize game systems
     initGame();
@@ -637,6 +638,7 @@ async function handleBuild(x, y, buildType) {
  * Handle tile hover
  */
 function handleTileHover(x, y, globalPos) {
+  if (state.isDragDrawing) return;
   updateTooltip(x, y, globalPos);
 
   // Show build cursor highlight when a build type is selected
@@ -691,6 +693,193 @@ function handleTileHover(x, y, globalPos) {
       state.setHighlightGraphics(container);
     }
   }
+}
+
+// ============================================
+// Drag-to-Draw Handlers
+// ============================================
+
+const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
+const ZONE_MAPPING = {
+  residential: "residential",
+  offices: "office",
+  industrial: "industrial",
+  suburban: "suburban",
+};
+
+/**
+ * Handle drag start — begin drawing roads or zoning
+ */
+function handleDragStart(x, y) {
+  const { selectedBuildType } = state;
+  if (!selectedBuildType) return;
+
+  state.setIsDragDrawing(true);
+  state.setDragDrawStart({ x, y });
+
+  if (selectedBuildType === "road") {
+    state.setDragDrawTiles([{ x, y }]);
+  } else {
+    state.setDragDrawTiles([{ x, y }]);
+  }
+
+  // Create preview container
+  const container = new PIXI.Container();
+  container.sortableChildren = true;
+  container.zIndex = 1000;
+  state.worldContainer.addChild(container);
+  state.setDragDrawPreview(container);
+
+  updateDragPreview(x, y);
+}
+
+/**
+ * Handle drag move — update tiles and preview
+ */
+function handleDragMove(x, y, globalPos) {
+  const { selectedBuildType, dragDrawTiles } = state;
+  if (!state.isDragDrawing || !selectedBuildType) return;
+
+  if (selectedBuildType === "road") {
+    // Free-line: interpolate from last tile to current using bresenham
+    const last = dragDrawTiles[dragDrawTiles.length - 1];
+    if (last.x === x && last.y === y) return;
+
+    const interpolated = bresenhamLine(last.x, last.y, x, y);
+    for (const pt of interpolated) {
+      if (!dragDrawTiles.some(t => t.x === pt.x && t.y === pt.y)) {
+        dragDrawTiles.push(pt);
+      }
+    }
+    state.setDragDrawTiles(dragDrawTiles);
+  } else if (ZONE_TYPES.includes(selectedBuildType)) {
+    // Rectangle fill from start to current
+    const start = state.dragDrawStart;
+    const minX = Math.min(start.x, x);
+    const maxX = Math.max(start.x, x);
+    const minY = Math.min(start.y, y);
+    const maxY = Math.max(start.y, y);
+    const tiles = [];
+    for (let ty = minY; ty <= maxY; ty++) {
+      for (let tx = minX; tx <= maxX; tx++) {
+        tiles.push({ x: tx, y: ty });
+      }
+    }
+    state.setDragDrawTiles(tiles);
+  }
+
+  updateDragPreview(x, y);
+  updateDragTooltip(globalPos);
+}
+
+/**
+ * Update the visual preview overlay during drag
+ */
+function updateDragPreview() {
+  const { dragDrawPreview, dragDrawTiles, selectedBuildType } = state;
+  if (!dragDrawPreview) return;
+
+  dragDrawPreview.removeChildren();
+
+  const isZoning = ZONE_TYPES.includes(selectedBuildType);
+  for (const tile of dragDrawTiles) {
+    // For zoning, all tiles are valid; for roads, check occupancy
+    const occupied = isZoning ? false : isTileOccupied(tile.x, tile.y);
+    const color = occupied ? 0xff0000 : COLORS.selected;
+    const highlight = drawHighlight(tile.x, tile.y, color, true);
+    dragDrawPreview.addChild(highlight);
+  }
+}
+
+/**
+ * Update the tooltip during drag with tile count and cost
+ */
+function updateDragTooltip(globalPos) {
+  const tooltip = document.getElementById("tooltip");
+  if (!tooltip || !globalPos) return;
+
+  const { selectedBuildType, dragDrawTiles, gameConfig } = state;
+  const isZoning = ZONE_TYPES.includes(selectedBuildType);
+  const validCount = isZoning ? dragDrawTiles.length : dragDrawTiles.filter(t => !isTileOccupied(t.x, t.y)).length;
+
+  let costPer = 0;
+  if (ZONE_TYPES.includes(selectedBuildType)) {
+    costPer = gameConfig?.zoningCost || 0;
+  } else if (selectedBuildType === "road") {
+    costPer = gameConfig?.costs?.road || 0;
+  }
+
+  const totalCost = validCount * costPer;
+  const label = selectedBuildType === "road" ? "Roads" : selectedBuildType;
+
+  tooltip.innerHTML = `<strong>${label}</strong><br>Tiles: ${validCount}/${dragDrawTiles.length}<br><span style="color:#4ecdc4">Cost: $${totalCost.toLocaleString()}</span>`;
+  tooltip.style.display = "block";
+  tooltip.style.left = `${globalPos.x + 15}px`;
+  tooltip.style.top = `${globalPos.y + 15}px`;
+}
+
+/**
+ * Handle drag end — submit batch placement
+ */
+async function handleDragEnd() {
+  const { selectedBuildType, dragDrawTiles, dragDrawPreview } = state;
+
+  // Clean up preview
+  if (dragDrawPreview) {
+    state.worldContainer.removeChild(dragDrawPreview);
+    dragDrawPreview.destroy({ children: true });
+    state.setDragDrawPreview(null);
+  }
+
+  state.setIsDragDrawing(false);
+  state.setDragDrawStart(null);
+
+  // For roads, filter out occupied tiles; for zoning, send all tiles (server skips duplicates)
+  const isZoning = ZONE_TYPES.includes(selectedBuildType);
+  const validTiles = isZoning ? [...dragDrawTiles] : dragDrawTiles.filter(t => !isTileOccupied(t.x, t.y));
+  state.setDragDrawTiles([]);
+
+  const tooltip = document.getElementById("tooltip");
+  if (tooltip) tooltip.style.display = "none";
+
+  if (validTiles.length === 0) return;
+
+  try {
+    if (selectedBuildType === "road") {
+      const result = await api.createRoadsBatch(validTiles);
+      showToast(`${result.created} roads placed`);
+    } else if (isZoning) {
+      const zoning = ZONE_MAPPING[selectedBuildType];
+      const result = await api.setZoningBatch(validTiles, zoning);
+      showToast(`${result.zoned} tiles zoned as ${selectedBuildType}`);
+    }
+
+    // Reload state and re-render
+    const [parcelsR, roadsR] = await Promise.all([api.getParcels(), api.getRoads()]);
+    state.setParcels(parcelsR.parcels || []);
+    state.setRoads(roadsR.roads || []);
+    render();
+    updateUserBalance();
+  } catch (error) {
+    console.error("[MoltCity] Batch draw failed:", error.message);
+    showToast(`Draw failed: ${error.message}`, true);
+  }
+}
+
+/**
+ * Cancel an in-progress drag-draw
+ */
+function cancelDragDraw() {
+  if (state.dragDrawPreview) {
+    state.worldContainer.removeChild(state.dragDrawPreview);
+    state.dragDrawPreview.destroy({ children: true });
+    state.setDragDrawPreview(null);
+  }
+  state.setIsDragDrawing(false);
+  state.setDragDrawStart(null);
+  state.setDragDrawTiles([]);
+  const tooltip = document.getElementById("tooltip");
+  if (tooltip) tooltip.style.display = "none";
 }
 
 /**
@@ -950,6 +1139,10 @@ function setupBuildMenu() {
   // ESC key to deselect
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      // Cancel active drag-draw
+      if (state.isDragDrawing) {
+        cancelDragDraw();
+      }
       if (state.infraStartPoint) {
         // Cancel infrastructure placement
         state.setInfraStartPoint(null);

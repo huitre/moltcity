@@ -211,6 +211,13 @@ export async function createRoad(params) {
   });
 }
 
+export async function createRoadsBatch(tiles) {
+  return fetchApi('/api/roads/batch', {
+    method: 'POST',
+    body: JSON.stringify(bodyWithCity({ tiles })),
+  });
+}
+
 export async function deleteRoad(id) {
   return fetchApi(withCityId(`/api/roads/${id}`), { method: 'DELETE' });
 }
@@ -436,6 +443,13 @@ export async function setZoning(parcelIdOrX, zoningOrY, maybeZoning) {
   return fetchApi('/api/parcels/zoning', {
     method: 'POST',
     body: JSON.stringify(bodyWithCity(params)),
+  });
+}
+
+export async function setZoningBatch(tiles, zoning) {
+  return fetchApi('/api/parcels/zoning/batch', {
+    method: 'POST',
+    body: JSON.stringify(bodyWithCity({ tiles, zoning })),
   });
 }
 

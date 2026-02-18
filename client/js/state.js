@@ -97,6 +97,12 @@ export let currentElection = null;
 export let currentMayor = null;
 export let electionCandidates = [];
 
+// Drag-draw state
+export let isDragDrawing = false;
+export let dragDrawStart = null;
+export let dragDrawTiles = [];
+export let dragDrawPreview = null;
+
 // Economy
 export let economyData = null;
 
@@ -142,4 +148,8 @@ export function setWalletAddress(addr) { walletAddress = addr; }
 export function setCurrentElection(election) { currentElection = election; }
 export function setCurrentMayor(mayor) { currentMayor = mayor; }
 export function setElectionCandidates(candidates) { electionCandidates = candidates; }
+export function setIsDragDrawing(v) { isDragDrawing = v; }
+export function setDragDrawStart(p) { dragDrawStart = p; }
+export function setDragDrawTiles(t) { dragDrawTiles = t; }
+export function setDragDrawPreview(c) { dragDrawPreview = c; }
 export function setEconomyData(data) { economyData = data; }

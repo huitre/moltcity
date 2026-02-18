@@ -248,4 +248,12 @@ export class ParcelService {
     }
     return (await this.parcelRepo.getParcelById(parcelId))!;
   }
+
+  async setZoningDirect(parcelId: string, zoning: ZoningType | null, cityId?: string): Promise<void> {
+    if (zoning) {
+      await this.parcelRepo.setZoning(parcelId, zoning, cityId);
+    } else {
+      await this.parcelRepo.clearZoning(parcelId);
+    }
+  }
 }
