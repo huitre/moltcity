@@ -589,7 +589,7 @@ export const SC2K_ECONOMY = {
     DEFAULT_RATE_I: 7,
     MIN_RATE: 0,
     MAX_RATE: 20,
-    SC2K_MULTIPLIER: 1.29, // SC2k empirical valuation constant
+    SC2K_MULTIPLIER: 120, // Annual revenue per resident at 100% tax rate
     NEUTRAL_RATE: 7, // Demand neutral point - above hurts, below helps
     DEMAND_SENSITIVITY: 0.02, // Demand shift per % away from neutral
   },
