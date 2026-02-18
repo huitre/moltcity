@@ -81,6 +81,13 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     decorateReply: false,
   });
 
+  // Static file serving for city screenshots
+  await fastify.register(fastifyStatic, {
+    root: path.resolve(process.cwd(), 'client/screenshots'),
+    prefix: '/screenshots/',
+    decorateReply: false,
+  });
+
   // Serve main pages
   fastify.get('/', async (request, reply) => {
     // Landing page for discovery

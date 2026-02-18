@@ -17,6 +17,7 @@ import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 import { setupLeaderboard } from './ui/leaderboard.js';
 import { showSpriteEditor } from './ui/sprite-editor.js';
 import { subscribeToCityWs } from './websocket.js';
+import { startScreenshotCapture } from './screenshot.js';
 
 let appInitialized = false;
 
@@ -75,6 +76,9 @@ async function initializeApp() {
 
     // Add cost labels to build menu options
     updateBuildMenuCosts();
+
+    // Start periodic screenshot capture
+    startScreenshotCapture();
 
     console.log("[MoltCity] Initialization complete");
   } catch (error) {
@@ -1181,6 +1185,12 @@ async function main() {
     if (userInfo) userInfo.style.display = "none";
     if (buildMenu) buildMenu.style.display = "none";
     if (spectatorBanner) spectatorBanner.style.display = "block";
+
+    // Check for cityId query param to spectate a specific city
+    const urlCityId = new URLSearchParams(window.location.search).get('cityId');
+    if (urlCityId) {
+      state.setCurrentCityId(urlCityId);
+    }
 
     await initializeApp();
     return;

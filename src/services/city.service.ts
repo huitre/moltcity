@@ -52,6 +52,19 @@ export class CityService {
     await this.cityRepo.updateTime(cityId, tick, hour, day, year);
   }
 
+  async getTopCities(limit: number = 10): Promise<City[]> {
+    const cities = await this.cityRepo.getAllCities();
+    const enriched = await Promise.all(
+      cities.map(async (c) => {
+        c.stats = await this.calculateStats(c.id);
+        return c;
+      })
+    );
+    return enriched
+      .sort((a, b) => b.stats.population - a.stats.population)
+      .slice(0, limit);
+  }
+
   async calculateStats(cityId: string): Promise<CityStats> {
     const [residentCount, employedCount, buildings, roads] = await Promise.all([
       this.db.select({ count: count() }).from(residents).where(eq(residents.cityId, cityId)).then(r => r[0]?.count || 0),

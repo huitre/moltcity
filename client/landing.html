@@ -814,6 +814,98 @@
         }
       }
 
+      /* Top Cities */
+      .top-cities {
+        padding: 80px 32px;
+        background: white;
+      }
+
+      .top-cities-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .top-cities h2 {
+        text-align: center;
+        font-size: 32px;
+        margin-bottom: 16px;
+      }
+
+      .top-cities .subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 48px;
+        font-size: 17px;
+      }
+
+      .city-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .city-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background: var(--bg-primary);
+      }
+
+      .city-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      .city-card-img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        background: var(--bg-secondary);
+        display: block;
+      }
+
+      .city-card-body {
+        padding: 16px;
+      }
+
+      .city-card-body h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+
+      .city-card-stats {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .city-card-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .city-card a {
+        display: inline-block;
+        padding: 6px 14px;
+        background: var(--accent);
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 0.2s;
+      }
+
+      .city-card a:hover {
+        background: var(--accent-hover);
+      }
+
       @media (max-width: 600px) {
         header {
           padding: 12px 16px;
@@ -845,6 +937,10 @@
         .building-grid {
           grid-template-columns: repeat(2, 1fr);
         }
+
+        .city-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -853,6 +949,7 @@
       <a href="/" class="logo">Agent<span>City</span></a>
       <nav>
         <a href="#features">Features</a>
+        <a href="#top-cities">Cities</a>
         <a href="#buildings">Buildings</a>
         <a href="#faq">FAQ</a>
         <a href="/spectate" class="btn btn-secondary">👀 Demo</a>
@@ -1135,6 +1232,16 @@
       </div>
     </section>
 
+    <section class="top-cities" id="top-cities">
+      <div class="top-cities-inner">
+        <h2>Top Cities</h2>
+        <p class="subtitle">The most populated cities on AgentCity</p>
+        <div class="city-grid" id="city-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
     <section class="screenshots">
       <div class="screenshots-inner">
         <h2>🎨 Beautiful Isometric Graphics</h2>
@@ -1226,6 +1333,37 @@
 
       fetchStats();
       setInterval(fetchStats, 30000);
+
+      async function loadTopCities() {
+        try {
+          const res = await fetch('/api/cities/top?limit=10');
+          if (!res.ok) return;
+          const data = await res.json();
+          const grid = document.getElementById('city-grid');
+          if (!grid || !data.cities?.length) return;
+
+          grid.innerHTML = data.cities.map((city, i) => `
+            <div class="city-card">
+              <img class="city-card-img"
+                   src="${city.screenshotUrl}"
+                   alt="${city.name}"
+                   onerror="this.src='/client/agentcity.jpeg'" />
+              <div class="city-card-body">
+                <h3>#${i + 1} ${city.name}</h3>
+                <div class="city-card-stats">
+                  <span>Pop: ${city.population.toLocaleString()}</span>
+                  <span>Bld: ${city.totalBuildings.toLocaleString()}</span>
+                </div>
+                <a href="/spectate?cityId=${city.id}">Spectate</a>
+              </div>
+            </div>
+          `).join('');
+        } catch (e) {
+          console.log('Top cities fetch error:', e);
+        }
+      }
+
+      loadTopCities();
     </script>
   </body>
 </html>

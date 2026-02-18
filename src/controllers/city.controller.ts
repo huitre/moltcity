@@ -17,6 +17,8 @@ import {
   HOUSING,
 } from '../config/game.js';
 import { z } from 'zod';
+import fs from 'fs/promises';
+import path from 'path';
 
 const createCitySchema = z.object({
   name: z.string().min(1).max(100),
@@ -101,6 +103,52 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
       floorCosts: HOUSING.FLOOR_COSTS,
       userRole: role,
     };
+  });
+
+  // Top cities by population
+  fastify.get('/api/cities/top', async (request) => {
+    const query = request.query as { limit?: string };
+    const limit = Math.min(parseInt(query.limit || '10') || 10, 20);
+    const cities = await cityService.getTopCities(limit);
+    return {
+      cities: cities.map(c => ({
+        id: c.id,
+        name: c.name,
+        population: c.stats.population,
+        totalBuildings: c.stats.totalBuildings,
+        treasury: c.stats.treasury,
+        mayor: c.mayor,
+        screenshotUrl: `/screenshots/${c.id}.jpg`,
+      }))
+    };
+  });
+
+  // Screenshot upload (rate-limited per city)
+  const screenshotTimestamps = new Map<string, number>();
+  const SCREENSHOT_COOLDOWN = 5 * 60 * 1000;
+
+  fastify.post('/api/cities/:cityId/screenshot', async (request, reply) => {
+    const { cityId } = request.params as { cityId: string };
+
+    const lastUpload = screenshotTimestamps.get(cityId) || 0;
+    if (Date.now() - lastUpload < SCREENSHOT_COOLDOWN) {
+      return reply.status(429).send({ error: 'Screenshot recently updated' });
+    }
+
+    const data = await request.file();
+    if (!data) return reply.status(400).send({ error: 'No file' });
+
+    const dir = path.resolve(process.cwd(), 'client/screenshots');
+    await fs.mkdir(dir, { recursive: true });
+
+    // Sanitize cityId to prevent path traversal
+    const safeCityId = cityId.replace(/[^a-zA-Z0-9_-]/g, '');
+    const filePath = path.join(dir, `${safeCityId}.jpg`);
+    const buffer = await data.toBuffer();
+    await fs.writeFile(filePath, buffer);
+
+    screenshotTimestamps.set(cityId, Date.now());
+    return { ok: true };
   });
 
   // Spectator mode - full city state without authentication
