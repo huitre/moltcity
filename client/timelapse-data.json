@@ -1,0 +1,804 @@
+{
+  "city": {
+    "id": "5decd428-1c4d-4743-81e2-a6b99358abf9",
+    "name": "MoltCity"
+  },
+  "meta": {
+    "totalRoads": 25,
+    "totalBuildings": 26,
+    "firstBuildTime": 1771429878405,
+    "lastBuildTime": 1771430806972,
+    "totalDurationMs": 928567,
+    "buildingGroups": 20,
+    "exportedAt": "2026-02-19T13:31:05.723Z"
+  },
+  "roads": [
+    {
+      "id": "9f8c4fa4-522b-450f-b1a2-0e8a833835ae",
+      "x": 20,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "8937b0b2-2b4c-467d-b7c2-8d5badef8fc6",
+      "x": 21,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "d85440a7-fd0b-48d3-8359-daad4170b00f",
+      "x": 22,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "eca385ab-ac7b-487b-92fb-69d14063f364",
+      "x": 22,
+      "y": 27,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "e6ecc81e-2322-4c47-b3e9-b4ee700b6535",
+      "x": 22,
+      "y": 28,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "e82b5609-b9d1-41ec-a2b5-d35a54a15968",
+      "x": 22,
+      "y": 29,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "77632ebb-55f1-4124-a751-fe1aecfe131b",
+      "x": 23,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "327bd7f6-1909-41ce-b16c-14bbb102604e",
+      "x": 24,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "f968680d-689b-4a21-8aed-8c4355d1cc81",
+      "x": 25,
+      "y": 22,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "733b5137-4aee-4d03-a949-3933afb6f05c",
+      "x": 25,
+      "y": 23,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "47cb043e-eefd-4c8b-9672-da8b6633bbc1",
+      "x": 25,
+      "y": 24,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "b8723100-6093-4007-94ed-b12136154c2d",
+      "x": 25,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "043e8243-c1e9-4573-ab0d-898b35254777",
+      "x": 25,
+      "y": 26,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "9d7f4a22-57d4-4339-9647-911c78767bad",
+      "x": 25,
+      "y": 27,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "f14463af-bb22-45e4-bff3-b395588d7b0d",
+      "x": 25,
+      "y": 28,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "cb74da9c-4b66-45fc-a429-baf0e2648224",
+      "x": 25,
+      "y": 29,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "81e86956-8388-4cb5-8d4b-e03f5ac54c77",
+      "x": 25,
+      "y": 30,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "510ce623-3be1-4556-9a77-11431a4b9805",
+      "x": 26,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "0c1ed767-ef90-4ef3-a33b-6469360e17b9",
+      "x": 27,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "4d5b5e96-fdbd-4778-a67d-8c0193fc7f46",
+      "x": 28,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "42847804-7cab-428a-97b2-39b3b0a5a042",
+      "x": 28,
+      "y": 27,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "4985837f-cec7-4890-b0d0-a1454690b1e0",
+      "x": 28,
+      "y": 28,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "e91ca636-66cb-46c7-9c1c-7594a79a9686",
+      "x": 28,
+      "y": 29,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "5de7c751-3e05-4444-9e85-b5e1754d2509",
+      "x": 29,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    },
+    {
+      "id": "b1aaf6a0-f051-4afd-926b-aa5a74fd12fd",
+      "x": 30,
+      "y": 25,
+      "direction": "horizontal",
+      "lanes": 2
+    }
+  ],
+  "buildings": [
+    {
+      "id": "abb18ea9-02d5-44c4-98bd-d6ccce16b15d",
+      "type": "power_plant",
+      "name": "Power Plant",
+      "sprite": "",
+      "x": 25,
+      "y": 20,
+      "width": 2,
+      "height": 2,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 1000,
+      "builtAt": 1771429878405,
+      "relativeTime": 0,
+      "normalizedTime": 0
+    },
+    {
+      "id": "db3b0316-3f5b-42f7-b437-878502add2e2",
+      "type": "water_tower",
+      "name": "Water Tower",
+      "sprite": "",
+      "x": 27,
+      "y": 20,
+      "width": 2,
+      "height": 2,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 50,
+      "waterRequired": 50,
+      "builtAt": 1771429900946,
+      "relativeTime": 22541,
+      "normalizedTime": 0.024275038850185286
+    },
+    {
+      "id": "2e4809f7-5f0d-42ef-ac2e-2b5c20b58722",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 23,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771429987661,
+      "relativeTime": 109256,
+      "normalizedTime": 0.11766086884414372
+    },
+    {
+      "id": "70e47343-fd8f-4e73-9cad-a28d5dc574b4",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 28,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430144214,
+      "relativeTime": 265809,
+      "normalizedTime": 0.2862572113805466
+    },
+    {
+      "id": "b42bcfad-5c47-41cc-8a0d-e19b39d10025",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 22,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430149230,
+      "relativeTime": 270825,
+      "normalizedTime": 0.2916590832971665
+    },
+    {
+      "id": "8eba6bec-ea9c-4a02-aef3-3488caaf0cc6",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 26,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430154245,
+      "relativeTime": 275840,
+      "normalizedTime": 0.29705987828557334
+    },
+    {
+      "id": "5da90f72-2e89-4c4b-92d3-721c608eea5e",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 29,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430154247,
+      "relativeTime": 275842,
+      "normalizedTime": 0.29706203214199944
+    },
+    {
+      "id": "539551a6-d6fe-477d-bef3-99e5c316943d",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 23,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430169457,
+      "relativeTime": 291052,
+      "normalizedTime": 0.313442110262372
+    },
+    {
+      "id": "06221725-c25b-4230-9a54-3a7317409c14",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 24,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430174547,
+      "relativeTime": 296142,
+      "normalizedTime": 0.31892367486675705
+    },
+    {
+      "id": "ceb2c841-7674-4af2-8e5d-fe41cd26ce39",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 21,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430174548,
+      "relativeTime": 296143,
+      "normalizedTime": 0.3189247517949701
+    },
+    {
+      "id": "f2c0e29b-8080-402e-9026-e68bae306be2",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 24,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430174549,
+      "relativeTime": 296144,
+      "normalizedTime": 0.31892582872318315
+    },
+    {
+      "id": "4d0c805b-b35e-4800-8c99-3b2e84ee44b6",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 22,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430174549,
+      "relativeTime": 296144,
+      "normalizedTime": 0.31892582872318315
+    },
+    {
+      "id": "b0de5666-ac82-497f-b8b4-73edc21974de",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 27,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430179641,
+      "relativeTime": 301236,
+      "normalizedTime": 0.3244095471839943
+    },
+    {
+      "id": "fb34c674-16cb-47d5-b7b2-9bba1f0f655e",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 30,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430205030,
+      "relativeTime": 326625,
+      "normalizedTime": 0.35175167758492387
+    },
+    {
+      "id": "b41e9580-ea98-43ad-a1a0-4c59937fb7a0",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 26,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430225274,
+      "relativeTime": 346869,
+      "normalizedTime": 0.37355301232975113
+    },
+    {
+      "id": "fb54e1dd-2c46-4205-9ade-977808c2cdc8",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 28,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430225276,
+      "relativeTime": 346871,
+      "normalizedTime": 0.3735551661861772
+    },
+    {
+      "id": "5a06f4e0-2a8e-411d-ae80-51add5b1f6f9",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 20,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430230343,
+      "relativeTime": 351938,
+      "normalizedTime": 0.37901196144166227
+    },
+    {
+      "id": "b5f00e7d-6e72-41c2-b6af-b84f06e7036c",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 20,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430240436,
+      "relativeTime": 362031,
+      "normalizedTime": 0.38988139789589765
+    },
+    {
+      "id": "a57da49f-e0e5-4e37-be08-c83617d8223a",
+      "type": "offices",
+      "name": "Office",
+      "sprite": "",
+      "x": 27,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430265563,
+      "relativeTime": 387158,
+      "normalizedTime": 0.41694137310501017
+    },
+    {
+      "id": "7675707a-bc2d-43a7-96c7-522fc45a463c",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 21,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430290864,
+      "relativeTime": 412459,
+      "normalizedTime": 0.4441887338231921
+    },
+    {
+      "id": "7f9ee54c-49d1-43bd-bad0-09961b8f12cb",
+      "type": "industrial",
+      "name": "Industrial Zone",
+      "sprite": "",
+      "x": 21,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 1500,
+      "waterRequired": 400,
+      "builtAt": 1771430361871,
+      "relativeTime": 483466,
+      "normalizedTime": 0.5206581754466829
+    },
+    {
+      "id": "b8dbc893-cbff-4537-a8b4-75cc6e795ace",
+      "type": "industrial",
+      "name": "Industrial Zone",
+      "sprite": "",
+      "x": 21,
+      "y": 29,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 1500,
+      "waterRequired": 400,
+      "builtAt": 1771430397100,
+      "relativeTime": 518695,
+      "normalizedTime": 0.5585972794639482
+    },
+    {
+      "id": "3170eb9a-5e1b-4910-8980-6c6dbdf7a054",
+      "type": "police_station",
+      "name": "Police HQ",
+      "sprite": "",
+      "x": 29,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 800,
+      "waterRequired": 100,
+      "builtAt": 1771430588623,
+      "relativeTime": 710218,
+      "normalizedTime": 0.7648538016104385
+    },
+    {
+      "id": "120d169e-7032-4102-a5e6-ddd06b8c4e20",
+      "type": "school",
+      "name": "School",
+      "sprite": "",
+      "x": 30,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430711066,
+      "relativeTime": 832661,
+      "normalizedTime": 0.8967161227999703
+    },
+    {
+      "id": "3ba681be-d87a-4f1e-9136-8bb73d8711bf",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 19,
+      "y": 24,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430806971,
+      "relativeTime": 928566,
+      "normalizedTime": 0.999998923071787
+    },
+    {
+      "id": "5ba00959-05c0-4bdb-a6a5-6a2fb4c4c3f4",
+      "type": "residential",
+      "name": "Residence",
+      "sprite": "",
+      "x": 19,
+      "y": 26,
+      "width": 1,
+      "height": 1,
+      "floors": 1,
+      "density": 1,
+      "powerRequired": 100,
+      "waterRequired": 50,
+      "builtAt": 1771430806972,
+      "relativeTime": 928567,
+      "normalizedTime": 1
+    }
+  ],
+  "buildingGroups": [
+    {
+      "time": 1771429878405,
+      "relativeTime": 0,
+      "normalizedTime": 0,
+      "buildings": [
+        "abb18ea9-02d5-44c4-98bd-d6ccce16b15d"
+      ]
+    },
+    {
+      "time": 1771429900946,
+      "relativeTime": 22541,
+      "normalizedTime": 0.024275038850185286,
+      "buildings": [
+        "db3b0316-3f5b-42f7-b437-878502add2e2"
+      ]
+    },
+    {
+      "time": 1771429987661,
+      "relativeTime": 109256,
+      "normalizedTime": 0.11766086884414372,
+      "buildings": [
+        "2e4809f7-5f0d-42ef-ac2e-2b5c20b58722"
+      ]
+    },
+    {
+      "time": 1771430144214,
+      "relativeTime": 265809,
+      "normalizedTime": 0.2862572113805466,
+      "buildings": [
+        "70e47343-fd8f-4e73-9cad-a28d5dc574b4"
+      ]
+    },
+    {
+      "time": 1771430149230,
+      "relativeTime": 270825,
+      "normalizedTime": 0.2916590832971665,
+      "buildings": [
+        "b42bcfad-5c47-41cc-8a0d-e19b39d10025"
+      ]
+    },
+    {
+      "time": 1771430154245,
+      "relativeTime": 275840,
+      "normalizedTime": 0.29705987828557334,
+      "buildings": [
+        "8eba6bec-ea9c-4a02-aef3-3488caaf0cc6",
+        "5da90f72-2e89-4c4b-92d3-721c608eea5e"
+      ]
+    },
+    {
+      "time": 1771430169457,
+      "relativeTime": 291052,
+      "normalizedTime": 0.313442110262372,
+      "buildings": [
+        "539551a6-d6fe-477d-bef3-99e5c316943d"
+      ]
+    },
+    {
+      "time": 1771430174547,
+      "relativeTime": 296142,
+      "normalizedTime": 0.31892367486675705,
+      "buildings": [
+        "06221725-c25b-4230-9a54-3a7317409c14",
+        "ceb2c841-7674-4af2-8e5d-fe41cd26ce39",
+        "f2c0e29b-8080-402e-9026-e68bae306be2",
+        "4d0c805b-b35e-4800-8c99-3b2e84ee44b6"
+      ]
+    },
+    {
+      "time": 1771430179641,
+      "relativeTime": 301236,
+      "normalizedTime": 0.3244095471839943,
+      "buildings": [
+        "b0de5666-ac82-497f-b8b4-73edc21974de"
+      ]
+    },
+    {
+      "time": 1771430205030,
+      "relativeTime": 326625,
+      "normalizedTime": 0.35175167758492387,
+      "buildings": [
+        "fb34c674-16cb-47d5-b7b2-9bba1f0f655e"
+      ]
+    },
+    {
+      "time": 1771430225274,
+      "relativeTime": 346869,
+      "normalizedTime": 0.37355301232975113,
+      "buildings": [
+        "b41e9580-ea98-43ad-a1a0-4c59937fb7a0",
+        "fb54e1dd-2c46-4205-9ade-977808c2cdc8"
+      ]
+    },
+    {
+      "time": 1771430230343,
+      "relativeTime": 351938,
+      "normalizedTime": 0.37901196144166227,
+      "buildings": [
+        "5a06f4e0-2a8e-411d-ae80-51add5b1f6f9"
+      ]
+    },
+    {
+      "time": 1771430240436,
+      "relativeTime": 362031,
+      "normalizedTime": 0.38988139789589765,
+      "buildings": [
+        "b5f00e7d-6e72-41c2-b6af-b84f06e7036c"
+      ]
+    },
+    {
+      "time": 1771430265563,
+      "relativeTime": 387158,
+      "normalizedTime": 0.41694137310501017,
+      "buildings": [
+        "a57da49f-e0e5-4e37-be08-c83617d8223a"
+      ]
+    },
+    {
+      "time": 1771430290864,
+      "relativeTime": 412459,
+      "normalizedTime": 0.4441887338231921,
+      "buildings": [
+        "7675707a-bc2d-43a7-96c7-522fc45a463c"
+      ]
+    },
+    {
+      "time": 1771430361871,
+      "relativeTime": 483466,
+      "normalizedTime": 0.5206581754466829,
+      "buildings": [
+        "7f9ee54c-49d1-43bd-bad0-09961b8f12cb"
+      ]
+    },
+    {
+      "time": 1771430397100,
+      "relativeTime": 518695,
+      "normalizedTime": 0.5585972794639482,
+      "buildings": [
+        "b8dbc893-cbff-4537-a8b4-75cc6e795ace"
+      ]
+    },
+    {
+      "time": 1771430588623,
+      "relativeTime": 710218,
+      "normalizedTime": 0.7648538016104385,
+      "buildings": [
+        "3170eb9a-5e1b-4910-8980-6c6dbdf7a054"
+      ]
+    },
+    {
+      "time": 1771430711066,
+      "relativeTime": 832661,
+      "normalizedTime": 0.8967161227999703,
+      "buildings": [
+        "120d169e-7032-4102-a5e6-ddd06b8c4e20"
+      ]
+    },
+    {
+      "time": 1771430806971,
+      "relativeTime": 928566,
+      "normalizedTime": 0.999998923071787,
+      "buildings": [
+        "3ba681be-d87a-4f1e-9136-8bb73d8711bf",
+        "5ba00959-05c0-4bdb-a6a5-6a2fb4c4c3f4"
+      ]
+    }
+  ]
+}

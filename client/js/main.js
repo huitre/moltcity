@@ -19,6 +19,7 @@ import { showSpriteEditor } from './ui/sprite-editor.js';
 import { subscribeToCityWs } from './websocket.js';
 import { startScreenshotCapture } from './screenshot.js';
 import { initTimelapse } from './timelapse.js';
+import { initReplay } from './replay.js';
 
 let appInitialized = false;
 
@@ -83,6 +84,7 @@ async function initializeApp() {
 
     // Initialize timelapse recorder
     initTimelapse();
+    initReplay();
 
     console.log("[MoltCity] Initialization complete");
   } catch (error) {
