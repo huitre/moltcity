@@ -25,7 +25,7 @@ export type ActivityLogger = (type: string, message: string, metadata?: Record<s
 // Configuration
 // ============================================
 
-const TICK_INTERVAL_MS = 50;            // How often the simulation updates (50ms = 20 ticks/second)
+const TICK_INTERVAL_MS = 10;            // How often the simulation updates (10ms = 100 ticks/second) - 5x SPEED FOR TIMELAPSE
 const TICKS_PER_MINUTE = 5;             // 5 ticks = 1 in-game minute (faster days)
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;

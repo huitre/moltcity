@@ -3,7 +3,7 @@
 
 import * as state from './state.js';
 import { render } from './game.js';
-import { isoToScreen } from './pixi/utils.js';
+import { cartToIso } from './utils.js';
 
 // Replay data (exported from database)
 const REPLAY_DATA = {
@@ -321,7 +321,7 @@ function centerCamera() {
   const centerX = 25;
   const centerY = 25;
   
-  const screenPos = isoToScreen(centerX, centerY);
+  const screenPos = cartToIso(centerX, centerY);
   
   const offsetX = app.screen.width / 2 - screenPos.x;
   const offsetY = app.screen.height / 2 - screenPos.y;
