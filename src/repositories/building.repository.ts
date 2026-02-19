@@ -33,26 +33,29 @@ const POWER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
 };
 
 const WATER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
+  // Zone types: residential=10, offices=1.2x res, industrial=1.5x off
   residential: 10,
-  offices: 20,
+  offices: 12,
   suburban: 5,
-  industrial: 80,
-  fire_station: 40,
-  hospital: 100,
+  industrial: 18,
+  // Legacy building types follow same ratios
   house: 10,
-  apartment: 40,
-  shop: 6,
-  office: 20,
-  factory: 100,
-  power_plant: 200,
+  apartment: 15,
+  shop: 12,
+  office: 12,
+  factory: 18,
+  // Infrastructure & services
+  fire_station: 20,
+  hospital: 40,
+  power_plant: 50,
   water_tower: 0,
   road: 0,
-  park: 20,
-  plaza: 10,
-  city_hall: 40,
-  police_station: 20,
-  courthouse: 30,
-  jail: 60,
+  park: 8,
+  plaza: 6,
+  city_hall: 20,
+  police_station: 15,
+  courthouse: 15,
+  jail: 20,
 };
 
 export class BuildingRepository extends BaseRepository<typeof buildings, BuildingRow, BuildingInsert> {

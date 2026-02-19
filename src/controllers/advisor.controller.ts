@@ -88,7 +88,7 @@ export const advisorController: FastifyPluginAsync = async (fastify) => {
     let waterCapacity = 0, waterDemand = 0, noWater = 0;
     for (const b of completed) {
       if (b.type === 'water_tower') {
-        waterCapacity += 1000;
+        waterCapacity += 10000;
       } else {
         waterDemand += b.waterRequired;
         if (!b.hasWater && b.type !== 'power_plant') noWater++;

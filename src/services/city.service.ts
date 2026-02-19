@@ -127,7 +127,7 @@ export class CityService {
       }
 
       if (building.type === 'water_tower') {
-        waterCapacity += 1000;
+        waterCapacity += 10000;
       } else {
         waterDemand += building.waterRequired;
       }

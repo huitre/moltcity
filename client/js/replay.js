@@ -336,7 +336,7 @@ function hideUIForCapture() {
     '.sidebar',
     '.top-bar', 
     '.stats-bar',
-    '#timelapse-ui',
+    '#timelapse-panel',
     '.building-panel',
     '.modal',
     '.activity-feed'
