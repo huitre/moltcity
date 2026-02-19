@@ -18,6 +18,7 @@ import { setupLeaderboard } from './ui/leaderboard.js';
 import { showSpriteEditor } from './ui/sprite-editor.js';
 import { subscribeToCityWs } from './websocket.js';
 import { startScreenshotCapture } from './screenshot.js';
+import { initTimelapse } from './timelapse.js';
 
 let appInitialized = false;
 
@@ -79,6 +80,9 @@ async function initializeApp() {
 
     // Start periodic screenshot capture
     startScreenshotCapture();
+
+    // Initialize timelapse recorder
+    initTimelapse();
 
     console.log("[MoltCity] Initialization complete");
   } catch (error) {
