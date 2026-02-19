@@ -116,6 +116,17 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
       return { statusCode: 400, error: 'parcelId or x/y coordinates required' };
     }
 
+    // Block zoning on water
+    const parcelData = await parcelService.getParcel(body.x ?? 0, body.y ?? 0, cityId);
+    if (!parcelData && body.parcelId) {
+      const p = await parcelService.getParcelById(body.parcelId);
+      if (p && p.terrain === 'water') {
+        return { statusCode: 400, error: 'Cannot zone water tiles' };
+      }
+    } else if (parcelData && parcelData.terrain === 'water') {
+      return { statusCode: 400, error: 'Cannot zone water tiles' };
+    }
+
     const parcel = await parcelService.setZoning(parcelId, body.zoning, cityId);
     return { success: true, parcel };
   });
@@ -146,6 +157,7 @@ export const parcelsController: FastifyPluginAsync = async (fastify) => {
     const validParcels: { id: string }[] = [];
     for (const tile of body.tiles) {
       const parcel = await parcelService.getOrCreateParcel(tile.x, tile.y, cityId);
+      if (parcel.terrain === 'water') continue;
       if (parcel.zoning === body.zoning) continue;
       validParcels.push({ id: parcel.id });
     }

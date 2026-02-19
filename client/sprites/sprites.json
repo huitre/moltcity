@@ -248,7 +248,7 @@
         "height": 180,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.93
         }
       },
       {
@@ -836,7 +836,7 @@
         "height": 186,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 1
         }
       },
       {
@@ -846,7 +846,7 @@
         "height": 186,
         "anchor": {
           "x": 0.5,
-          "y": 0.97
+          "y": 0.99
         }
       },
       {
@@ -926,7 +926,7 @@
         "height": 183,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.96
         }
       },
       {
@@ -970,16 +970,6 @@
         }
       },
       {
-        "id": "sheet08_cityscape_05",
-        "file": "sliced/sheet08_cityscape_05.png",
-        "width": 193,
-        "height": 173,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
         "id": "sheet08_cityscape_06",
         "file": "sliced/sheet08_cityscape_06.png",
         "width": 159,
@@ -996,7 +986,7 @@
         "height": 182,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 1
         }
       },
       {
@@ -1006,7 +996,7 @@
         "height": 182,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.98
         }
       },
       {
@@ -1016,7 +1006,7 @@
         "height": 182,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 1
         }
       },
       {
@@ -1351,10 +1341,10 @@
       "file": "sliced/sheet09_emergency_06.png",
       "width": 353,
       "height": 303,
-      "tiles": 2,
+      "tiles": 1,
       "anchor": {
         "x": 0.5,
-        "y": 0.98
+        "y": 0.94
       }
     }
   ],
@@ -1391,7 +1381,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.93
+        "y": 0.94
       }
     }
   ],
@@ -1557,7 +1547,7 @@
       "height": 180,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.97
       }
     },
     {
@@ -1652,16 +1642,6 @@
     }
   ],
   "industrial": [
-    {
-      "id": "industrial_default",
-      "file": "city-pack/PNG/cityTiles_000.png",
-      "width": 132,
-      "height": 101,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.85
-      }
-    },
     {
       "id": "industrial_01",
       "file": "sliced/industrial_01.png",

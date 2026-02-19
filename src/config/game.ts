@@ -5,6 +5,11 @@
 import type { BuildingType } from '../models/types.js';
 
 // ============================================
+// Grid
+// ============================================
+export const GRID_SIZE = 50;
+
+// ============================================
 // Currency
 // ============================================
 export const CURRENCY = {
@@ -631,4 +636,22 @@ export const SC2K_ECONOMY = {
     education: 100,
     transit: 100,
   },
+};
+
+export const TAX_PENALTIES = {
+  PENALTY_THRESHOLD: 11,              // Penalties start above 11%
+  INDUSTRIAL_DESTROY_THRESHOLD: 15,   // Factory destruction above 15%
+
+  // Residential: population exodus
+  EXODUS_RATE: 0.5,                   // residents leaving per day per excess % above threshold
+
+  // Office: salary cuts
+  SALARY_CUT_PER_PERCENT: 0.05,      // 5% salary reduction per excess %
+  MIN_SALARY: 5,                      // Floor salary (never below $5)
+
+  // Industrial: building destruction
+  DESTROY_CHANCE_PER_PERCENT: 0.03,   // 3% chance per excess % above destroy threshold per day
+
+  // Happiness: client-side penalty
+  HAPPINESS_PENALTY_PER_PERCENT: 3,   // -3 happiness per % above neutral (7%)
 };

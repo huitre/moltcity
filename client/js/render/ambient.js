@@ -22,13 +22,16 @@ let sunsetSprite = null;
 function getSunsetSprite() {
   if (!sunsetSprite) {
     const texture = PIXI.Texture.from("/sprites/sliced/sunset_gradient_01.png");
-    sunsetSprite = new PIXI.Sprite(texture);
-    sunsetSprite.anchor.set(0, 0);
+    sunsetSprite = new PIXI.TilingSprite(
+      texture,
+      state.app.screen.width,
+      state.app.screen.height,
+    );
     sunsetSprite.alpha = 0;
     sunsetSprite.zIndex = 19999; // Just below dayNightOverlay (20000)
     state.app.stage.addChild(sunsetSprite);
   }
-  // Stretch to fill the screen
+  // Resize to fill the screen, texture repeats naturally
   sunsetSprite.width = state.app.screen.width;
   sunsetSprite.height = state.app.screen.height;
   return sunsetSprite;
@@ -38,13 +41,15 @@ function getSunsetSprite() {
  * Initialize cloud sprites with shadows
  */
 export function initClouds() {
-  const { cloudsContainer, clouds, cloudShadowsContainer, cloudShadows } =
-    state;
+  const { cloudsContainer, clouds, cloudShadows } = state;
+  const skyHeight = WORLD_MAX_Y * 0.4 - WORLD_MIN_Y;
+  const spacing = skyHeight / CLOUD_COUNT;
 
   for (let i = 0; i < CLOUD_COUNT; i++) {
     const cloud = createCloud();
+    // Spread clouds top-to-bottom with random horizontal offset and vertical jitter
     cloud.x = WORLD_MIN_X + Math.random() * (WORLD_MAX_X - WORLD_MIN_X);
-    cloud.y = WORLD_MIN_Y + Math.random() * (WORLD_MAX_Y * 0.3);
+    cloud.y = WORLD_MIN_Y + i * spacing + Math.random() * spacing * 0.6;
     cloud.speed = 0.2 + Math.random() * 0.3;
     clouds.push(cloud);
     cloudsContainer.addChild(cloud);
@@ -283,7 +288,7 @@ export function updateDayNightOverlay() {
     dayNightOverlay.drawRect(0, 0, width, height);
     dayNightOverlay.endFill();
 
-    dayNightOverlay.beginFill(0x1a1a4a, alpha * 0.3);
+    dayNightOverlay.beginFill(0x1a1a4a, alpha * 0.45);
     dayNightOverlay.drawRect(0, 0, width, height * 0.6);
     dayNightOverlay.endFill();
 

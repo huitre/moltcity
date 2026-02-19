@@ -874,6 +874,10 @@ class LegacyPopulationRepository {
     this.raw.prepare('UPDATE residents SET work_building_id = NULL, salary = 0 WHERE id = ?').run(residentId);
   }
 
+  updateSalary(residentId: string, salary: number): void {
+    this.raw.prepare('UPDATE residents SET salary = ? WHERE id = ?').run(salary, residentId);
+  }
+
   deleteResident(id: string): boolean {
     const result = this.raw.prepare('DELETE FROM residents WHERE id = ?').run(id);
     return result.changes > 0;

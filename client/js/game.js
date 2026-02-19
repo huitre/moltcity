@@ -6,7 +6,7 @@ import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
 import { seededRandom } from "./sprites.js";
-import { drawGrassTile, drawHighlight, drawZoneTile } from "./render/tiles.js";
+import { drawGrassTile, drawHighlight, drawZoneTile, drawWaterTile } from "./render/tiles.js";
 import { drawRoad, hasRoadAt } from "./render/roads.js";
 import { animateVehicles, initVehicles } from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
@@ -123,19 +123,22 @@ export function render() {
     if (p) occupiedTiles.add(`${p.x},${p.y}`);
   }
 
-  // Build parcel coord lookup for zoning
+  // Build parcel coord lookup for zoning and water terrain
   const parcelByCoord = new Map();
   for (const p of parcels) {
-    if (p.zoning) parcelByCoord.set(`${p.x},${p.y}`, p);
+    if (p.zoning || p.terrain === 'water') parcelByCoord.set(`${p.x},${p.y}`, p);
   }
 
-  // Draw grid tiles (grass or zone color)
+  // Draw grid tiles (water, zone color, or grass)
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
       const key = `${x},${y}`;
-      const zonedParcel = parcelByCoord.get(key);
-      if (zonedParcel && !occupiedTiles.has(key)) {
-        const tile = drawZoneTile(x, y, zonedParcel.zoning);
+      const parcel = parcelByCoord.get(key);
+      if (parcel && parcel.terrain === 'water') {
+        const tile = drawWaterTile(x, y);
+        tilesLayer.addChild(tile);
+      } else if (parcel && parcel.zoning && !occupiedTiles.has(key)) {
+        const tile = drawZoneTile(x, y, parcel.zoning);
         tilesLayer.addChild(tile);
       } else {
         const tile = drawGrassTile(x, y);

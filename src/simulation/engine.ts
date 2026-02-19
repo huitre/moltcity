@@ -14,6 +14,7 @@ import { DemandCalculator } from './demand.calculator.js';
 import { CrimeSimulator } from './crime.simulator.js';
 import { FireSimulator } from './fire.simulator.js';
 import { ZoneBuildSimulator } from './zone-build.simulator.js';
+import { TaxPenaltySimulator } from './tax-penalty.simulator.js';
 
 // ============================================
 // Activity Logger
@@ -1194,6 +1195,7 @@ class CitySimulatorBundle {
   public crimeSimulator: CrimeSimulator;
   public fireSimulator: FireSimulator;
   public zoneBuildSimulator: ZoneBuildSimulator;
+  public taxPenaltySimulator: TaxPenaltySimulator;
 
   constructor(db: CityScopedDatabaseAdapter, logger?: ActivityLogger) {
     this.powerGrid = new PowerGridSimulator(db);
@@ -1210,6 +1212,7 @@ class CitySimulatorBundle {
     this.crimeSimulator = new CrimeSimulator(db, logger);
     this.fireSimulator = new FireSimulator(db, logger);
     this.zoneBuildSimulator = new ZoneBuildSimulator(db, logger);
+    this.taxPenaltySimulator = new TaxPenaltySimulator(db, db.cityId, logger);
   }
 }
 
@@ -1368,6 +1371,10 @@ export class SimulationEngine extends EventEmitter {
 
     // Simulate zone evolution (runs daily at hour 2)
     bundle.zoneEvolutionSimulator.simulate(time);
+
+    // Simulate tax penalties (runs daily at hour 3)
+    const penaltyEvents = bundle.taxPenaltySimulator.simulate(this.currentTick, time);
+    events.push(...penaltyEvents);
 
     // Simulate crime (every 300 ticks / hourly)
     if (this.currentTick % 300 === 0) {

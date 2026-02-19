@@ -4,6 +4,7 @@
 
 import { FastifyPluginAsync } from 'fastify';
 import { CityService } from '../services/city.service.js';
+import { CityRepository } from '../repositories/city.repository.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { RoadRepository } from '../repositories/road.repository.js';
@@ -200,5 +201,25 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
         tick: fastify.simulationEngine?.getCurrentTick() || 0,
       },
     };
+  });
+
+  // Admin debug endpoint — directly set treasury, hour, day, year
+  fastify.post('/api/admin/debug', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    if (request.user?.role !== 'admin') {
+      return reply.status(403).send({ error: 'Admin only' });
+    }
+    const body = request.body as { cityId?: string; treasury?: number; hour?: number; day?: number; year?: number };
+    const cityId = body.cityId || (request.query as Record<string, string>)?.cityId;
+    const city = await cityService.getCity(cityId);
+    if (!city) return reply.status(404).send({ error: 'City not found' });
+
+    const cityRepo = new CityRepository(fastify.db);
+    if (body.treasury !== undefined) await cityRepo.updateTreasury(city.id, body.treasury);
+    if (body.hour !== undefined || body.day !== undefined || body.year !== undefined) {
+      await cityRepo.updateTime(city.id, city.time.tick, body.hour ?? city.time.hour, body.day ?? city.time.day, body.year ?? city.time.year);
+    }
+    return { ok: true, city: await cityService.getCity(city.id) };
   });
 };

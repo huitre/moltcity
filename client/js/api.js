@@ -459,3 +459,22 @@ export async function updateSpriteConfig(data) {
     body: JSON.stringify(data),
   });
 }
+
+// ============================================
+// Advisor API
+// ============================================
+
+export async function getAdvisor() {
+  return fetchApi(withCityId('/api/advisor'));
+}
+
+// ============================================
+// Admin Debug API
+// ============================================
+
+export async function debugUpdateCity(params) {
+  return fetchApi('/api/admin/debug', {
+    method: 'POST',
+    body: JSON.stringify(bodyWithCity(params)),
+  });
+}

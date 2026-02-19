@@ -33,26 +33,26 @@ const POWER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
 };
 
 const WATER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
-  residential: 50,
-  offices: 100,
-  suburban: 25,
-  industrial: 400,
-  fire_station: 200,
-  hospital: 500,
-  house: 50,
-  apartment: 200,
-  shop: 30,
-  office: 100,
-  factory: 500,
-  power_plant: 1000,
+  residential: 10,
+  offices: 20,
+  suburban: 5,
+  industrial: 80,
+  fire_station: 40,
+  hospital: 100,
+  house: 10,
+  apartment: 40,
+  shop: 6,
+  office: 20,
+  factory: 100,
+  power_plant: 200,
   water_tower: 0,
   road: 0,
-  park: 100,
-  plaza: 50,
-  city_hall: 200,
-  police_station: 100,
-  courthouse: 150,
-  jail: 300,
+  park: 20,
+  plaza: 10,
+  city_hall: 40,
+  police_station: 20,
+  courthouse: 30,
+  jail: 60,
 };
 
 export class BuildingRepository extends BaseRepository<typeof buildings, BuildingRow, BuildingInsert> {
@@ -168,7 +168,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
   }
 
   getWaterRequirement(type: BuildingType): number {
-    return WATER_REQUIREMENTS[type] || 50;
+    return WATER_REQUIREMENTS[type] || 10;
   }
 
   async updateWaterStatus(buildingId: string, hasWater: boolean): Promise<void> {

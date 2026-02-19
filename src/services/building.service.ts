@@ -14,6 +14,11 @@ import { canUserBuild, getBuildingLimit, hasElevatedPrivileges, getBuildingCost,
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { FastifyInstance } from 'fastify';
 import type { Building, BuildingType } from '../models/types.js';
+import { eq } from 'drizzle-orm';
+import { powerPlants } from '../db/schema/infrastructure.js';
+import { residents } from '../db/schema/population.js';
+import { agents } from '../db/schema/agents.js';
+import { crimes, policeOfficers, fires, firefighters, schools, garbageDepots } from '../db/schema/crime.js';
 
 // Building costs are imported from config/game.ts
 
@@ -28,6 +33,7 @@ export interface BuildingQuote {
 }
 
 export class BuildingService {
+  private db: DrizzleDb;
   private buildingRepo: BuildingRepository;
   private parcelRepo: ParcelRepository;
   private agentRepo: AgentRepository;
@@ -37,6 +43,7 @@ export class BuildingService {
   private activityService: ActivityService;
 
   constructor(db: DrizzleDb, fastify?: FastifyInstance) {
+    this.db = db;
     this.buildingRepo = new BuildingRepository(db);
     this.parcelRepo = new ParcelRepository(db);
     this.agentRepo = new AgentRepository(db);
@@ -121,6 +128,11 @@ export class BuildingService {
       throw new NotFoundError('Parcel');
     }
 
+    // Block building on water
+    if (parcel.terrain === 'water') {
+      throw new ValidationError('Cannot build on water');
+    }
+
     // Auto-claim unowned parcels when building
     if (!parcel.ownerId) {
       let claimAgent = null;
@@ -196,6 +208,11 @@ export class BuildingService {
           throw new ValidationError(`Tile (${tileX}, ${tileY}) doesn't exist`);
         }
 
+        // Block building on water tiles in footprint
+        if (tileParcel.terrain === 'water') {
+          throw new ValidationError('Cannot build on water');
+        }
+
         // Check for existing building at this parcel
         const existingBuilding = await this.buildingRepo.getBuildingAtParcel(tileParcel.id);
         if (existingBuilding) {
@@ -223,6 +240,24 @@ export class BuildingService {
         if (!tileParcel.ownerId) {
           await this.parcelRepo.purchaseParcel(tileParcel.id, claimOwnerId, 0);
         }
+      }
+    }
+
+    // Water tower must be adjacent to water
+    if (params.type === 'water_tower') {
+      let adjacentToWater = false;
+      for (let dy = -1; dy <= footprint.h && !adjacentToWater; dy++) {
+        for (let dx = -1; dx <= footprint.w && !adjacentToWater; dx++) {
+          // Skip interior tiles (only check the ring around the footprint)
+          if (dx >= 0 && dx < footprint.w && dy >= 0 && dy < footprint.h) continue;
+          const adjParcel = await this.parcelRepo.getParcel(parcel.x + dx, parcel.y + dy, params.cityId);
+          if (adjParcel && adjParcel.terrain === 'water') {
+            adjacentToWater = true;
+          }
+        }
+      }
+      if (!adjacentToWater) {
+        throw new ValidationError('Water tower must be placed adjacent to water');
       }
     }
 
@@ -332,6 +367,20 @@ export class BuildingService {
 
     // Delete associated rental units
     await this.rentalRepo.deleteUnitsForBuilding(buildingId);
+
+    // Clean up all FK references to this building
+    await this.db.delete(powerPlants).where(eq(powerPlants.buildingId, buildingId));
+    await this.db.delete(firefighters).where(eq(firefighters.stationId, buildingId));
+    await this.db.delete(fires).where(eq(fires.buildingId, buildingId));
+    await this.db.delete(policeOfficers).where(eq(policeOfficers.stationId, buildingId));
+    await this.db.delete(crimes).where(eq(crimes.buildingId, buildingId));
+    await this.db.delete(schools).where(eq(schools.buildingId, buildingId));
+    await this.db.delete(garbageDepots).where(eq(garbageDepots.buildingId, buildingId));
+
+    // Nullify nullable FK references
+    await this.db.update(residents).set({ homeBuildingId: null }).where(eq(residents.homeBuildingId, buildingId));
+    await this.db.update(agents).set({ homeBuildingId: null }).where(eq(agents.homeBuildingId, buildingId));
+    await this.db.update(agents).set({ workBuildingId: null }).where(eq(agents.workBuildingId, buildingId));
 
     // Delete building
     await this.buildingRepo.deleteBuilding(buildingId);

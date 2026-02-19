@@ -16,6 +16,8 @@ import { loadActivities, addActivity } from './ui/activity.js';
 import { loadElectionStatus, setupElectionUI } from './ui/election.js';
 import { setupLeaderboard } from './ui/leaderboard.js';
 import { showSpriteEditor } from './ui/sprite-editor.js';
+import { initDebugPanel } from './ui/debug.js';
+import { initAdvisor } from './ui/advisor.js';
 import { subscribeToCityWs } from './websocket.js';
 import { startScreenshotCapture } from './screenshot.js';
 import { initTimelapse } from './timelapse.js';
@@ -72,6 +74,8 @@ async function initializeApp() {
     // await loadElectionStatus();
     // setupElectionUI();
     setupLeaderboard();
+    initDebugPanel();
+    initAdvisor();
 
     // Setup build menu
     setupBuildMenu();
@@ -406,6 +410,14 @@ function isTileOccupied(x, y) {
 }
 
 /**
+ * Check if a tile is water terrain
+ */
+function isTileWater(x, y) {
+  const parcel = state.parcels.find((p) => p.x === x && p.y === y);
+  return parcel && parcel.terrain === 'water';
+}
+
+/**
  * Find a building covering a tile (accounts for multi-tile footprints)
  */
 function findBuildingAtTile(x, y) {
@@ -520,6 +532,12 @@ async function handleDemolish(x, y) {
  */
 async function handleBuild(x, y, buildType) {
   try {
+    // Block all building on water
+    if (isTileWater(x, y)) {
+      showToast("Cannot build on water", true);
+      return;
+    }
+
     if (buildType === "road") {
       // Check tile is not occupied by a building
       if (findBuildingAtTile(x, y)) {
@@ -698,7 +716,7 @@ function handleTileHover(x, y, globalPos) {
           const tx = x + dx;
           const ty = y + dy;
           if (tx >= GRID_SIZE || ty >= GRID_SIZE) continue;
-          const occupied = isTileOccupied(tx, ty);
+          const occupied = isTileOccupied(tx, ty) || isTileWater(tx, ty);
           const color = occupied ? 0xff0000 : COLORS.selected;
           const highlight = drawHighlight(tx, ty, color, true);
           container.addChild(highlight);
@@ -799,8 +817,9 @@ function updateDragPreview() {
 
   const isZoning = ZONE_TYPES.includes(selectedBuildType);
   for (const tile of dragDrawTiles) {
-    // For zoning, all tiles are valid; for roads, check occupancy
-    const occupied = isZoning ? false : isTileOccupied(tile.x, tile.y);
+    // For zoning, check water only; for roads, check occupancy + water
+    const water = isTileWater(tile.x, tile.y);
+    const occupied = water || (!isZoning && isTileOccupied(tile.x, tile.y));
     const color = occupied ? 0xff0000 : COLORS.selected;
     const highlight = drawHighlight(tile.x, tile.y, color, true);
     dragDrawPreview.addChild(highlight);
@@ -850,9 +869,13 @@ async function handleDragEnd() {
   state.setIsDragDrawing(false);
   state.setDragDrawStart(null);
 
-  // For roads, filter out occupied tiles; for zoning, send all tiles (server skips duplicates)
+  // Filter out water tiles and occupied tiles
   const isZoning = ZONE_TYPES.includes(selectedBuildType);
-  const validTiles = isZoning ? [...dragDrawTiles] : dragDrawTiles.filter(t => !isTileOccupied(t.x, t.y));
+  const validTiles = dragDrawTiles.filter(t => {
+    if (isTileWater(t.x, t.y)) return false;
+    if (!isZoning && isTileOccupied(t.x, t.y)) return false;
+    return true;
+  });
   state.setDragDrawTiles([]);
 
   const tooltip = document.getElementById("tooltip");

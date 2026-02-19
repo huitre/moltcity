@@ -71,8 +71,13 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     if (existingBuilding) {
       throw new ConflictError('Cannot place road on a building');
     }
-    // Check multi-tile buildings whose footprint covers this tile
+    // Block roads on water
     const parcel = await parcelRepo.getParcelById(parcelId);
+    if (parcel && parcel.terrain === 'water') {
+      throw new ConflictError('Cannot place road on water');
+    }
+
+    // Check multi-tile buildings whose footprint covers this tile
     if (parcel) {
       const allBuildings = await buildingRepo.getAllBuildings(cityData?.id);
       for (const b of allBuildings) {
@@ -130,6 +135,8 @@ export const roadsController: FastifyPluginAsync = async (fastify) => {
     const validParcels: { id: string; x: number; y: number }[] = [];
     for (const tile of body.tiles) {
       const parcel = await parcelRepo.getOrCreateParcel(tile.x, tile.y, cityData?.id);
+
+      if (parcel.terrain === 'water') continue;
 
       const existingRoad = await roadRepo.getRoad(parcel.id);
       if (existingRoad) continue;

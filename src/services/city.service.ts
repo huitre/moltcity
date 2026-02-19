@@ -11,6 +11,8 @@ import { AgentRepository } from '../repositories/agent.repository.js';
 import { residents } from '../db/schema/population.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { City, CityStats } from '../models/types.js';
+import { generateWaterTiles } from './water-generator.js';
+import { GRID_SIZE } from '../config/game.js';
 
 export class CityService {
   private db: DrizzleDb;
@@ -33,6 +35,9 @@ export class CityService {
     const city = await this.cityRepo.getCity(cityId);
     if (!city) return null;
 
+    // Lazy backfill: ensure water terrain exists for existing cities
+    await this.ensureWaterTerrain(city.id);
+
     // Enrich with calculated stats
     const stats = await this.calculateStats(city.id);
     city.stats = stats;
@@ -45,7 +50,9 @@ export class CityService {
   }
 
   async createCity(name: string, creatorUserId: string): Promise<City> {
-    return this.cityRepo.createCity(name, creatorUserId);
+    const city = await this.cityRepo.createCity(name, creatorUserId);
+    await this.generateWaterTerrain(city.id);
+    return city;
   }
 
   async updateTime(cityId: string, tick: number, hour: number, day: number, year: number): Promise<void> {
@@ -63,6 +70,39 @@ export class CityService {
     return enriched
       .sort((a, b) => b.stats.population - a.stats.population)
       .slice(0, limit);
+  }
+
+  /**
+   * Generate water terrain parcels for a city
+   */
+  private async generateWaterTerrain(cityId: string): Promise<void> {
+    const waterTiles = generateWaterTiles(cityId, GRID_SIZE);
+    for (const tile of waterTiles) {
+      // Create water parcel (ignore if already exists)
+      try {
+        await this.parcelRepo.createParcel(tile.x, tile.y, 'water', cityId);
+      } catch {
+        // Parcel may already exist — update terrain to water
+        const existing = await this.parcelRepo.getParcel(tile.x, tile.y, cityId);
+        if (existing && existing.terrain !== 'water') {
+          // Update existing parcel terrain via direct DB update
+          const { parcels } = await import('../db/schema/parcels.js');
+          const { eq } = await import('drizzle-orm');
+          await this.db.update(parcels).set({ terrain: 'water' }).where(eq(parcels.id, existing.id));
+        }
+      }
+    }
+  }
+
+  /**
+   * Ensure water terrain exists for a city (lazy backfill for existing cities)
+   */
+  private async ensureWaterTerrain(cityId: string): Promise<void> {
+    const cityParcels = await this.parcelRepo.getParcelsByCityId(cityId);
+    const hasWater = cityParcels.some(p => p.terrain === 'water');
+    if (!hasWater) {
+      await this.generateWaterTerrain(cityId);
+    }
   }
 
   async calculateStats(cityId: string): Promise<CityStats> {
