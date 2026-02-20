@@ -24,7 +24,7 @@ const POWER_REQUIREMENTS: Partial<Record<BuildingType, number>> = {
   power_plant: 0,
   water_tower: 50,
   road: 10,
-  park: 20,
+  park: 0,
   plaza: 100,
   city_hall: 1000,
   police_station: 800,

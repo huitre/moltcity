@@ -60,7 +60,7 @@ export class ConflictError extends AppError {
 export class InsufficientFundsError extends AppError {
   constructor(required: number, available: number) {
     super(
-      `Insufficient funds: required ${required}, available ${available}`,
+      `Not enough funds — costs $${required.toLocaleString()}, you have $${Math.floor(available).toLocaleString()}`,
       400,
       'INSUFFICIENT_FUNDS'
     );

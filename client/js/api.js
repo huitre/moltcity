@@ -47,8 +47,10 @@ async function fetchApi(endpoint, options = {}) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || error.message || 'Request failed');
+    const data = await response.json().catch(() => ({ error: 'Request failed' }));
+    // error handler sends { error: { code, message } } or legacy { error: "string" }
+    const msg = typeof data.error === 'object' ? data.error.message : (data.error || data.message || 'Request failed');
+    throw new Error(msg);
   }
 
   return response.json();

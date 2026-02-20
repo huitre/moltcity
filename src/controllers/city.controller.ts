@@ -218,7 +218,17 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
     const cityRepo = new CityRepository(fastify.db);
     if (body.treasury !== undefined) await cityRepo.updateTreasury(city.id, body.treasury);
     if (body.hour !== undefined || body.day !== undefined || body.year !== undefined) {
-      await cityRepo.updateTime(city.id, city.time.tick, body.hour ?? city.time.hour, body.day ?? city.time.day, body.year ?? city.time.year);
+      const newHour = body.hour ?? city.time.hour;
+      const newDay = body.day ?? city.time.day;
+      const newYear = body.year ?? city.time.year;
+      // Sync the simulation engine's internal tick counter
+      if (fastify.simulationEngine) {
+        fastify.simulationEngine.setTime(newHour, newDay, newYear);
+        const newTick = fastify.simulationEngine.getCurrentTick();
+        await cityRepo.updateTime(city.id, newTick, newHour, newDay, newYear);
+      } else {
+        await cityRepo.updateTime(city.id, city.time.tick, newHour, newDay, newYear);
+      }
     }
     return { ok: true, city: await cityService.getCity(city.id) };
   });

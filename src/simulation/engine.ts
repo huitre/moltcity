@@ -346,6 +346,52 @@ export class PowerGridSimulator {
       }
     }
 
+    // Propagate power through adjacent buildings (chain effect):
+    // If a building is adjacent to a powered tile, it becomes powered
+    // and its tiles become powered — so adjacent buildings also get power.
+    const buildingFootprints: Array<{ building: typeof buildings[0]; tiles: Array<{ x: number; y: number }> }> = [];
+    for (const building of buildings) {
+      if (building.type === 'power_plant') continue;
+      const parcel = this.db.parcels.getParcelById(building.parcelId);
+      if (!parcel) continue;
+      const tiles: Array<{ x: number; y: number }> = [];
+      for (let by = 0; by < (building.height || 1); by++) {
+        for (let bx = 0; bx < (building.width || 1); bx++) {
+          tiles.push({ x: parcel.x + bx, y: parcel.y + by });
+        }
+      }
+      buildingFootprints.push({ building, tiles });
+    }
+
+    let changed = true;
+    const poweredBuildings = new Set<string>();
+    while (changed) {
+      changed = false;
+      for (const { building, tiles } of buildingFootprints) {
+        if (poweredBuildings.has(building.id)) continue;
+        // Check if any tile of this building is adjacent to a powered tile
+        let adjacent = false;
+        for (const tile of tiles) {
+          for (let dx = -1; dx <= 1 && !adjacent; dx++) {
+            for (let dy = -1; dy <= 1 && !adjacent; dy++) {
+              if (poweredTiles.has(`${tile.x + dx},${tile.y + dy}`)) {
+                adjacent = true;
+              }
+            }
+          }
+          if (adjacent) break;
+        }
+        if (adjacent) {
+          poweredBuildings.add(building.id);
+          // Add this building's tiles to poweredTiles so neighbors can chain
+          for (const tile of tiles) {
+            poweredTiles.add(`${tile.x},${tile.y}`);
+          }
+          changed = true;
+        }
+      }
+    }
+
     // Calculate total power capacity from connected plants
     let totalCapacity = 0;
     for (const building of buildings) {
@@ -354,31 +400,25 @@ export class PowerGridSimulator {
       }
     }
 
-    // Calculate total demand from connected buildings (adjacent to powered tiles)
+    // Calculate total demand from connected buildings
     let totalDemand = 0;
     for (const building of buildings) {
-      if (building.type !== 'power_plant') {
-        const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel && isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, poweredTiles)) {
-          totalDemand += building.powerRequired;
-        }
+      if (building.type !== 'power_plant' && poweredBuildings.has(building.id)) {
+        totalDemand += building.powerRequired;
       }
     }
 
     const hasEnoughPower = totalCapacity >= totalDemand;
 
+    // Types that don't need electricity
+    const NO_POWER_TYPES = new Set(['park', 'plaza']);
+
     // Set power status for each building
     for (const building of buildings) {
-      if (building.type === 'power_plant') {
-        powerStatus.set(building.id, true); // Plants always powered
+      if (building.type === 'power_plant' || NO_POWER_TYPES.has(building.type)) {
+        powerStatus.set(building.id, true); // Plants and parks always powered
       } else {
-        const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel) {
-          const isConnected = isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, poweredTiles);
-          powerStatus.set(building.id, isConnected && hasEnoughPower);
-        } else {
-          powerStatus.set(building.id, false);
-        }
+        powerStatus.set(building.id, poweredBuildings.has(building.id) && hasEnoughPower);
       }
     }
 
@@ -478,23 +518,62 @@ export class WaterGridSimulator {
       }
     }
 
+    // Propagate water through adjacent buildings (chain effect)
+    const buildingFootprints: Array<{ building: typeof buildings[0]; tiles: Array<{ x: number; y: number }> }> = [];
+    for (const building of buildings) {
+      if (building.type === 'water_tower') continue;
+      const parcel = this.db.parcels.getParcelById(building.parcelId);
+      if (!parcel) continue;
+      const tiles: Array<{ x: number; y: number }> = [];
+      for (let by = 0; by < (building.height || 1); by++) {
+        for (let bx = 0; bx < (building.width || 1); bx++) {
+          tiles.push({ x: parcel.x + bx, y: parcel.y + by });
+        }
+      }
+      buildingFootprints.push({ building, tiles });
+    }
+
+    let changed = true;
+    const suppliedBuildings = new Set<string>();
+    while (changed) {
+      changed = false;
+      for (const { building, tiles } of buildingFootprints) {
+        if (suppliedBuildings.has(building.id)) continue;
+        let adjacent = false;
+        for (const tile of tiles) {
+          for (let dx = -1; dx <= 1 && !adjacent; dx++) {
+            for (let dy = -1; dy <= 1 && !adjacent; dy++) {
+              if (suppliedTiles.has(`${tile.x + dx},${tile.y + dy}`)) {
+                adjacent = true;
+              }
+            }
+          }
+          if (adjacent) break;
+        }
+        if (adjacent) {
+          suppliedBuildings.add(building.id);
+          for (const tile of tiles) {
+            suppliedTiles.add(`${tile.x},${tile.y}`);
+          }
+          changed = true;
+        }
+      }
+    }
+
     // Calculate capacity vs demand
     let totalCapacity = 0;
     for (const building of buildings) {
       if (building.type === 'water_tower') {
-        totalCapacity += 5000; // Each tower supplies 5000 liters/tick
+        totalCapacity += 10000; // Each tower supplies 10000 units
       }
     }
 
     let totalDemand = 0;
     let connectedBuildings = 0;
     for (const building of buildings) {
-      if (building.type !== 'water_tower') {
-        const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel && isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, suppliedTiles)) {
-          totalDemand += building.waterRequired;
-          connectedBuildings++;
-        }
+      if (building.type !== 'water_tower' && suppliedBuildings.has(building.id)) {
+        totalDemand += building.waterRequired;
+        connectedBuildings++;
       }
     }
 
@@ -505,13 +584,7 @@ export class WaterGridSimulator {
       if (building.type === 'water_tower') {
         waterStatus.set(building.id, true);
       } else {
-        const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (parcel) {
-          const isConnected = isBuildingAdjacentToSupplied(parcel.x, parcel.y, building.width || 1, building.height || 1, suppliedTiles);
-          waterStatus.set(building.id, isConnected && hasEnoughWater);
-        } else {
-          waterStatus.set(building.id, false);
-        }
+        waterStatus.set(building.id, suppliedBuildings.has(building.id) && hasEnoughWater);
       }
     }
 
@@ -1266,10 +1339,36 @@ export class SimulationEngine extends EventEmitter {
   }
 
   /**
+   * Set the engine's internal tick to match a given hour/day/year.
+   * Used by the debug endpoint to sync time after admin changes.
+   */
+  setTime(hour: number, day: number, year: number): void {
+    // Reverse the deriveTime() formula:
+    // hour = (8 + Math.floor(totalMinutes / 60)) % 24
+    // day = 1 + Math.floor(totalHours / 24)
+    // year = 1 + Math.floor(absoluteDay / 365)
+    const absoluteDay = (year - 1) * 365 + (day - 1);
+    const totalHours = absoluteDay * HOURS_PER_DAY + (hour >= 8 ? hour - 8 : hour + 16);
+    const totalMinutes = totalHours * MINUTES_PER_HOUR;
+    this.currentTick = totalMinutes * TICKS_PER_MINUTE;
+    console.log(`[SimulationEngine] Time set to hour=${hour} day=${day} year=${year} (tick=${this.currentTick})`);
+  }
+
+  /**
    * Start the simulation loop
    */
   start(): void {
     if (this.running) return;
+
+    // Initialize tick from DB so time persists across restarts
+    const cities = this.db.city.getAllCities();
+    if (cities.length > 0) {
+      const maxTick = Math.max(...cities.map(c => c.time.tick));
+      if (maxTick > 0) {
+        this.currentTick = maxTick;
+        console.log(`[SimulationEngine] Resumed from tick ${maxTick}`);
+      }
+    }
 
     this.running = true;
     this.tickTimer = setInterval(() => this.tick(), TICK_INTERVAL_MS);

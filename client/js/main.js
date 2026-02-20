@@ -2,31 +2,38 @@
 // MOLTCITY - Main Entry Point
 // ============================================
 
-import * as state from './state.js';
-import * as api from './api.js';
-import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS } from './config.js';
-import { bresenhamLine } from './utils.js';
-import { initPixi, setupInteractions } from './pixi/init.js';
-import { initGame, render } from './game.js';
-import { connectWebSocket } from './websocket.js';
-import { loadSprites } from './sprites.js';
-import { drawHighlight } from './render/tiles.js';
-import { setupAuthUI, checkAuth, setOnAuthSuccess, showUserInfo } from './ui/auth.js';
-import { loadActivities, addActivity } from './ui/activity.js';
-import { loadElectionStatus, setupElectionUI } from './ui/election.js';
-import { setupLeaderboard } from './ui/leaderboard.js';
-import { showSpriteEditor } from './ui/sprite-editor.js';
-import { initDebugPanel } from './ui/debug.js';
-import { initAdvisor } from './ui/advisor.js';
-import { subscribeToCityWs } from './websocket.js';
-import { startScreenshotCapture } from './screenshot.js';
-import { initTimelapse } from './timelapse.js';
-import { initReplay } from './replay.js';
+import * as state from "./state.js";
+import * as api from "./api.js";
+import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS } from "./config.js";
+import { bresenhamLine } from "./utils.js";
+import { initPixi, setupInteractions } from "./pixi/init.js";
+import { initGame, render } from "./game.js";
+import { connectWebSocket } from "./websocket.js";
+import { loadSprites } from "./sprites.js";
+import { drawHighlight } from "./render/tiles.js";
+import {
+  setupAuthUI,
+  checkAuth,
+  setOnAuthSuccess,
+  showUserInfo,
+} from "./ui/auth.js";
+import { loadActivities, addActivity } from "./ui/activity.js";
+import { loadElectionStatus, setupElectionUI } from "./ui/election.js";
+import { setupLeaderboard } from "./ui/leaderboard.js";
+import { showSpriteEditor } from "./ui/sprite-editor.js";
+import { initDebugPanel } from "./ui/debug.js";
+import { initAdvisor } from "./ui/advisor.js";
+import { subscribeToCityWs } from "./websocket.js";
+import { startScreenshotCapture } from "./screenshot.js";
+import { initTimelapse } from "./timelapse.js";
+import { initReplay } from "./replay.js";
 
 let appInitialized = false;
 
 // Check for spectator mode (either /spectate path or ?mode=spectator query param)
-const isSpectatorMode = window.location.pathname === '/spectate' || new URLSearchParams(window.location.search).get("mode") === "spectator";
+const isSpectatorMode =
+  window.location.pathname === "/spectate" ||
+  new URLSearchParams(window.location.search).get("mode") === "spectator";
 
 // Get cityId from URL if provided
 const urlCityId = new URLSearchParams(window.location.search).get("cityId");
@@ -54,7 +61,13 @@ async function initializeApp() {
     await loadCityData();
 
     // Setup interactions
-    setupInteractions(handleTileClick, handleTileHover, handleDragStart, handleDragMove, handleDragEnd);
+    setupInteractions(
+      handleTileClick,
+      handleTileHover,
+      handleDragStart,
+      handleDragMove,
+      handleDragEnd,
+    );
 
     // Initialize game systems
     initGame();
@@ -82,6 +95,9 @@ async function initializeApp() {
 
     // Add cost labels to build menu options
     updateBuildMenuCosts();
+
+    // Check if city hall is required (onboarding)
+    checkCityHallRequired();
 
     // Start periodic screenshot capture
     startScreenshotCapture();
@@ -140,7 +156,7 @@ async function updateUserBalance() {
     // Fallback: try matching from local agents list
     const { agents } = state;
     const userAgent = agents.find(
-      (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id
+      (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id,
     );
     if (userAgent && userAgent.wallet) {
       balanceDisplay.textContent = `$${userAgent.wallet.balance.toLocaleString()}`;
@@ -170,7 +186,11 @@ async function loadCityData() {
     } else if (!state.currentCityId && cities.length > 0) {
       // Pick user's first city, or just the first available
       const userCity = state.currentUser
-        ? cities.find(c => c.createdBy === state.currentUser.id || c.mayorId === state.currentUser.id)
+        ? cities.find(
+            (c) =>
+              c.createdBy === state.currentUser.id ||
+              c.mayorId === state.currentUser.id,
+          )
         : null;
       state.setCurrentCityId(userCity ? userCity.id : cities[0].id);
     }
@@ -266,14 +286,15 @@ export async function switchCity(cityId) {
   // Re-evaluate mayor status for the new city
   showUserInfo();
 
-  const [parcelsR, buildingsR, roadsR, agentsR, powerR, waterR] = await Promise.all([
-    api.getParcels(),
-    api.getBuildings(),
-    api.getRoads(),
-    api.getAgents(),
-    api.getPowerLines(),
-    api.getWaterPipes(),
-  ]);
+  const [parcelsR, buildingsR, roadsR, agentsR, powerR, waterR] =
+    await Promise.all([
+      api.getParcels(),
+      api.getBuildings(),
+      api.getRoads(),
+      api.getAgents(),
+      api.getPowerLines(),
+      api.getWaterPipes(),
+    ]);
 
   state.setParcels(parcelsR.parcels || []);
   state.setBuildings(buildingsR.buildings || []);
@@ -288,6 +309,9 @@ export async function switchCity(cityId) {
   // Re-render
   render();
   await loadActivities();
+
+  // Re-check city hall onboarding for the new city
+  checkCityHallRequired();
 }
 
 /**
@@ -314,7 +338,8 @@ function buildCitySelectorUI() {
   if (cities.length > 1) {
     const select = document.createElement("select");
     select.className = "city-select";
-    select.style.cssText = "background:#2a2a2a;color:#fff;border:1px solid #555;padding:2px 4px;font-size:12px;border-radius:3px;cursor:pointer;";
+    select.style.cssText =
+      "background:#2a2a2a;color:#fff;border:1px solid #555;padding:2px 4px;font-size:12px;border-radius:3px;cursor:pointer;";
     for (const city of cities) {
       const opt = document.createElement("option");
       opt.value = city.id;
@@ -332,7 +357,8 @@ function buildCitySelectorUI() {
   const btn = document.createElement("button");
   btn.textContent = "+";
   btn.title = "Create new city";
-  btn.style.cssText = "background:#4ecdc4;color:#000;border:none;padding:2px 6px;font-size:12px;border-radius:3px;cursor:pointer;margin-left:4px;font-weight:bold;";
+  btn.style.cssText =
+    "background:#4ecdc4;color:#000;border:none;padding:2px 6px;font-size:12px;border-radius:3px;cursor:pointer;margin-left:4px;font-weight:bold;";
   btn.addEventListener("click", async () => {
     const name = prompt("Enter a name for your new city:");
     if (!name || !name.trim()) return;
@@ -414,7 +440,7 @@ function isTileOccupied(x, y) {
  */
 function isTileWater(x, y) {
   const parcel = state.parcels.find((p) => p.x === x && p.y === y);
-  return parcel && parcel.terrain === 'water';
+  return parcel && parcel.terrain === "water";
 }
 
 /**
@@ -437,28 +463,36 @@ function findBuildingAtTile(x, y) {
  * Find a road at a tile
  */
 function findRoadAtTile(x, y) {
-  return state.roads.find((r) => {
-    const p = state.parcels.find((p) => p.id === r.parcelId);
-    return p && p.x === x && p.y === y;
-  }) || null;
+  return (
+    state.roads.find((r) => {
+      const p = state.parcels.find((p) => p.id === r.parcelId);
+      return p && p.x === x && p.y === y;
+    }) || null
+  );
 }
 
 /**
  * Find a power line connected to a tile
  */
 function findPowerLineAtTile(x, y) {
-  return state.powerLines.find(
-    (l) => (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y)
-  ) || null;
+  return (
+    state.powerLines.find(
+      (l) =>
+        (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y),
+    ) || null
+  );
 }
 
 /**
  * Find a water pipe connected to a tile
  */
 function findWaterPipeAtTile(x, y) {
-  return state.waterPipes.find(
-    (p) => (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y)
-  ) || null;
+  return (
+    state.waterPipes.find(
+      (p) =>
+        (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y),
+    ) || null
+  );
 }
 
 /**
@@ -549,7 +583,10 @@ async function handleBuild(x, y, buildType) {
       console.log("[MoltCity] Road created:", result);
 
       // Reload parcels + roads and re-render
-      const [parcelsR, roadsResponse] = await Promise.all([api.getParcels(), api.getRoads()]);
+      const [parcelsR, roadsResponse] = await Promise.all([
+        api.getParcels(),
+        api.getRoads(),
+      ]);
       state.setParcels(parcelsR.parcels || []);
       state.setRoads(roadsResponse.roads || []);
       render();
@@ -560,7 +597,9 @@ async function handleBuild(x, y, buildType) {
       if (!state.infraStartPoint) {
         // First click: set start point
         state.setInfraStartPoint({ x, y });
-        console.log(`[MoltCity] Infrastructure start point set: (${x}, ${y}). Click again to set endpoint.`);
+        console.log(
+          `[MoltCity] Infrastructure start point set: (${x}, ${y}). Click again to set endpoint.`,
+        );
       } else {
         // Second click: create the infrastructure
         const start = state.infraStartPoint;
@@ -624,6 +663,7 @@ async function handleBuild(x, y, buildType) {
           jail: "Jail",
           university: "University",
           stadium: "Stadium",
+          city_hall: "City Hall",
         };
         const name = buildingNames[buildType] || buildType;
 
@@ -654,12 +694,20 @@ async function handleBuild(x, y, buildType) {
         console.log("[MoltCity] Building created:", result);
 
         // Reload parcels + buildings and re-render
-        const [parcelsR2, buildingsResponse] = await Promise.all([api.getParcels(), api.getBuildings()]);
+        const [parcelsR2, buildingsResponse] = await Promise.all([
+          api.getParcels(),
+          api.getBuildings(),
+        ]);
         state.setParcels(parcelsR2.parcels || []);
         state.setBuildings(buildingsResponse.buildings || []);
         render();
         showToast(`${name} placed at (${x}, ${y})`);
         updateUserBalance();
+
+        // Unlock full build menu after city hall placement
+        if (buildType === "city_hall") {
+          exitCityHallMode();
+        }
       }
     }
   } catch (error) {
@@ -680,7 +728,13 @@ function handleTileHover(x, y, globalPos) {
     state.worldContainer.removeChild(state.highlightGraphics);
     state.setHighlightGraphics(null);
   }
-  if (state.selectedBuildType && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+  if (
+    state.selectedBuildType &&
+    x >= 0 &&
+    x < GRID_SIZE &&
+    y >= 0 &&
+    y < GRID_SIZE
+  ) {
     if (state.selectedBuildType === "demolish") {
       // Demolish mode: red highlight, expand to building footprint if hovering one
       const building = findBuildingAtTile(x, y);
@@ -706,7 +760,10 @@ function handleTileHover(x, y, globalPos) {
       }
     } else {
       // Build mode: green/red footprint highlight
-      const footprint = BUILDING_FOOTPRINTS[state.selectedBuildType] || { w: 1, h: 1 };
+      const footprint = BUILDING_FOOTPRINTS[state.selectedBuildType] || {
+        w: 1,
+        h: 1,
+      };
       const container = new PIXI.Container();
       container.sortableChildren = true;
       container.zIndex = 1000;
@@ -781,7 +838,7 @@ function handleDragMove(x, y, globalPos) {
 
     const interpolated = bresenhamLine(last.x, last.y, x, y);
     for (const pt of interpolated) {
-      if (!dragDrawTiles.some(t => t.x === pt.x && t.y === pt.y)) {
+      if (!dragDrawTiles.some((t) => t.x === pt.x && t.y === pt.y)) {
         dragDrawTiles.push(pt);
       }
     }
@@ -835,7 +892,9 @@ function updateDragTooltip(globalPos) {
 
   const { selectedBuildType, dragDrawTiles, gameConfig } = state;
   const isZoning = ZONE_TYPES.includes(selectedBuildType);
-  const validCount = isZoning ? dragDrawTiles.length : dragDrawTiles.filter(t => !isTileOccupied(t.x, t.y)).length;
+  const validCount = isZoning
+    ? dragDrawTiles.length
+    : dragDrawTiles.filter((t) => !isTileOccupied(t.x, t.y)).length;
 
   let costPer = 0;
   if (ZONE_TYPES.includes(selectedBuildType)) {
@@ -871,7 +930,7 @@ async function handleDragEnd() {
 
   // Filter out water tiles and occupied tiles
   const isZoning = ZONE_TYPES.includes(selectedBuildType);
-  const validTiles = dragDrawTiles.filter(t => {
+  const validTiles = dragDrawTiles.filter((t) => {
     if (isTileWater(t.x, t.y)) return false;
     if (!isZoning && isTileOccupied(t.x, t.y)) return false;
     return true;
@@ -894,7 +953,10 @@ async function handleDragEnd() {
     }
 
     // Reload state and re-render
-    const [parcelsR, roadsR] = await Promise.all([api.getParcels(), api.getRoads()]);
+    const [parcelsR, roadsR] = await Promise.all([
+      api.getParcels(),
+      api.getRoads(),
+    ]);
     state.setParcels(parcelsR.parcels || []);
     state.setRoads(roadsR.roads || []);
     render();
@@ -984,9 +1046,14 @@ function showBuildingInfo(building) {
   if (nameEl) nameEl.textContent = building.name || building.type;
   if (typeEl) typeEl.textContent = building.type;
   if (floorsEl) floorsEl.textContent = building.floors || 1;
-  if (powerEl) powerEl.textContent = building.powered ? "Connected" : "No Power";
-  if (waterEl) waterEl.textContent = building.hasWater ? "Connected" : "No Water";
-  if (ownerEl) ownerEl.textContent = building.ownerId ? building.ownerId.slice(0, 8) + "..." : "Unknown";
+  if (powerEl)
+    powerEl.textContent = building.powered ? "Connected" : "No Power";
+  if (waterEl)
+    waterEl.textContent = building.hasWater ? "Connected" : "No Water";
+  if (ownerEl)
+    ownerEl.textContent = building.ownerId
+      ? building.ownerId.slice(0, 8) + "..."
+      : "Unknown";
 
   panel.style.display = "block";
 }
@@ -1058,7 +1125,11 @@ function updateTooltip(x, y, globalPos) {
   } else if (parcel) {
     const zoningLabel = parcel.zoning ? `<br>Zone: ${parcel.zoning}` : "";
     let costLabel = "";
-    if (state.selectedBuildType && state.selectedBuildType !== "demolish" && state.gameConfig) {
+    if (
+      state.selectedBuildType &&
+      state.selectedBuildType !== "demolish" &&
+      state.gameConfig
+    ) {
       const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
       let cost;
       if (ZONE_TYPES.includes(state.selectedBuildType)) {
@@ -1098,7 +1169,9 @@ function showToast(message, isError = false) {
     background: ${isError ? "#e74c3c" : "#2ecc71"};
   `;
   document.body.appendChild(toast);
-  requestAnimationFrame(() => { toast.style.opacity = "1"; });
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+  });
   setTimeout(() => {
     toast.style.opacity = "0";
     setTimeout(() => toast.remove(), 300);
@@ -1168,7 +1241,9 @@ function setupBuildMenu() {
       // Fade buildings when placing infrastructure so pipes/lines are visible
       const infraTypes = ["water_pipe", "power_line"];
       if (state.sceneLayer) {
-        state.sceneLayer.alpha = infraTypes.includes(state.selectedBuildType) ? 0.5 : 1;
+        state.sceneLayer.alpha = infraTypes.includes(state.selectedBuildType)
+          ? 0.5
+          : 1;
       }
 
       console.log("[MoltCity] Build type selected:", state.selectedBuildType);
@@ -1198,6 +1273,56 @@ function setupBuildMenu() {
 }
 
 /**
+ * Check if city hall needs to be placed (onboarding for new cities)
+ */
+function checkCityHallRequired() {
+  const hasCityHall = state.buildings.some((b) => b.type === "city_hall");
+  const buildMenu = document.getElementById("build-menu");
+  const banner = document.getElementById("city-hall-banner");
+
+  if (!hasCityHall) {
+    // Enter city hall required mode
+    if (buildMenu) buildMenu.classList.add("city-hall-required");
+    if (banner) banner.style.display = "";
+
+    // Auto-select city_hall build type
+    const cityHallOption = document.getElementById("build-city-hall");
+    if (cityHallOption) {
+      cityHallOption.click();
+    }
+  } else {
+    // Normal mode — ensure classes are removed, hide city hall button
+    if (buildMenu) buildMenu.classList.remove("city-hall-required");
+    if (banner) banner.style.display = "none";
+    const cityHallOption = document.getElementsByClassName("city-hall-group");
+    if (cityHallOption) cityHallOption[0].style.display = "none";
+  }
+}
+
+/**
+ * Exit city hall onboarding mode — unlock full build menu
+ */
+function exitCityHallMode() {
+  const buildMenu = document.getElementById("build-menu");
+  const banner = document.getElementById("city-hall-banner");
+
+  if (buildMenu) buildMenu.classList.remove("city-hall-required");
+  if (banner) banner.style.display = "none";
+
+  // Hide city hall button now that it's built
+  const cityHallOption = document.getElementById("build-city-hall");
+  if (cityHallOption) cityHallOption.style.display = "none";
+
+  // Deselect current build type
+  state.setSelectedBuildType(null);
+  document
+    .querySelectorAll(".build-option")
+    .forEach((opt) => opt.classList.remove("selected"));
+
+  showToast("City Hall placed! Full build menu unlocked.");
+}
+
+/**
  * Main application entry point
  */
 async function main() {
@@ -1216,7 +1341,7 @@ async function main() {
     if (spectatorBanner) spectatorBanner.style.display = "block";
 
     // Check for cityId query param to spectate a specific city
-    const urlCityId = new URLSearchParams(window.location.search).get('cityId');
+    const urlCityId = new URLSearchParams(window.location.search).get("cityId");
     if (urlCityId) {
       state.setCurrentCityId(urlCityId);
     }

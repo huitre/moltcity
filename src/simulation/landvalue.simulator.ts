@@ -83,21 +83,25 @@ export class LandValueSimulator {
       }
 
       // Check for water terrain within radius 3
-      for (let dx = -3; dx <= 3; dx++) {
+      let hasNearbyWater = false;
+      for (let dx = -3; dx <= 3 && !hasNearbyWater; dx++) {
         for (let dy = -3; dy <= 3; dy++) {
           const np = parcelMap.get(`${parcel.x + dx},${parcel.y + dy}`);
           if (np && np.terrain === 'water') {
             value += 5;
-            break; // Only count once
+            hasNearbyWater = true;
+            break;
           }
         }
       }
 
       // Adjacent to road bonus
-      for (let dx = -1; dx <= 1; dx++) {
+      let hasAdjacentRoad = false;
+      for (let dx = -1; dx <= 1 && !hasAdjacentRoad; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
           if (roadTiles.has(`${parcel.x + dx},${parcel.y + dy}`)) {
             value += 20;
+            hasAdjacentRoad = true;
             break;
           }
         }

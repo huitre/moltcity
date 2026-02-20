@@ -2,9 +2,17 @@
 // MOLTCITY - Pixi.js Initialization
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, WORLD_MIN_X, WORLD_MAX_X, WORLD_MIN_Y, WORLD_MAX_Y } from '../config.js';
-import * as state from '../state.js';
-import { cartToIso, isoToCart, clamp } from '../utils.js';
+import {
+  GRID_SIZE,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  WORLD_MIN_X,
+  WORLD_MAX_X,
+  WORLD_MIN_Y,
+  WORLD_MAX_Y,
+} from "../config.js";
+import * as state from "../state.js";
+import { cartToIso, isoToCart, clamp } from "../utils.js";
 
 /**
  * Initialize the Pixi.js application
@@ -80,9 +88,21 @@ export async function initPixi() {
 /**
  * Setup mouse/keyboard interactions
  */
-const DRAWABLE_TYPES = ["road", "residential", "offices", "industrial", "suburban"];
+const DRAWABLE_TYPES = [
+  "road",
+  "residential",
+  "offices",
+  "industrial",
+  "suburban",
+];
 
-export function setupInteractions(onTileClick, onTileHover, onDragStart, onDragMove, onDragEnd) {
+export function setupInteractions(
+  onTileClick,
+  onTileHover,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+) {
   const { app, worldContainer } = state;
 
   // Drag state
@@ -101,7 +121,10 @@ export function setupInteractions(onTileClick, onTileHover, onDragStart, onDragM
     startPos = { x: e.global.x, y: e.global.y };
     lastPos = { x: e.global.x, y: e.global.y };
 
-    if (state.selectedBuildType && DRAWABLE_TYPES.includes(state.selectedBuildType)) {
+    if (
+      state.selectedBuildType &&
+      DRAWABLE_TYPES.includes(state.selectedBuildType)
+    ) {
       // Potential drag-draw — defer until threshold exceeded
       isPendingDragDraw = true;
       isDragging = false;
@@ -143,12 +166,12 @@ export function setupInteractions(onTileClick, onTileHover, onDragStart, onDragM
       worldContainer.x = clamp(
         worldContainer.x + dx,
         -WORLD_MAX_X + app.screen.width / 2,
-        -WORLD_MIN_X + app.screen.width / 2
+        -WORLD_MIN_X + app.screen.width / 2,
       );
       worldContainer.y = clamp(
         worldContainer.y + dy,
         -WORLD_MAX_Y + app.screen.height / 2,
-        -WORLD_MIN_Y + app.screen.height / 2
+        app.screen.height / 2,
       );
 
       lastPos = { x: e.global.x, y: e.global.y };

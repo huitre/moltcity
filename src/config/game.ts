@@ -40,6 +40,7 @@ export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   'garbage_depot',
   'park',
   'plaza',
+  'city_hall',
 ];
 
 // Infrastructure that mayor can build
@@ -64,7 +65,6 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
   'library',
   'monument',
   'amusement_park',
-  'city_hall',
   'courthouse',
 ];
 
@@ -79,6 +79,7 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   water_tower: { w: 2, h: 2 },
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
+  city_hall: { w: 2, h: 2 },
 };
 
 // ============================================
@@ -162,7 +163,7 @@ export const BUILDING_COSTS: Record<string, number> = {
   // Special buildings
   park: 200,
   plaza: 300,
-  city_hall: 5000,
+  city_hall: 0,
   police_station: 1500,
   courthouse: 2500,
   // City services (new)
@@ -566,9 +567,9 @@ export const LANDMARKS = {
 // Zone Evolution Configuration
 // ============================================
 export const ZONE_EVOLUTION = {
-  LAND_VALUE_THRESHOLD_MEDIUM: 75,
-  LAND_VALUE_THRESHOLD_HIGH: 150,
-  DEMAND_THRESHOLD: 0.3,
+  LAND_VALUE_THRESHOLD_MEDIUM: 60,
+  LAND_VALUE_THRESHOLD_HIGH: 120,
+  DEMAND_THRESHOLD: 0.05,
   SUBURBAN_MAX_DENSITY: 1,
   RESIDENTIAL_MAX_DENSITY: 3,
   OFFICE_MAX_DENSITY: 3,

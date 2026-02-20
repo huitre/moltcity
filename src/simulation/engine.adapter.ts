@@ -272,15 +272,15 @@ const POWER_REQUIREMENTS: Partial<Record<string, number>> = {
   residential: 100, offices: 800, suburban: 50, industrial: 1500,
   fire_station: 500, hospital: 2000, house: 100, apartment: 500,
   shop: 300, office: 800, factory: 2000, power_plant: 0,
-  water_tower: 50, road: 10, park: 20, plaza: 100,
+  water_tower: 50, road: 10, park: 0, plaza: 100,
   city_hall: 1000, police_station: 800, courthouse: 1200, jail: 1500,
 };
 const WATER_REQUIREMENTS: Partial<Record<string, number>> = {
-  residential: 50, offices: 100, suburban: 25, industrial: 400,
-  fire_station: 200, hospital: 500, house: 50, apartment: 200,
-  shop: 30, office: 100, factory: 500, power_plant: 1000,
-  water_tower: 0, road: 0, park: 100, plaza: 50,
-  city_hall: 200, police_station: 100, courthouse: 150, jail: 300,
+  residential: 10, offices: 12, suburban: 5, industrial: 18,
+  fire_station: 20, hospital: 40, house: 10, apartment: 15,
+  shop: 12, office: 12, factory: 18, power_plant: 50,
+  water_tower: 0, road: 0, park: 8, plaza: 6,
+  city_hall: 20, police_station: 15, courthouse: 15, jail: 20,
 };
 
 // Random resident names (duplicated from population.repository.ts)
@@ -565,7 +565,7 @@ class LegacyBuildingRepository {
   ): Building {
     const id = generateId();
     const powerRequired = (POWER_REQUIREMENTS[type] || 100) * floors;
-    const waterRequired = (WATER_REQUIREMENTS[type] || 50) * floors;
+    const waterRequired = (WATER_REQUIREMENTS[type] || 10) * floors;
     this.raw.prepare(`
       INSERT OR IGNORE INTO buildings (id, city_id, parcel_id, type, name, sprite, floors, width, height,
         power_required, water_required, built_at, owner_id, construction_progress,

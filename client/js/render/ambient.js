@@ -42,7 +42,7 @@ function getSunsetSprite() {
  */
 export function initClouds() {
   const { cloudsContainer, clouds, cloudShadows } = state;
-  const skyHeight = WORLD_MAX_Y * 0.4 - WORLD_MIN_Y;
+  const skyHeight = WORLD_MAX_Y * 0.25 - WORLD_MIN_Y;
   const spacing = skyHeight / CLOUD_COUNT;
 
   for (let i = 0; i < CLOUD_COUNT; i++) {
@@ -276,7 +276,7 @@ export function updateDayNightOverlay() {
     cloudsContainer.alpha = 1 - progress * 0.3;
     cloudShadowsContainer.alpha = 1 - progress; // Shadows fade out at sunset
     birdsContainer.alpha = 1 - progress * 0.3;
-  } else if (currentHour >= 19 && currentHour < 21) {
+  } else if (currentHour >= 21 && currentHour < 23) {
     // Dusk - purple/blue transition
     const progress = (currentHour - 19) / 2; // 0 to 1
     const alpha = 0.25 + progress * 0.15;

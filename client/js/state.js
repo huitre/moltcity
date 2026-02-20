@@ -81,6 +81,7 @@ export const powerPlantSprites = [];
 export const waterTankSprites = [];
 export const universitySprites = [];
 export const stadiumSprites = [];
+export const cityHallSprites = [];
 // Legacy arrays (kept for old procedural code paths)
 export const houseBricks = [];
 export const houseBottoms = [];

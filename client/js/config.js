@@ -11,7 +11,7 @@ export const TILE_HEIGHT = 32;
 export const GRID_SIZE = 50;
 
 // World bounds for camera
-export const WORLD_MIN_X = (-GRID_SIZE * TILE_WIDTH) / 4;
+export const WORLD_MIN_X = -(GRID_SIZE * TILE_WIDTH) / 2;
 export const WORLD_MAX_X = (GRID_SIZE * TILE_WIDTH) / 2;
 export const WORLD_MIN_Y = 400;
 export const WORLD_MAX_Y = GRID_SIZE * TILE_HEIGHT + WORLD_MIN_Y;
@@ -49,6 +49,7 @@ export const BUILDING_FOOTPRINTS = {
   water_tower: { w: 2, h: 2 },
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
+  city_hall: { w: 2, h: 2 },
 };
 
 // Vehicle/pedestrian config

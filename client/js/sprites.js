@@ -341,6 +341,30 @@ export async function loadSprites() {
       }
     }
 
+    // Load city hall sprites
+    if (spritesConfig.city_hall) {
+      for (let i = 0; i < spritesConfig.city_hall.length; i++) {
+        const spriteConfig = spritesConfig.city_hall[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.cityHallSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded city_hall: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load city_hall ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };
