@@ -2,8 +2,9 @@
 // MOLTCITY - Tile Rendering
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from '../config.js';
-import { cartToIso, lightenColor, darkenColor } from '../utils.js';
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "../config.js";
+import { cartToIso, lightenColor, darkenColor } from "../utils.js";
+import * as state from "../state.js";
 
 /**
  * Draw a basic isometric tile
@@ -48,10 +49,23 @@ export function drawTile(x, y, color, height = 0) {
 }
 
 /**
- * Draw a grass tile with subtle variation
+ * Draw a grass tile using sprite textures (grass_01/05), with procedural fallback
  */
 export function drawGrassTile(x, y) {
-  // Vary grass color slightly based on position
+  if (state.grassTextures.length > 0) {
+    const idx = Math.floor(state.grassTextures.length * Math.random());
+    const texture = state.grassTextures[idx];
+    const iso = cartToIso(x, y);
+    const sprite = new PIXI.Sprite(texture);
+    const scale = TILE_WIDTH / texture.width;
+    sprite.scale.set(scale);
+    sprite.anchor.set(0.5, 0.85);
+    sprite.x = iso.x;
+    sprite.y = iso.y + TILE_HEIGHT;
+    sprite.zIndex = 0;
+    return sprite;
+  }
+  // Procedural fallback
   const variation = ((x * 7 + y * 13) % 10) - 5;
   const grassColor = lightenColor(COLORS.grass, variation);
   return drawTile(x, y, grassColor);
@@ -81,9 +95,9 @@ export function drawWaterTile(x, y) {
  */
 const ZONE_COLORS = {
   residential: 0x4caf50, // green
-  suburban: 0x66bb6a,    // lighter green
-  office: 0x42a5f5,      // blue
-  industrial: 0xffca28,  // yellow
+  suburban: 0x66bb6a, // lighter green
+  office: 0x42a5f5, // blue
+  industrial: 0xffca28, // yellow
 };
 
 /**
@@ -133,7 +147,12 @@ export function drawZoneTile(x, y, zoning) {
 /**
  * Draw a highlight overlay for a tile
  */
-export function drawHighlight(x, y, color = COLORS.highlight, isSelection = false) {
+export function drawHighlight(
+  x,
+  y,
+  color = COLORS.highlight,
+  isSelection = false,
+) {
   const iso = cartToIso(x, y);
   const graphics = new PIXI.Graphics();
 

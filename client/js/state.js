@@ -72,6 +72,7 @@ export const vehicleSprites = new Map();
 export const residentialSprites = { low: [], medium: [], high: [] };
 export const officeSprites = { low: [], medium: [], high: [] };
 export const serviceSprites = { police: [], hospital: [], firestation: [] };
+export const grassTextures = [];
 export const parkSprites = [];
 export const suburbanSprites = [];
 export const industrialSprites = [];
