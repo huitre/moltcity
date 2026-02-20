@@ -3,6 +3,7 @@
 // ============================================
 
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import { env } from '../config/env.js';
 import { AuthService } from '../services/auth.service.js';
 import { CityRepository } from '../repositories/city.repository.js';
 import {
@@ -30,6 +31,12 @@ export const authController: FastifyPluginAsync = async (fastify) => {
   // Register
   fastify.post('/api/auth/register', async (request, reply) => {
     const body = registerSchema.parse(request.body);
+
+    if (env.BETA_KEY && body.betaKey !== env.BETA_KEY) {
+      reply.status(403);
+      return { error: 'Invalid beta key' };
+    }
+
     const result = await authService.register(body.email, body.password, body.name);
     reply.status(201);
     return result;

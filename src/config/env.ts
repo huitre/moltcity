@@ -39,6 +39,9 @@ const envSchema = z.object({
   USE_NEW_RENTALS: coerceBoolean.default(false),
   USE_NEW_PAYMENTS: coerceBoolean.default(false),
 
+  // Beta access
+  BETA_KEY: z.string().optional(),
+
   // Sprites
   SPRITES_DIR: z.string().default('./client/sprites'),
 });

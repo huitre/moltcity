@@ -569,6 +569,40 @@
         display: flex;
       }
 
+      /* City Hall required mode — hide everything except city_hall group */
+      #build-menu.city-hall-required .build-group {
+        display: none;
+      }
+      #build-menu.city-hall-required .build-group.city-hall-group {
+        display: flex;
+      }
+      #build-menu.city-hall-required .build-group.city-hall-group .build-option.admin-only {
+        display: flex;
+      }
+
+      /* City Hall guidance banner */
+      #city-hall-banner {
+        position: fixed;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #3a2a1a 0%, #2a1a0a 100%);
+        border: 2px solid var(--text-gold);
+        color: var(--text-gold);
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-family: "Press Start 2P", monospace;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        animation: pulse-banner 2s ease-in-out infinite;
+      }
+      @keyframes pulse-banner {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+
       /* Floor selector panel */
       #floor-selector {
         position: fixed;
@@ -2509,6 +2543,94 @@
         margin-top: 4px;
       }
 
+      /* Demand Meter Popup */
+      #popup-demand { width: 240px; }
+      .demand-meter {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 16px;
+        height: 140px;
+        padding: 12px 0 0;
+      }
+      .demand-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 48px;
+      }
+      .demand-bar-track {
+        width: 28px;
+        height: 100px;
+        background: rgba(0,0,0,0.3);
+        border: 2px solid var(--wood-border);
+        position: relative;
+        overflow: hidden;
+      }
+      .demand-bar-mid {
+        position: absolute;
+        left: 0; right: 0;
+        top: 50%;
+        height: 1px;
+        background: var(--wood-highlight);
+        opacity: 0.4;
+        z-index: 1;
+      }
+      .demand-bar-fill {
+        position: absolute;
+        left: 2px; right: 2px;
+        transition: height 0.3s, bottom 0.3s, top 0.3s;
+      }
+      .demand-bar-fill.positive {
+        bottom: 50%;
+      }
+      .demand-bar-fill.negative {
+        top: 50%;
+      }
+      .demand-label {
+        font-size: 8px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .demand-val {
+        font-size: 7px;
+        font-family: 'Press Start 2P', monospace;
+        color: var(--wood-highlight);
+      }
+      .demand-legend {
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0;
+        border-top: 2px solid var(--wood-border);
+        margin-top: 8px;
+      }
+      .demand-legend-item {
+        font-size: 6px;
+        color: var(--wood-highlight);
+        text-transform: uppercase;
+        text-align: center;
+      }
+      .demand-legend-item .dot {
+        display: inline-block;
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        margin-right: 3px;
+        vertical-align: middle;
+      }
+      .demand-info {
+        font-size: 6px;
+        color: var(--wood-highlight);
+        text-align: center;
+        padding: 6px 8px;
+        background: rgba(0,0,0,0.2);
+        border: 2px solid var(--wood-border);
+        margin-top: 8px;
+        line-height: 1.6;
+      }
+      .demand-info strong { color: var(--text-gold); }
+
       /* Services Popup specific */
       #popup-services .service-row {
         display: flex;
@@ -2765,6 +2887,11 @@
       <a href="/login">Sign in to interact</a>
     </div>
 
+    <!-- City Hall Required Banner -->
+    <div id="city-hall-banner" style="display:none;">
+      Place your City Hall to start building your city!
+    </div>
+
     <!-- ============================================
          TOOLBAR - Right Side Icon Bar
          ============================================ -->
@@ -2790,6 +2917,10 @@
       <button class="toolbar-btn" id="tb-services" data-popup="popup-services">
         🏛️
         <span class="tooltip-text">City Services</span>
+      </button>
+      <button class="toolbar-btn" id="tb-demand" data-popup="popup-demand">
+        📈
+        <span class="tooltip-text">Demand (D)</span>
       </button>
       <button class="toolbar-btn" id="tb-stats" data-popup="popup-stats">
         📊
@@ -3319,6 +3450,19 @@
       </div>
     </div>
 
+    <!-- Demand Meter Popup -->
+    <div class="toolbar-popup" id="popup-demand">
+      <div class="popup-header">
+        <h3>📈 Zone Demand</h3>
+        <button class="popup-close" onclick="closePopup('popup-demand')">
+          &times;
+        </button>
+      </div>
+      <div class="popup-content" id="demand-content">
+        <div style="text-align:center;padding:20px;color:#888">Loading...</div>
+      </div>
+    </div>
+
     <div class="toolbar-popup" id="popup-help">
       <div class="popup-header">
         <h3>❓ Help & Resources</h3>
@@ -3555,6 +3699,15 @@
                 minlength="6"
               />
             </div>
+            <div class="form-group">
+              <label for="signup-beta-key">Beta Key</label>
+              <input
+                type="text"
+                id="signup-beta-key"
+                placeholder="Enter beta key"
+                required
+              />
+            </div>
             <button type="submit" class="auth-submit">Create Account</button>
           </form>
           <p
@@ -3682,6 +3835,16 @@
     </div>
 
     <div id="build-menu">
+      <!-- City Hall (shown during onboarding) -->
+      <div class="build-group city-hall-group">
+        <span class="build-group-label">City Hall</span>
+        <div class="build-group-items">
+          <div class="build-option admin-only" data-type="city_hall" id="build-city-hall">
+            <span>🏛️</span>
+            <small>City Hall</small>
+          </div>
+        </div>
+      </div>
       <!-- Zone -->
       <div class="build-group">
         <span class="build-group-label">Zone</span>
@@ -4083,6 +4246,7 @@
           if (popupId === "popup-election") loadToolbarElection();
           if (popupId === "popup-activity") loadToolbarActivity();
           if (popupId === "popup-budget") loadToolbarBudget();
+          if (popupId === "popup-demand") loadToolbarDemand();
           if (popupId === "popup-services") loadToolbarServices();
           if (popupId === "popup-stats") loadToolbarStats();
         }
@@ -4365,6 +4529,91 @@
         updateStatsPopup(data);
         updateServicesPopup(data);
       };
+
+      // ============================================
+      // DEMAND METER POPUP
+      // ============================================
+
+      async function loadToolbarDemand() {
+        const container = document.getElementById("demand-content");
+        if (!container) return;
+        try {
+          const token = localStorage.getItem("agentcity_token");
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const res = await fetch(withCityParam("/api/advisor"), { headers });
+          if (!res.ok) throw new Error("Failed to load");
+          const data = await res.json();
+          renderDemandMeter(data);
+        } catch (err) {
+          container.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:20px">Failed to load demand data</div>';
+        }
+      }
+
+      function renderDemandMeter(data) {
+        const container = document.getElementById("demand-content");
+        if (!container || !data.zoning) return;
+
+        const zones = [
+          { key: "residential", label: "R", color: "#2ecc71", name: "Residential" },
+          { key: "office", label: "C", color: "#3498db", name: "Commercial" },
+          { key: "industrial", label: "I", color: "#e67e22", name: "Industrial" },
+        ];
+
+        const demand = data.zoning.demand;
+        const current = data.zoning.current;
+
+        // Scale: demand ranges roughly -0.5 to +0.5, map to bar height %
+        const maxBar = 0.5;
+
+        let barsHtml = "";
+        for (const z of zones) {
+          const val = demand[z.key] || 0;
+          const pct = Math.min(Math.abs(val) / maxBar, 1) * 50; // 50% = half the bar height
+          const isPositive = val >= 0;
+          const fillStyle = isPositive
+            ? `background:${z.color};height:${pct}%;bottom:50%;`
+            : `background:${z.color};opacity:0.4;height:${pct}%;top:50%;`;
+          const fillClass = isPositive ? "positive" : "negative";
+          const sign = val > 0 ? "+" : "";
+          const currentPct = (current[z.key] * 100).toFixed(0);
+
+          barsHtml += `
+            <div class="demand-col">
+              <div class="demand-val">${sign}${(val * 100).toFixed(0)}%</div>
+              <div class="demand-bar-track">
+                <div class="demand-bar-mid"></div>
+                <div class="demand-bar-fill ${fillClass}" style="${fillStyle}"></div>
+              </div>
+              <div class="demand-label" style="color:${z.color}">${z.label}</div>
+            </div>
+          `;
+        }
+
+        // Build info text
+        let infoHtml = "";
+        if (data.zoning.recommendation) {
+          const rec = data.zoning.recommendation;
+          const recName = rec === "office" ? "Commercial" : rec.charAt(0).toUpperCase() + rec.slice(1);
+          infoHtml = `<strong>${recName}</strong> demand is high — zone more to enable growth`;
+        } else {
+          infoHtml = "Zoning balance is good — all zones can grow";
+        }
+
+        // Current ratio bar
+        const rPct = (current.residential * 100).toFixed(0);
+        const cPct = (current.office * 100).toFixed(0);
+        const iPct = (current.industrial * 100).toFixed(0);
+
+        container.innerHTML = `
+          <div class="demand-meter">${barsHtml}</div>
+          <div class="demand-legend">
+            <div class="demand-legend-item"><span class="dot" style="background:#2ecc71"></span>Res ${rPct}%</div>
+            <div class="demand-legend-item"><span class="dot" style="background:#3498db"></span>Com ${cPct}%</div>
+            <div class="demand-legend-item"><span class="dot" style="background:#e67e22"></span>Ind ${iPct}%</div>
+          </div>
+          <div class="demand-info">${infoHtml}</div>
+        `;
+      }
 
       // ============================================
       // BUDGET POPUP

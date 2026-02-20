@@ -182,12 +182,13 @@ export async function handleSignup(e) {
   const name = document.getElementById("signup-name")?.value;
   const email = document.getElementById("signup-email")?.value;
   const password = document.getElementById("signup-password")?.value;
+  const betaKey = document.getElementById("signup-beta-key")?.value;
 
   try {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, betaKey }),
     });
 
     const data = await response.json();
