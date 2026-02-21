@@ -223,231 +223,131 @@
     "low": [
       {
         "id": "sheet01_houses_01",
-        "file": "sliced/sheet01_houses_01.png",
-        "width": 187,
-        "height": 181,
+        "file": "residential/suburban/sheet01_houses_01.png",
+        "width": 482,
+        "height": 376,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.9
         }
       },
       {
         "id": "sheet01_houses_02",
-        "file": "sliced/sheet01_houses_02.png",
-        "width": 187,
-        "height": 181,
+        "file": "residential/suburban/sheet01_houses_02.png",
+        "width": 482,
+        "height": 395,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.98
         }
       },
       {
         "id": "sheet01_houses_04",
-        "file": "sliced/sheet01_houses_04.png",
-        "width": 185,
-        "height": 180,
+        "file": "residential/suburban/sheet01_houses_04.png",
+        "width": 482,
+        "height": 414,
         "anchor": {
           "x": 0.5,
-          "y": 0.99
+          "y": 0.93
         }
       },
       {
         "id": "sheet01_houses_05",
-        "file": "sliced/sheet01_houses_05.png",
-        "width": 188,
-        "height": 178,
+        "file": "residential/suburban/sheet01_houses_05.png",
+        "width": 482,
+        "height": 415,
         "anchor": {
           "x": 0.5,
-          "y": 0.99
+          "y": 0.91
         }
       },
       {
         "id": "sheet01_houses_06",
-        "file": "sliced/sheet01_houses_06.png",
-        "width": 188,
-        "height": 178,
+        "file": "residential/suburban/sheet01_houses_06.png",
+        "width": 482,
+        "height": 421,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.94
         }
       },
       {
         "id": "sheet01_houses_07",
-        "file": "sliced/sheet01_houses_07.png",
-        "width": 186,
-        "height": 178,
+        "file": "residential/suburban/sheet01_houses_07.png",
+        "width": 482,
+        "height": 399,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.89
         }
       },
       {
         "id": "sheet01_houses_08",
-        "file": "sliced/sheet01_houses_08.png",
-        "width": 186,
-        "height": 183,
+        "file": "residential/suburban/sheet01_houses_08.png",
+        "width": 482,
+        "height": 415,
         "anchor": {
           "x": 0.5,
-          "y": 0.99
+          "y": 0.95
         }
       },
       {
         "id": "sheet01_houses_09",
-        "file": "sliced/sheet01_houses_09.png",
-        "width": 188,
-        "height": 179,
+        "file": "residential/suburban/sheet01_houses_09.png",
+        "width": 482,
+        "height": 436,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.93
         }
       },
       {
         "id": "sheet01_houses_10",
-        "file": "sliced/sheet01_houses_10.png",
-        "width": 187,
-        "height": 187,
+        "file": "residential/suburban/sheet01_houses_10.png",
+        "width": 482,
+        "height": 448,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.95
         }
       },
       {
         "id": "sheet01_houses_11",
-        "file": "sliced/sheet01_houses_11.png",
-        "width": 186,
-        "height": 180,
+        "file": "residential/suburban/sheet01_houses_11.png",
+        "width": 482,
+        "height": 425,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.95
         }
       },
       {
         "id": "sheet01_houses_12",
-        "file": "sliced/sheet01_houses_12.png",
-        "width": 190,
-        "height": 180,
+        "file": "residential/suburban/sheet01_houses_12.png",
+        "width": 482,
+        "height": 422,
         "anchor": {
           "x": 0.5,
-          "y": 0.97
+          "y": 0.95
         }
       },
       {
         "id": "sheet01_houses_13",
-        "file": "sliced/sheet01_houses_13.png",
-        "width": 186,
-        "height": 187,
+        "file": "residential/suburban/sheet01_houses_123.png",
+        "width": 482,
+        "height": 469,
         "anchor": {
           "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet01_houses_14",
-        "file": "sliced/sheet01_houses_14.png",
-        "width": 187,
-        "height": 190,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet01_houses_15",
-        "file": "sliced/sheet01_houses_15.png",
-        "width": 187,
-        "height": 178,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.97
-        }
-      },
-      {
-        "id": "sheet01_houses_16",
-        "file": "sliced/sheet01_houses_16.png",
-        "width": 186,
-        "height": 179,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.97
-        }
-      },
-      {
-        "id": "sheet01_houses_17",
-        "file": "sliced/sheet01_houses_17.png",
-        "width": 190,
-        "height": 178,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet01_houses_18",
-        "file": "sliced/sheet01_houses_18.png",
-        "width": 186,
-        "height": 178,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet01_houses_19",
-        "file": "sliced/sheet01_houses_19.png",
-        "width": 188,
-        "height": 178,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet01_houses_20",
-        "file": "sliced/sheet01_houses_20.png",
-        "width": 187,
-        "height": 181,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet01_houses_21",
-        "file": "sliced/sheet01_houses_21.png",
-        "width": 185,
-        "height": 192,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet01_houses_22",
-        "file": "sliced/sheet01_houses_22.png",
-        "width": 186,
-        "height": 181,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.96
-        }
-      },
-      {
-        "id": "sheet01_houses_23",
-        "file": "sliced/sheet01_houses_23.png",
-        "width": 185,
-        "height": 171,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
+          "y": 0.95
         }
       }
     ],
     "medium": [
       {
         "id": "sheet02_apartments_01",
-        "file": "sliced/sheet02_apartments_01.png",
-        "width": 233,
-        "height": 317,
+        "file": "residential/medium/sheet02_apartments_01.png",
+        "width": 482,
+        "height": 469,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -455,9 +355,9 @@
       },
       {
         "id": "sheet02_apartments_02",
-        "file": "sliced/sheet02_apartments_02.png",
-        "width": 235,
-        "height": 318,
+        "file": "residential/medium/sheet02_apartments_02.png",
+        "width": 482,
+        "height": 425,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -465,9 +365,9 @@
       },
       {
         "id": "sheet02_apartments_03",
-        "file": "sliced/sheet02_apartments_03.png",
-        "width": 239,
-        "height": 312,
+        "file": "residential/medium/sheet02_apartments_03.png",
+        "width": 482,
+        "height": 459,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -475,9 +375,9 @@
       },
       {
         "id": "sheet02_apartments_04",
-        "file": "sliced/sheet02_apartments_04.png",
-        "width": 237,
-        "height": 306,
+        "file": "residential/medium/sheet02_apartments_04.png",
+        "width": 482,
+        "height": 456,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -485,9 +385,9 @@
       },
       {
         "id": "sheet02_apartments_05",
-        "file": "sliced/sheet02_apartments_05.png",
-        "width": 236,
-        "height": 330,
+        "file": "residential/medium/sheet02_apartments_05.png",
+        "width": 482,
+        "height": 405,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -495,9 +395,9 @@
       },
       {
         "id": "sheet02_apartments_06",
-        "file": "sliced/sheet02_apartments_06.png",
-        "width": 235,
-        "height": 327,
+        "file": "residential/medium/sheet02_apartments_06.png",
+        "width": 482,
+        "height": 459,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -505,89 +405,9 @@
       },
       {
         "id": "sheet02_apartments_07",
-        "file": "sliced/sheet02_apartments_07.png",
-        "width": 242,
-        "height": 305,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet02_apartments_08",
-        "file": "sliced/sheet02_apartments_08.png",
-        "width": 238,
-        "height": 322,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet02_apartments_09",
-        "file": "sliced/sheet02_apartments_09.png",
-        "width": 236,
-        "height": 288,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet02_apartments_10",
-        "file": "sliced/sheet02_apartments_10.png",
-        "width": 236,
-        "height": 268,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet02_apartments_11",
-        "file": "sliced/sheet02_apartments_11.png",
-        "width": 240,
-        "height": 268,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet02_apartments_12",
-        "file": "sliced/sheet02_apartments_12.png",
-        "width": 237,
-        "height": 264,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet07_blocks_12",
-        "file": "sliced/sheet07_blocks_12.png",
-        "width": 186,
-        "height": 263,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet09_emergency_07",
-        "file": "sliced/sheet09_emergency_07.png",
-        "width": 269,
-        "height": 304,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet09_emergency_08",
-        "file": "sliced/sheet09_emergency_08.png",
-        "width": 272,
-        "height": 330,
+        "file": "residential/medium/sheet02_apartments_07.png",
+        "width": 482,
+        "height": 452,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -597,9 +417,9 @@
     "high": [
       {
         "id": "sheet10_suburban_02",
-        "file": "sliced/sheet10_suburban_02.png",
-        "width": 183,
-        "height": 363,
+        "file": "residential/high/sheet01_high_01.png",
+        "width": 350,
+        "height": 417,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -607,8 +427,8 @@
       },
       {
         "id": "sheet10_suburban_03",
-        "file": "sliced/sheet10_suburban_03.png",
-        "width": 185,
+        "file": "residential/high/sheet01_high_01.png",
+        "width": 350,
         "height": 386,
         "anchor": {
           "x": 0.5,
@@ -617,8 +437,8 @@
       },
       {
         "id": "sheet01_houses_03",
-        "file": "sliced/sheet01_houses_03.png",
-        "width": 194,
+        "file": "residential/high/sheet01_high_01.png",
+        "width": 350,
         "height": 373,
         "anchor": {
           "x": 0.5,
@@ -627,8 +447,8 @@
       },
       {
         "id": "sheet05_mixed_03",
-        "file": "sliced/sheet05_mixed_03.png",
-        "width": 185,
+        "file": "residential/high/sheet01_high_01.png",
+        "width": 350,
         "height": 384,
         "anchor": {
           "x": 0.5,
@@ -641,7 +461,7 @@
     "low": [
       {
         "id": "sheet04_buildings_02",
-        "file": "sliced/sheet04_buildings_02.png",
+        "file": "office/low/sheet04_buildings_02.png",
         "width": 166,
         "height": 166,
         "anchor": {
@@ -651,7 +471,7 @@
       },
       {
         "id": "sheet04_buildings_04",
-        "file": "sliced/sheet04_buildings_04.png",
+        "file": "office/low/sheet04_buildings_04.png",
         "width": 170,
         "height": 171,
         "anchor": {
@@ -1431,213 +1251,123 @@
   ],
   "suburban": [
     {
-      "id": "sheet10_suburban_01",
-      "file": "sliced/sheet10_suburban_01.png",
-      "width": 185,
-      "height": 171,
+      "id": "sheet01_houses_01",
+      "file": "residential/suburban/sheet01_houses_01.png",
+      "width": 482,
+      "height": 376,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.94
       }
     },
     {
-      "id": "sheet10_suburban_04",
-      "file": "sliced/sheet10_suburban_04.png",
-      "width": 188,
-      "height": 180,
+      "id": "sheet01_houses_02",
+      "file": "residential/suburban/sheet01_houses_02.png",
+      "width": 482,
+      "height": 395,
       "anchor": {
         "x": 0.5,
-        "y": 0.96
+        "y": 0.88
       }
     },
     {
-      "id": "sheet10_suburban_05",
-      "file": "sliced/sheet10_suburban_05.png",
-      "width": 187,
-      "height": 181,
+      "id": "sheet01_houses_04",
+      "file": "residential/suburban/sheet01_houses_04.png",
+      "width": 482,
+      "height": 414,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.93
+      }
+    },
+    {
+      "id": "sheet01_houses_05",
+      "file": "residential/suburban/sheet01_houses_05.png",
+      "width": 482,
+      "height": 415,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.91
+      }
+    },
+    {
+      "id": "sheet01_houses_06",
+      "file": "residential/suburban/sheet01_houses_06.png",
+      "width": 482,
+      "height": 421,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.94
+      }
+    },
+    {
+      "id": "sheet01_houses_07",
+      "file": "residential/suburban/sheet01_houses_07.png",
+      "width": 482,
+      "height": 399,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.89
+      }
+    },
+    {
+      "id": "sheet01_houses_08",
+      "file": "residential/suburban/sheet01_houses_08.png",
+      "width": 482,
+      "height": 415,
       "anchor": {
         "x": 0.5,
         "y": 0.95
       }
     },
     {
-      "id": "sheet10_suburban_06",
-      "file": "sliced/sheet10_suburban_06.png",
-      "width": 185,
-      "height": 192,
+      "id": "sheet01_houses_09",
+      "file": "residential/suburban/sheet01_houses_09.png",
+      "width": 482,
+      "height": 436,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     },
     {
-      "id": "sheet10_suburban_07",
-      "file": "sliced/sheet10_suburban_07.png",
-      "width": 188,
-      "height": 179,
+      "id": "sheet01_houses_10",
+      "file": "residential/suburban/sheet01_houses_10.png",
+      "width": 482,
+      "height": 448,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     },
     {
-      "id": "sheet10_suburban_08",
-      "file": "sliced/sheet10_suburban_08.png",
-      "width": 186,
-      "height": 179,
+      "id": "sheet01_houses_11",
+      "file": "residential/suburban/sheet01_houses_11.png",
+      "width": 482,
+      "height": 425,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     },
     {
-      "id": "sheet10_suburban_09",
-      "file": "sliced/sheet10_suburban_09.png",
-      "width": 185,
-      "height": 184,
+      "id": "sheet01_houses_12",
+      "file": "residential/suburban/sheet01_houses_12.png",
+      "width": 482,
+      "height": 422,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     },
     {
-      "id": "sheet10_suburban_10",
-      "file": "sliced/sheet10_suburban_10.png",
-      "width": 183,
-      "height": 185,
+      "id": "sheet01_houses_13",
+      "file": "residential/suburban/sheet01_houses_123.png",
+      "width": 482,
+      "height": 469,
       "anchor": {
         "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_11",
-      "file": "sliced/sheet10_suburban_11.png",
-      "width": 186,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_12",
-      "file": "sliced/sheet10_suburban_12.png",
-      "width": 188,
-      "height": 184,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.98
-      }
-    },
-    {
-      "id": "sheet10_suburban_13",
-      "file": "sliced/sheet10_suburban_13.png",
-      "width": 187,
-      "height": 190,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_14",
-      "file": "sliced/sheet10_suburban_14.png",
-      "width": 184,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.97
-      }
-    },
-    {
-      "id": "sheet10_suburban_15",
-      "file": "sliced/sheet10_suburban_15.png",
-      "width": 183,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_16",
-      "file": "sliced/sheet10_suburban_16.png",
-      "width": 185,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_17",
-      "file": "sliced/sheet10_suburban_17.png",
-      "width": 191,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_18",
-      "file": "sliced/sheet10_suburban_18.png",
-      "width": 187,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_19",
-      "file": "sliced/sheet10_suburban_19.png",
-      "width": 186,
-      "height": 178,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_20",
-      "file": "sliced/sheet10_suburban_20.png",
-      "width": 188,
-      "height": 178,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_21",
-      "file": "sliced/sheet10_suburban_21.png",
-      "width": 185,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_22",
-      "file": "sliced/sheet10_suburban_22.png",
-      "width": 187,
-      "height": 181,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "sheet10_suburban_23",
-      "file": "sliced/sheet10_suburban_23.png",
-      "width": 187,
-      "height": 180,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     }
   ],
