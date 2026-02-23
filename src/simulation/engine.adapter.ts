@@ -505,7 +505,26 @@ class LegacyParcelRepository {
     const rows = cityId
       ? this.raw.prepare(sql).all(cityId)
       : this.raw.prepare(sql).all();
-    return rows.map(row => rowToParcel(row));
+    const candidates = rows.map(row => rowToParcel(row));
+    return this.filterOutMultiTileFootprints(candidates);
+  }
+
+  protected filterOutMultiTileFootprints(candidates: Parcel[]): Parcel[] {
+    const multiTileBuildings = this.raw.prepare(
+      'SELECT b.*, p.x AS base_x, p.y AS base_y FROM buildings b JOIN parcels p ON b.parcel_id = p.id WHERE b.width > 1 OR b.height > 1'
+    ).all() as any[];
+    if (multiTileBuildings.length === 0) return candidates;
+
+    const occupied = new Set<string>();
+    for (const b of multiTileBuildings) {
+      for (let dx = 0; dx < b.width; dx++) {
+        for (let dy = 0; dy < b.height; dy++) {
+          occupied.add(`${b.base_x + dx},${b.base_y + dy}`);
+        }
+      }
+    }
+
+    return candidates.filter(p => !occupied.has(`${p.x},${p.y}`));
   }
 
   getParcelsInRange(minX: number, minY: number, maxX: number, maxY: number): Parcel[] {
@@ -588,8 +607,14 @@ class LegacyBuildingRepository {
     this.raw.prepare('UPDATE buildings SET has_water = ? WHERE id = ?').run(hasWater ? 1 : 0, buildingId);
   }
 
-  updateDensityAndFloors(buildingId: string, density: number, floors: number): void {
-    this.raw.prepare('UPDATE buildings SET density = ?, floors = ? WHERE id = ?').run(density, floors, buildingId);
+  updateDensityAndFloors(buildingId: string, density: number, floors: number, width?: number, height?: number): void {
+    if (width !== undefined && height !== undefined) {
+      this.raw.prepare('UPDATE buildings SET density = ?, floors = ?, width = ?, height = ? WHERE id = ?')
+        .run(density, floors, width, height, buildingId);
+    } else {
+      this.raw.prepare('UPDATE buildings SET density = ?, floors = ? WHERE id = ?')
+        .run(density, floors, buildingId);
+    }
   }
 }
 
@@ -981,7 +1006,8 @@ class CityScopedParcelRepository extends LegacyParcelRepository {
 
   getZonedParcelsWithoutBuilding(): Parcel[] {
     const rows = this.raw.prepare('SELECT p.* FROM parcels p WHERE p.city_id = ? AND p.zoning IS NOT NULL AND NOT EXISTS (SELECT 1 FROM buildings b WHERE b.parcel_id = p.id)').all(this.cityId);
-    return rows.map(row => rowToParcel(row));
+    const candidates = rows.map(row => rowToParcel(row));
+    return this.filterOutMultiTileFootprints(candidates);
   }
 }
 

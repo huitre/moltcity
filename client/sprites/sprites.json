@@ -228,7 +228,7 @@
         "height": 376,
         "anchor": {
           "x": 0.5,
-          "y": 0.9
+          "y": 0.96
         }
       },
       {
@@ -238,7 +238,7 @@
         "height": 395,
         "anchor": {
           "x": 0.5,
-          "y": 0.98
+          "y": 0.92
         }
       },
       {
@@ -258,7 +258,7 @@
         "height": 415,
         "anchor": {
           "x": 0.5,
-          "y": 0.91
+          "y": 0.96
         }
       },
       {
@@ -278,7 +278,7 @@
         "height": 399,
         "anchor": {
           "x": 0.5,
-          "y": 0.89
+          "y": 0.95
         }
       },
       {
@@ -344,8 +344,8 @@
     ],
     "medium": [
       {
-        "id": "sheet02_apartments_01",
-        "file": "residential/medium/sheet02_apartments_01.png",
+        "id": "sheet01_apartments_01",
+        "file": "residential/medium/sheet01_apartments_01.png",
         "width": 482,
         "height": 469,
         "anchor": {
@@ -354,8 +354,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_02",
-        "file": "residential/medium/sheet02_apartments_02.png",
+        "id": "sheet01_apartments_02",
+        "file": "residential/medium/sheet01_apartments_02.png",
         "width": 482,
         "height": 425,
         "anchor": {
@@ -364,8 +364,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_03",
-        "file": "residential/medium/sheet02_apartments_03.png",
+        "id": "sheet01_apartments_03",
+        "file": "residential/medium/sheet01_apartments_03.png",
         "width": 482,
         "height": 459,
         "anchor": {
@@ -374,8 +374,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_04",
-        "file": "residential/medium/sheet02_apartments_04.png",
+        "id": "sheet01_apartments_04",
+        "file": "residential/medium/sheet01_apartments_04.png",
         "width": 482,
         "height": 456,
         "anchor": {
@@ -384,8 +384,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_05",
-        "file": "residential/medium/sheet02_apartments_05.png",
+        "id": "sheet01_apartments_05",
+        "file": "residential/medium/sheet01_apartments_05.png",
         "width": 482,
         "height": 405,
         "anchor": {
@@ -394,8 +394,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_06",
-        "file": "residential/medium/sheet02_apartments_06.png",
+        "id": "sheet01_apartments_06",
+        "file": "residential/medium/sheet01_apartments_06.png",
         "width": 482,
         "height": 459,
         "anchor": {
@@ -404,8 +404,8 @@
         }
       },
       {
-        "id": "sheet02_apartments_07",
-        "file": "residential/medium/sheet02_apartments_07.png",
+        "id": "sheet01_apartments_07",
+        "file": "residential/medium/sheet01_apartments_07.png",
         "width": 482,
         "height": 452,
         "anchor": {
@@ -420,6 +420,7 @@
         "file": "residential/high/sheet01_high_01.png",
         "width": 350,
         "height": 417,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -430,6 +431,7 @@
         "file": "residential/high/sheet01_high_01.png",
         "width": 350,
         "height": 386,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -440,6 +442,7 @@
         "file": "residential/high/sheet01_high_01.png",
         "width": 350,
         "height": 373,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -450,6 +453,7 @@
         "file": "residential/high/sheet01_high_01.png",
         "width": 350,
         "height": 384,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -462,18 +466,28 @@
       {
         "id": "sheet04_buildings_02",
         "file": "office/low/sheet04_buildings_02.png",
-        "width": 166,
-        "height": 166,
+        "width": 482,
+        "height": 422,
         "anchor": {
           "x": 0.5,
           "y": 1
         }
       },
       {
+        "id": "sheet04_buildings_03",
+        "file": "office/low/sheet04_buildings_03.png",
+        "width": 482,
+        "height": 454,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.98
+        }
+      },
+      {
         "id": "sheet04_buildings_04",
         "file": "office/low/sheet04_buildings_04.png",
-        "width": 170,
-        "height": 171,
+        "width": 482,
+        "height": 468,
         "anchor": {
           "x": 0.5,
           "y": 0.98
@@ -481,19 +495,19 @@
       },
       {
         "id": "sheet04_buildings_05",
-        "file": "sliced/sheet04_buildings_05.png",
-        "width": 168,
-        "height": 174,
+        "file": "office/low/sheet04_buildings_05.png",
+        "width": 482,
+        "height": 452,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.95
         }
       },
       {
         "id": "sheet04_buildings_06",
-        "file": "sliced/sheet04_buildings_06.png",
-        "width": 167,
-        "height": 165,
+        "file": "office/low/sheet04_buildings_06.png",
+        "width": 482,
+        "height": 405,
         "anchor": {
           "x": 0.5,
           "y": 0.97
@@ -501,9 +515,9 @@
       },
       {
         "id": "sheet04_buildings_07",
-        "file": "sliced/sheet04_buildings_07.png",
-        "width": 167,
-        "height": 166,
+        "file": "office/low/sheet04_buildings_07.png",
+        "width": 482,
+        "height": 440,
         "anchor": {
           "x": 0.5,
           "y": 1
@@ -511,492 +525,32 @@
       },
       {
         "id": "sheet04_buildings_08",
-        "file": "sliced/sheet04_buildings_08.png",
-        "width": 167,
-        "height": 166,
+        "file": "office/low/sheet04_buildings_08.png",
+        "width": 482,
+        "height": 430,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.98
         }
       },
       {
         "id": "sheet04_buildings_09",
-        "file": "sliced/sheet04_buildings_09.png",
-        "width": 166,
-        "height": 207,
+        "file": "office/low/sheet04_buildings_09.png",
+        "width": 482,
+        "height": 474,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 1
         }
       },
       {
         "id": "sheet04_buildings_10",
-        "file": "sliced/sheet04_buildings_10.png",
-        "width": 194,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet04_buildings_11",
-        "file": "sliced/sheet04_buildings_11.png",
-        "width": 167,
-        "height": 157,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_01",
-        "file": "sliced/sheet05_mixed_01.png",
-        "width": 189,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_02",
-        "file": "sliced/sheet05_mixed_02.png",
-        "width": 184,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_04",
-        "file": "sliced/sheet05_mixed_04.png",
-        "width": 183,
-        "height": 180,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_05",
-        "file": "sliced/sheet05_mixed_05.png",
-        "width": 185,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_06",
-        "file": "sliced/sheet05_mixed_06.png",
-        "width": 194,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_07",
-        "file": "sliced/sheet05_mixed_07.png",
-        "width": 183,
-        "height": 184,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_08",
-        "file": "sliced/sheet05_mixed_08.png",
-        "width": 183,
-        "height": 174,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_09",
-        "file": "sliced/sheet05_mixed_09.png",
-        "width": 185,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_10",
-        "file": "sliced/sheet05_mixed_10.png",
-        "width": 184,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_11",
-        "file": "sliced/sheet05_mixed_11.png",
-        "width": 183,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.97
-        }
-      },
-      {
-        "id": "sheet05_mixed_12",
-        "file": "sliced/sheet05_mixed_12.png",
-        "width": 184,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_13",
-        "file": "sliced/sheet05_mixed_13.png",
-        "width": 183,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_14",
-        "file": "sliced/sheet05_mixed_14.png",
-        "width": 185,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_15",
-        "file": "sliced/sheet05_mixed_15.png",
-        "width": 184,
-        "height": 187,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet05_mixed_16",
-        "file": "sliced/sheet05_mixed_16.png",
-        "width": 183,
-        "height": 187,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet05_mixed_17",
-        "file": "sliced/sheet05_mixed_17.png",
-        "width": 184,
-        "height": 187,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet05_mixed_18",
-        "file": "sliced/sheet05_mixed_18.png",
-        "width": 183,
-        "height": 186,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet05_mixed_19",
-        "file": "sliced/sheet05_mixed_19.png",
-        "width": 185,
-        "height": 191,
+        "file": "office/low/sheet04_buildings_10.png",
+        "width": 482,
+        "height": 468,
         "anchor": {
           "x": 0.5,
           "y": 0.96
-        }
-      },
-      {
-        "id": "sheet05_mixed_20",
-        "file": "sliced/sheet05_mixed_20.png",
-        "width": 184,
-        "height": 184,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet05_mixed_21",
-        "file": "sliced/sheet05_mixed_21.png",
-        "width": 183,
-        "height": 183,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.96
-        }
-      },
-      {
-        "id": "sheet05_mixed_22",
-        "file": "sliced/sheet05_mixed_22.png",
-        "width": 185,
-        "height": 184,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet05_mixed_23",
-        "file": "sliced/sheet05_mixed_23.png",
-        "width": 183,
-        "height": 184,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet08_cityscape_01",
-        "file": "sliced/sheet08_cityscape_01.png",
-        "width": 158,
-        "height": 173,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet08_cityscape_02",
-        "file": "sliced/sheet08_cityscape_02.png",
-        "width": 156,
-        "height": 174,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.97
-        }
-      },
-      {
-        "id": "sheet08_cityscape_06",
-        "file": "sliced/sheet08_cityscape_06.png",
-        "width": 159,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet08_cityscape_07",
-        "file": "sliced/sheet08_cityscape_07.png",
-        "width": 159,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_08",
-        "file": "sliced/sheet08_cityscape_08.png",
-        "width": 163,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet08_cityscape_09",
-        "file": "sliced/sheet08_cityscape_09.png",
-        "width": 159,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_10",
-        "file": "sliced/sheet08_cityscape_10.png",
-        "width": 159,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet08_cityscape_11",
-        "file": "sliced/sheet08_cityscape_11.png",
-        "width": 190,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet08_cityscape_12",
-        "file": "sliced/sheet08_cityscape_12.png",
-        "width": 177,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.97
-        }
-      },
-      {
-        "id": "sheet08_cityscape_13",
-        "file": "sliced/sheet08_cityscape_13.png",
-        "width": 194,
-        "height": 182,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_14",
-        "file": "sliced/sheet08_cityscape_14.png",
-        "width": 186,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet08_cityscape_15",
-        "file": "sliced/sheet08_cityscape_15.png",
-        "width": 192,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_16",
-        "file": "sliced/sheet08_cityscape_16.png",
-        "width": 190,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
-        }
-      },
-      {
-        "id": "sheet08_cityscape_17",
-        "file": "sliced/sheet08_cityscape_17.png",
-        "width": 190,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_18",
-        "file": "sliced/sheet08_cityscape_18.png",
-        "width": 194,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_19",
-        "file": "sliced/sheet08_cityscape_19.png",
-        "width": 186,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_20",
-        "file": "sliced/sheet08_cityscape_20.png",
-        "width": 194,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet08_cityscape_21",
-        "file": "sliced/sheet08_cityscape_21.png",
-        "width": 189,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet08_cityscape_22",
-        "file": "sliced/sheet08_cityscape_22.png",
-        "width": 190,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet08_cityscape_23",
-        "file": "sliced/sheet08_cityscape_23.png",
-        "width": 190,
-        "height": 188,
-        "anchor": {
-          "x": 0.5,
-          "y": 1
-        }
-      },
-      {
-        "id": "sheet07_blocks_13",
-        "file": "sliced/sheet07_blocks_13.png",
-        "width": 184,
-        "height": 180,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet07_blocks_14",
-        "file": "sliced/sheet07_blocks_14.png",
-        "width": 178,
-        "height": 180,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet07_blocks_15",
-        "file": "sliced/sheet07_blocks_15.png",
-        "width": 185,
-        "height": 180,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.94
         }
       }
     ],
@@ -1094,60 +648,66 @@
     ],
     "high": [
       {
-        "id": "sheet03_offices_01",
-        "file": "sliced/sheet03_offices_01.png",
-        "width": 235,
-        "height": 387,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet03_offices_02",
-        "file": "sliced/sheet03_offices_02.png",
-        "width": 240,
-        "height": 383,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet03_offices_03",
-        "file": "sliced/sheet03_offices_03.png",
-        "width": 226,
-        "height": 378,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
         "id": "sheet03_offices_04",
-        "file": "sliced/sheet03_offices_04.png",
-        "width": 233,
-        "height": 361,
+        "file": "office/high/sheet03_offices_04.png",
+        "width": 360,
+        "height": 454,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_06",
+        "file": "office/high/sheet03_offices_06.png",
+        "width": 576,
+        "height": 1024,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.94
+        }
+      },
+      {
+        "id": "sheet03_offices_07",
+        "file": "office/high/sheet03_offices_07.png",
+        "width": 576,
+        "height": 1024,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.94
+        }
+      },
+      {
+        "id": "sheet03_offices_08",
+        "file": "office/high/sheet03_offices_08.png",
+        "width": 508,
+        "height": 999,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.92
+        }
+      },
+      {
+        "id": "sheet03_offices_09",
+        "file": "office/high/sheet03_offices_09.png",
+        "width": 576,
+        "height": 1024,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 0.85
         }
       },
       {
-        "id": "sheet08_cityscape_03",
-        "file": "sliced/sheet08_cityscape_03.png",
-        "width": 192,
-        "height": 363,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet08_cityscape_04",
-        "file": "sliced/sheet08_cityscape_04.png",
-        "width": 185,
-        "height": 386,
+        "id": "sheet03_offices_10",
+        "file": "office/high/sheet03_offices_10.png",
+        "width": 576,
+        "height": 1024,
+        "tiles": 2,
         "anchor": {
           "x": 0.5,
           "y": 0.85
@@ -1171,9 +731,9 @@
   "hospital": [
     {
       "id": "sheet09_emergency_01",
-      "file": "sliced/sheet09_emergency_01.png",
-      "width": 427,
-      "height": 386,
+      "file": "hospital/sheet09_emergency_01.png",
+      "width": 946,
+      "height": 846,
       "tiles": 2,
       "anchor": {
         "x": 0.5,
@@ -1182,8 +742,8 @@
     },
     {
       "id": "sheet09_emergency_03",
-      "file": "sliced/sheet09_emergency_03.png",
-      "width": 427,
+      "file": "hospital/sheet09_emergency_03.png",
+      "width": 946,
       "height": 386,
       "tiles": 2,
       "anchor": {

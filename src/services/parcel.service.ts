@@ -233,6 +233,20 @@ export class ParcelService {
     }
 
     if (zoning) {
+      // Block zoning on water
+      if (parcel.terrain === 'water') {
+        throw new ConflictError('Cannot zone water tiles');
+      }
+      // Block zoning on roads
+      const road = await this.roadRepo.getRoad(parcelId);
+      if (road) {
+        throw new ConflictError('Cannot zone a tile with a road');
+      }
+      // Block zoning over a different existing zone type
+      if (parcel.zoning && parcel.zoning !== zoning) {
+        throw new ConflictError('Cannot zone over a different zone type — clear it first');
+      }
+
       // Deduct zoning cost from city treasury
       const cityRepo = new CityRepository(this.db);
       const city = await cityRepo.getCity(cityId);

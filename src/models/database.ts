@@ -648,7 +648,23 @@ export class ParcelRepository {
         AND p.id NOT IN (SELECT parcel_id FROM buildings)
         AND p.id NOT IN (SELECT parcel_id FROM roads)
     `).all() as any[];
-    return rows.map(row => this.rowToParcel(row));
+    const candidates = rows.map(row => this.rowToParcel(row));
+
+    // Filter out parcels occupied by multi-tile building footprints
+    const multiTile = this.db.prepare(
+      'SELECT b.width, b.height, p.x AS base_x, p.y AS base_y FROM buildings b JOIN parcels p ON b.parcel_id = p.id WHERE b.width > 1 OR b.height > 1'
+    ).all() as any[];
+    if (multiTile.length === 0) return candidates;
+
+    const occupied = new Set<string>();
+    for (const b of multiTile) {
+      for (let dx = 0; dx < b.width; dx++) {
+        for (let dy = 0; dy < b.height; dy++) {
+          occupied.add(`${b.base_x + dx},${b.base_y + dy}`);
+        }
+      }
+    }
+    return candidates.filter(p => !occupied.has(`${p.x},${p.y}`));
   }
 
   transferParcel(parcelId: string, newOwnerId: string, price: number): void {
@@ -794,8 +810,14 @@ export class BuildingRepository {
     };
   }
 
-  updateDensityAndFloors(buildingId: string, density: number, floors: number): void {
-    this.db.prepare('UPDATE buildings SET density = ?, floors = ? WHERE id = ?').run(density, floors, buildingId);
+  updateDensityAndFloors(buildingId: string, density: number, floors: number, width?: number, height?: number): void {
+    if (width !== undefined && height !== undefined) {
+      this.db.prepare('UPDATE buildings SET density = ?, floors = ?, width = ?, height = ? WHERE id = ?')
+        .run(density, floors, width, height, buildingId);
+    } else {
+      this.db.prepare('UPDATE buildings SET density = ?, floors = ? WHERE id = ?')
+        .run(density, floors, buildingId);
+    }
   }
 
   private getPowerRequirement(type: BuildingType): number {

@@ -162,15 +162,16 @@ export function setupInteractions(
       const dx = e.global.x - lastPos.x;
       const dy = e.global.y - lastPos.y;
 
-      // Move camera (with bounds)
+      // Move camera (with bounds scaled by zoom level)
+      const s = worldContainer.scale.x;
       worldContainer.x = clamp(
         worldContainer.x + dx,
-        -WORLD_MAX_X + app.screen.width / 2,
-        -WORLD_MIN_X + app.screen.width / 2,
+        -WORLD_MAX_X * s + app.screen.width / 2,
+        -WORLD_MIN_X * s + app.screen.width / 2,
       );
       worldContainer.y = clamp(
         worldContainer.y + dy,
-        -WORLD_MAX_Y + app.screen.height / 2,
+        -WORLD_MAX_Y * s + app.screen.height / 2,
         app.screen.height / 2,
       );
 
@@ -232,7 +233,7 @@ export function setupInteractions(
   app.view.addEventListener("wheel", (e) => {
     e.preventDefault();
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = clamp(worldContainer.scale.x * scaleFactor, 0.3, 2);
+    const newScale = clamp(worldContainer.scale.x * scaleFactor, 0.1, 4);
 
     // Zoom toward mouse position
     const mousePos = { x: e.clientX, y: e.clientY };

@@ -71,7 +71,14 @@ export class ZoneEvolutionSimulator {
       const newDensity = building.density + 1;
       const newFloors = ZONE_EVOLUTION.DENSITY_TO_FLOORS[newDensity] || newDensity;
 
-      this.db.buildings.updateDensityAndFloors(building.id, newDensity, newFloors);
+      // Density 3 for residential/offices requires 2x2 footprint on grid-aligned position
+      if (newDensity === 3 && (type === 'residential' || type === 'offices')) {
+        if (!this.canExpandTo2x2(parcel.x, parcel.y, parcel.zoning!)) continue;
+        this.mergeAdjacentBuildings(parcel.x, parcel.y);
+        this.db.buildings.updateDensityAndFloors(building.id, newDensity, newFloors, 2, 2);
+      } else {
+        this.db.buildings.updateDensityAndFloors(building.id, newDensity, newFloors);
+      }
       evolved++;
 
       console.log(`[ZoneEvolution] ${building.name} (${type}) evolved to density ${newDensity} (${newFloors} floors)`);
@@ -101,6 +108,37 @@ export class ZoneEvolutionSimulator {
       case 'offices': return demand.office;
       case 'industrial': return demand.industrial;
       default: return 0;
+    }
+  }
+
+  private canExpandTo2x2(baseX: number, baseY: number, zoning: string): boolean {
+    // Only grid-aligned positions can anchor a 2x2 block (divisible by 2)
+    if (baseX % 2 !== 0 || baseY % 2 !== 0) return false;
+
+    const offsets = [[1, 0], [0, 1], [1, 1]];
+    for (const [dx, dy] of offsets) {
+      const adj = this.db.parcels.getParcel(baseX + dx, baseY + dy);
+      if (!adj) return false;
+      if (adj.zoning !== zoning) return false;
+      // Adjacent parcels may have buildings (they'll be merged), but not multi-tile ones
+      const building = this.db.buildings.getBuildingAtParcel(adj.id);
+      if (building && (building.width > 1 || building.height > 1)) return false;
+    }
+    return true;
+  }
+
+  private mergeAdjacentBuildings(baseX: number, baseY: number): void {
+    const offsets = [[1, 0], [0, 1], [1, 1]];
+    for (const [dx, dy] of offsets) {
+      const adj = this.db.parcels.getParcel(baseX + dx, baseY + dy);
+      if (!adj) continue;
+      const building = this.db.buildings.getBuildingAtParcel(adj.id);
+      if (!building) continue;
+      // Evict residents and remove workers before deleting
+      this.db.population.deleteResidentsByHome(building.id);
+      this.db.population.removeWorkFromBuilding(building.id);
+      this.db.buildings.deleteBuilding(building.id);
+      console.log(`[ZoneEvolution] Merged building ${building.name} at (${baseX + dx},${baseY + dy}) into 2x2 block`);
     }
   }
 

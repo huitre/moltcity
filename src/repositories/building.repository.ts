@@ -181,10 +181,15 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       .where(eq(buildings.id, buildingId));
   }
 
-  async updateDensityAndFloors(buildingId: string, density: number, floors: number): Promise<void> {
+  async updateDensityAndFloors(buildingId: string, density: number, floors: number, width?: number, height?: number): Promise<void> {
+    const setValues: Record<string, number> = { density, floors };
+    if (width !== undefined && height !== undefined) {
+      setValues.width = width;
+      setValues.height = height;
+    }
     await this.db
       .update(buildings)
-      .set({ density, floors })
+      .set(setValues)
       .where(eq(buildings.id, buildingId));
   }
 
