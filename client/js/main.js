@@ -656,6 +656,9 @@ async function handleBuild(x, y, buildType) {
           factory: "Factory",
           park: "Park",
           power_plant: "Power Plant",
+          wind_turbine: "Wind Turbine",
+          coal_plant: "Coal Plant",
+          nuclear_plant: "Nuclear Plant",
           water_tower: "Water Tower",
           police_station: "Police Station",
           fire_station: "Fire Station",
@@ -1030,6 +1033,9 @@ function showBuildingInfo(building) {
     office: "🏢",
     factory: "🏭",
     power_plant: "⚡",
+    wind_turbine: "🌀",
+    coal_plant: "⚡",
+    nuclear_plant: "☢️",
     water_tower: "💧",
     park: "🌳",
     police_station: "🚔",
@@ -1238,8 +1244,13 @@ function updateBuildMenuCosts() {
  */
 function setupBuildMenu() {
   const buildOptions = document.querySelectorAll(".build-option");
+  const powerTrigger = document.getElementById("power-menu-trigger");
+  const powerPopover = document.getElementById("power-popover");
 
   buildOptions.forEach((option) => {
+    // Skip the power trigger — it opens the popover, not a build type
+    if (option.id === "power-menu-trigger") return;
+
     option.addEventListener("click", () => {
       const type = option.dataset.type;
 
@@ -1248,17 +1259,28 @@ function setupBuildMenu() {
         state.setInfraStartPoint(null);
       }
 
+      // Close power popover if open
+      if (powerPopover) powerPopover.classList.remove("open");
+
       // Toggle selection
       if (state.selectedBuildType === type) {
         // Deselect
         state.setSelectedBuildType(null);
         option.classList.remove("selected");
+        if (powerTrigger) powerTrigger.classList.remove("selected");
       } else {
         // Deselect all others
         buildOptions.forEach((opt) => opt.classList.remove("selected"));
+        if (powerTrigger) powerTrigger.classList.remove("selected");
         // Select this one
         state.setSelectedBuildType(type);
         option.classList.add("selected");
+
+        // If it's a power plant subtype, also highlight the trigger
+        const powerTypes = ["wind_turbine", "coal_plant", "nuclear_plant"];
+        if (powerTypes.includes(type) && powerTrigger) {
+          powerTrigger.classList.add("selected");
+        }
       }
 
       // Fade buildings when placing infrastructure so pipes/lines are visible
@@ -1273,9 +1295,26 @@ function setupBuildMenu() {
     });
   });
 
+  // Power popover trigger
+  if (powerTrigger && powerPopover) {
+    powerTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      powerPopover.classList.toggle("open");
+    });
+
+    // Close popover on outside click
+    document.addEventListener("click", (e) => {
+      if (!powerPopover.contains(e.target) && e.target !== powerTrigger && !powerTrigger.contains(e.target)) {
+        powerPopover.classList.remove("open");
+      }
+    });
+  }
+
   // ESC key to deselect
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      // Close power popover
+      if (powerPopover) powerPopover.classList.remove("open");
       // Cancel active drag-draw
       if (state.isDragDrawing) {
         cancelDragDraw();
@@ -1288,6 +1327,7 @@ function setupBuildMenu() {
       if (state.selectedBuildType) {
         state.setSelectedBuildType(null);
         buildOptions.forEach((opt) => opt.classList.remove("selected"));
+        if (powerTrigger) powerTrigger.classList.remove("selected");
         if (state.sceneLayer) state.sceneLayer.alpha = 1;
         console.log("[MoltCity] Build type deselected");
       }

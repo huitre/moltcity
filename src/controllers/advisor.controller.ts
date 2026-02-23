@@ -6,7 +6,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { CityRepository } from '../repositories/city.repository.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { extractOptionalCityId } from '../utils/city-context.js';
-import { DEMAND_BALANCE, TAX_PENALTIES, SC2K_ECONOMY } from '../config/game.js';
+import { DEMAND_BALANCE, TAX_PENALTIES, SC2K_ECONOMY, POWER_CAPACITY } from '../config/game.js';
 import type { Building } from '../models/types.js';
 
 const RESIDENTIAL_TYPES = ['house', 'apartment'];
@@ -69,8 +69,9 @@ export const advisorController: FastifyPluginAsync = async (fastify) => {
     // --- Power analysis ---
     let powerCapacity = 0, powerDemand = 0, unpowered = 0;
     for (const b of completed) {
-      if (b.type === 'power_plant') {
-        powerCapacity += 10000;
+      const cap = POWER_CAPACITY[b.type];
+      if (cap) {
+        powerCapacity += cap;
       } else {
         powerDemand += b.powerRequired;
         if (!b.powered && b.type !== 'water_tower') unpowered++;

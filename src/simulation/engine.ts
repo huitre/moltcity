@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
 import { LegacyDatabaseManagerAdapter, CityScopedDatabaseAdapter, type SimulationDb } from './engine.adapter.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
-import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY } from '../config/game.js';
+import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY, POWER_CAPACITY } from '../config/game.js';
 import type { Bond, DepartmentFunding, BudgetYtd } from '../models/types.js';
 import { LandValueSimulator } from './landvalue.simulator.js';
 import { ZoneEvolutionSimulator } from './zone-evolution.simulator.js';
@@ -303,7 +303,7 @@ export class PowerGridSimulator {
     // Find all power plant locations (all footprint tiles)
     const powerPlantTiles = new Set<string>();
     for (const building of buildings) {
-      if (building.type === 'power_plant') {
+      if (POWER_CAPACITY[building.type]) {
         const parcel = this.db.parcels.getParcelById(building.parcelId);
         if (parcel) {
           addBuildingTiles(powerPlantTiles, parcel.x, parcel.y, building.width || 1, building.height || 1);
@@ -351,7 +351,7 @@ export class PowerGridSimulator {
     // and its tiles become powered — so adjacent buildings also get power.
     const buildingFootprints: Array<{ building: typeof buildings[0]; tiles: Array<{ x: number; y: number }> }> = [];
     for (const building of buildings) {
-      if (building.type === 'power_plant') continue;
+      if (POWER_CAPACITY[building.type]) continue;
       const parcel = this.db.parcels.getParcelById(building.parcelId);
       if (!parcel) continue;
       const tiles: Array<{ x: number; y: number }> = [];
@@ -395,15 +395,14 @@ export class PowerGridSimulator {
     // Calculate total power capacity from connected plants
     let totalCapacity = 0;
     for (const building of buildings) {
-      if (building.type === 'power_plant') {
-        totalCapacity += 10000; // Each plant produces 10000 watts
-      }
+      const cap = POWER_CAPACITY[building.type];
+      if (cap) totalCapacity += cap;
     }
 
     // Calculate total demand from connected buildings
     let totalDemand = 0;
     for (const building of buildings) {
-      if (building.type !== 'power_plant' && poweredBuildings.has(building.id)) {
+      if (!POWER_CAPACITY[building.type] && poweredBuildings.has(building.id)) {
         totalDemand += building.powerRequired;
       }
     }
@@ -415,7 +414,7 @@ export class PowerGridSimulator {
 
     // Set power status for each building
     for (const building of buildings) {
-      if (building.type === 'power_plant' || NO_POWER_TYPES.has(building.type)) {
+      if (POWER_CAPACITY[building.type] || NO_POWER_TYPES.has(building.type)) {
         powerStatus.set(building.id, true); // Plants and parks always powered
       } else {
         powerStatus.set(building.id, poweredBuildings.has(building.id) && hasEnoughPower);
@@ -1108,7 +1107,7 @@ export class TaxationSimulator {
     // ── 1. Per-building infrastructure fees (deducted from owners) ──
     let infraFeesCollected = 0;
     for (const building of completedBuildings) {
-      if (['road', 'power_plant', 'water_tower', 'garbage_depot', 'park', 'plaza', 'power_line', 'water_pipe'].includes(building.type)) {
+      if (['road', 'power_plant', 'wind_turbine', 'coal_plant', 'nuclear_plant', 'water_tower', 'garbage_depot', 'park', 'plaza', 'power_line', 'water_pipe'].includes(building.type)) {
         continue;
       }
       const owner = this.db.agents.findAgent(building.ownerId);

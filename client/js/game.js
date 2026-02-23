@@ -297,6 +297,9 @@ function drawBuilding(x, y, building) {
     fire_station: state.serviceSprites.firestation,
     hospital: state.serviceSprites.hospital,
     power_plant: state.powerPlantSprites,
+    wind_turbine: state.powerPlantSprites,
+    coal_plant: state.powerPlantSprites,
+    nuclear_plant: state.powerPlantSprites,
     water_tower: state.waterTankSprites,
     university: state.universitySprites,
     stadium: state.stadiumSprites,
@@ -651,8 +654,10 @@ function updateUI() {
   if (buildingsDisplay) buildingsDisplay.textContent = buildings.length;
 
   // Power stats
-  const powerPlants = buildings.filter((b) => b.type === "power_plant");
-  const totalCapacity = powerPlants.length * 10;
+  const POWER_KW = { power_plant: 10, wind_turbine: 5, coal_plant: 20, nuclear_plant: 50 };
+  const totalCapacity = buildings
+    .filter((b) => POWER_KW[b.type])
+    .reduce((sum, b) => sum + POWER_KW[b.type], 0);
   const totalDemand =
     buildings.reduce((sum, b) => sum + (b.powerRequired || 0), 0) / 1000;
   const powerDisplay = document.getElementById("power-display");

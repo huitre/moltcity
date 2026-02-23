@@ -271,14 +271,14 @@ function rowToResident(row: any): Resident {
 const POWER_REQUIREMENTS: Partial<Record<string, number>> = {
   residential: 100, offices: 800, suburban: 50, industrial: 1500,
   fire_station: 500, hospital: 2000, house: 100, apartment: 500,
-  shop: 300, office: 800, factory: 2000, power_plant: 0,
+  shop: 300, office: 800, factory: 2000, power_plant: 0, wind_turbine: 0, coal_plant: 0, nuclear_plant: 0,
   water_tower: 50, road: 10, park: 0, plaza: 100,
   city_hall: 1000, police_station: 800, courthouse: 1200, jail: 1500,
 };
 const WATER_REQUIREMENTS: Partial<Record<string, number>> = {
   residential: 10, offices: 12, suburban: 5, industrial: 18,
   fire_station: 20, hospital: 40, house: 10, apartment: 15,
-  shop: 12, office: 12, factory: 18, power_plant: 50,
+  shop: 12, office: 12, factory: 18, power_plant: 50, wind_turbine: 0, coal_plant: 50, nuclear_plant: 100,
   water_tower: 0, road: 0, park: 8, plaza: 6,
   city_hall: 20, police_station: 15, courthouse: 15, jail: 20,
 };

@@ -1,7 +1,7 @@
 {
   "roads": {
     "road_055": {
-      "file": "city-pack/PNG/cityTiles_056.png",
+      "file": "roads/cityTiles_056.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -10,7 +10,7 @@
       }
     },
     "road_073": {
-      "file": "city-pack/PNG/cityTiles_073.png",
+      "file": "roads/cityTiles_073.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -19,7 +19,7 @@
       }
     },
     "road_080": {
-      "file": "city-pack/PNG/cityTiles_080.png",
+      "file": "roads/cityTiles_080.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -28,7 +28,7 @@
       }
     },
     "road_036": {
-      "file": "city-pack/PNG/cityTiles_036.png",
+      "file": "roads/cityTiles_036.png",
       "width": 132,
       "height": 123,
       "anchor": {
@@ -37,7 +37,7 @@
       }
     },
     "road_044": {
-      "file": "city-pack/PNG/cityTiles_044.png",
+      "file": "roads/cityTiles_044.png",
       "width": 132,
       "height": 123,
       "anchor": {
@@ -46,7 +46,7 @@
       }
     },
     "road_064": {
-      "file": "city-pack/PNG/cityTiles_064.png",
+      "file": "roads/cityTiles_064.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -55,7 +55,7 @@
       }
     },
     "road_081": {
-      "file": "city-pack/PNG/cityTiles_081.png",
+      "file": "roads/cityTiles_081.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -64,7 +64,7 @@
       }
     },
     "road_088": {
-      "file": "city-pack/PNG/cityTiles_088.png",
+      "file": "roads/cityTiles_088.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -73,7 +73,7 @@
       }
     },
     "road_089": {
-      "file": "city-pack/PNG/cityTiles_089.png",
+      "file": "roads/cityTiles_089.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -82,7 +82,7 @@
       }
     },
     "road_095": {
-      "file": "city-pack/PNG/cityTiles_095.png",
+      "file": "roads/cityTiles_095.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -91,7 +91,7 @@
       }
     },
     "road_096": {
-      "file": "city-pack/PNG/cityTiles_096.png",
+      "file": "roads/cityTiles_096.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -100,7 +100,7 @@
       }
     },
     "road_103": {
-      "file": "city-pack/PNG/cityTiles_103.png",
+      "file": "roads/cityTiles_103.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -109,7 +109,7 @@
       }
     },
     "road_104": {
-      "file": "city-pack/PNG/cityTiles_104.png",
+      "file": "roads/cityTiles_104.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -118,7 +118,7 @@
       }
     },
     "road_122": {
-      "file": "city-pack/PNG/cityTiles_122.png",
+      "file": "roads/cityTiles_122.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -127,7 +127,7 @@
       }
     },
     "road_124": {
-      "file": "city-pack/PNG/cityTiles_124.png",
+      "file": "roads/cityTiles_124.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -136,7 +136,7 @@
       }
     },
     "road_125": {
-      "file": "city-pack/PNG/cityTiles_125.png",
+      "file": "roads/cityTiles_125.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -145,7 +145,7 @@
       }
     },
     "road_126": {
-      "file": "city-pack/PNG/cityTiles_126.png",
+      "file": "roads/cityTiles_126.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -154,7 +154,7 @@
       }
     },
     "road_110": {
-      "file": "city-pack/PNG/cityTiles_110.png",
+      "file": "roads/cityTiles_110.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -163,7 +163,7 @@
       }
     },
     "road_111": {
-      "file": "city-pack/PNG/cityTiles_111.png",
+      "file": "roads/cityTiles_111.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -172,7 +172,7 @@
       }
     },
     "road_116": {
-      "file": "city-pack/PNG/cityTiles_116.png",
+      "file": "roads/cityTiles_116.png",
       "width": 132,
       "height": 101,
       "anchor": {
@@ -1100,6 +1100,45 @@
       "width": 451,
       "height": 386,
       "tiles": 2,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  ],
+  "wind_turbine": [
+    {
+      "id": "wind_turbine_01",
+      "file": "sliced/power_plant_01.png",
+      "width": 451,
+      "height": 386,
+      "tiles": 1,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  ],
+  "coal_plant": [
+    {
+      "id": "coal_plant_01",
+      "file": "sliced/power_plant_01.png",
+      "width": 451,
+      "height": 386,
+      "tiles": 2,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  ],
+  "nuclear_plant": [
+    {
+      "id": "nuclear_plant_01",
+      "file": "sliced/power_plant_01.png",
+      "width": 451,
+      "height": 386,
+      "tiles": 3,
       "anchor": {
         "x": 0.5,
         "y": 1

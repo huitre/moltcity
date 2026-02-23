@@ -587,6 +587,47 @@
         display: flex;
       }
 
+      /* Power popover menu */
+      .build-popover {
+        display: none;
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        gap: 6px;
+        background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+        border: 3px solid var(--wood-border);
+        padding: 8px;
+        box-shadow: inset 2px 2px 0 var(--wood-highlight), inset -2px -2px 0 var(--wood-grain), 0 6px 20px rgba(0, 0, 0, 0.6);
+        z-index: 100;
+      }
+      .build-popover::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid var(--wood-border);
+      }
+      .build-popover.open {
+        display: flex;
+      }
+      .build-option-wrapper {
+        display: flex;
+        align-items: center;
+      }
+      .build-option-wrapper.admin-only {
+        display: none;
+      }
+      body.is-admin .build-option-wrapper.admin-only {
+        display: flex;
+      }
+
       /* City Hall required mode — hide everything except city_hall group */
       #build-menu.city-hall-required .build-group {
         display: none;
@@ -3889,9 +3930,25 @@
       <div class="build-group">
         <span class="build-group-label">Build</span>
         <div class="build-group-items">
-          <div class="build-option admin-only" data-type="power_plant">
-            <span>⚡</span>
-            <small>Power</small>
+          <div class="build-option-wrapper admin-only" style="position:relative">
+            <div class="build-option admin-only" id="power-menu-trigger">
+              <span>⚡</span>
+              <small>Power</small>
+            </div>
+            <div id="power-popover" class="build-popover">
+              <div class="build-option admin-only" data-type="wind_turbine">
+                <span>🌀</span>
+                <small>Wind<br>5kW</small>
+              </div>
+              <div class="build-option admin-only" data-type="coal_plant">
+                <span>⚡</span>
+                <small>Coal<br>20kW</small>
+              </div>
+              <div class="build-option admin-only" data-type="nuclear_plant">
+                <span>☢️</span>
+                <small>Nuclear<br>50kW</small>
+              </div>
+            </div>
           </div>
           <div class="build-option admin-only" data-type="water_tower">
             <span>💧</span>

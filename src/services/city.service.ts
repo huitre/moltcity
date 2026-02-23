@@ -12,7 +12,7 @@ import { residents } from '../db/schema/population.js';
 import type { DrizzleDb } from '../db/drizzle.js';
 import type { City, CityStats } from '../models/types.js';
 import { generateWaterTiles } from './water-generator.js';
-import { GRID_SIZE } from '../config/game.js';
+import { GRID_SIZE, POWER_CAPACITY } from '../config/game.js';
 
 export class CityService {
   private db: DrizzleDb;
@@ -120,8 +120,9 @@ export class CityService {
     let totalJobs = 0;
 
     for (const building of buildings) {
-      if (building.type === 'power_plant') {
-        powerCapacity += 10000;
+      const cap = POWER_CAPACITY[building.type as keyof typeof POWER_CAPACITY];
+      if (cap) {
+        powerCapacity += cap;
       } else {
         powerDemand += building.powerRequired;
       }

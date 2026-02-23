@@ -36,6 +36,9 @@ export const PARCEL_LIMITS = {
 export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   'road',
   'power_plant',
+  'wind_turbine',
+  'coal_plant',
+  'nuclear_plant',
   'water_tower',
   'garbage_depot',
   'park',
@@ -76,6 +79,9 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   police_station: { w: 1, h: 1 },
   fire_station: { w: 2, h: 2 },
   power_plant: { w: 2, h: 2 },
+  wind_turbine: { w: 1, h: 1 },
+  coal_plant: { w: 2, h: 2 },
+  nuclear_plant: { w: 3, h: 3 },
   water_tower: { w: 2, h: 2 },
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
@@ -158,6 +164,9 @@ export const BUILDING_COSTS: Record<string, number> = {
   power_line: 10,
   water_pipe: 10,
   power_plant: 500,
+  wind_turbine: 200,
+  coal_plant: 500,
+  nuclear_plant: 5000,
   water_tower: 300,
   jail: 1000,
   // Special buildings
@@ -179,6 +188,13 @@ export const BUILDING_COSTS: Record<string, number> = {
   library: 2000,
   monument: 50000,
   amusement_park: 15000,
+};
+
+export const POWER_CAPACITY: Partial<Record<BuildingType, number>> = {
+  power_plant: 10000,
+  wind_turbine: 5000,
+  coal_plant: 20000,
+  nuclear_plant: 50000,
 };
 
 export const ZONING_COST = 10;
@@ -310,6 +326,7 @@ export const ECONOMY = {
 export const BUILDING_JOBS: Partial<Record<BuildingType, { count: number; salary: number }>> = {
   shop: { count: 3, salary: (SHOP_INCOME.MIN_DAILY + SHOP_INCOME.MAX_DAILY) / 2 },
   office: { count: OFFICE.JOBS_PER_OFFICE, salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2 },
+  offices: { count: OFFICE.JOBS_PER_OFFICE, salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2 },
   factory: { count: 20, salary: 40 },
   industrial: { count: 15, salary: 35 },
 };
