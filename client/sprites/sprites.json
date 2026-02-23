@@ -557,9 +557,9 @@
     "medium": [
       {
         "id": "sheet03_offices_05",
-        "file": "sliced/sheet03_offices_05.png",
-        "width": 239,
-        "height": 287,
+        "file": "office/medium/sheet02_offices_01.png",
+        "width": 576,
+        "height": 940,
         "anchor": {
           "x": 0.5,
           "y": 0.96
@@ -567,82 +567,22 @@
       },
       {
         "id": "sheet03_offices_06",
-        "file": "sliced/sheet03_offices_06.png",
-        "width": 235,
-        "height": 274,
+        "file": "office/medium/sheet02_offices_02.png",
+        "width": 576,
+        "height": 940,
         "anchor": {
           "x": 0.5,
-          "y": 0.85
+          "y": 0.93
         }
       },
       {
         "id": "sheet03_offices_07",
-        "file": "sliced/sheet03_offices_07.png",
-        "width": 235,
-        "height": 274,
+        "file": "office/medium/sheet02_offices_03.png",
+        "width": 576,
+        "height": 940,
         "anchor": {
           "x": 0.5,
           "y": 0.85
-        }
-      },
-      {
-        "id": "sheet03_offices_08",
-        "file": "sliced/sheet03_offices_08.png",
-        "width": 240,
-        "height": 256,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.85
-        }
-      },
-      {
-        "id": "sheet03_offices_09",
-        "file": "sliced/sheet03_offices_09.png",
-        "width": 233,
-        "height": 248,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet03_offices_10",
-        "file": "sliced/sheet03_offices_10.png",
-        "width": 233,
-        "height": 234,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.96
-        }
-      },
-      {
-        "id": "sheet03_offices_11",
-        "file": "sliced/sheet03_offices_11.png",
-        "width": 240,
-        "height": 240,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.99
-        }
-      },
-      {
-        "id": "sheet03_offices_12",
-        "file": "sliced/sheet03_offices_12.png",
-        "width": 238,
-        "height": 242,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.96
-        }
-      },
-      {
-        "id": "sheet09_emergency_02",
-        "file": "sliced/sheet09_emergency_02.png",
-        "width": 246,
-        "height": 347,
-        "anchor": {
-          "x": 0.5,
-          "y": 0.98
         }
       }
     ],
@@ -934,8 +874,8 @@
   "industrial": [
     {
       "id": "industrial_01",
-      "file": "sliced/industrial_01.png",
-      "width": 314,
+      "file": "industrial/industrial_01.png",
+      "width": 967,
       "height": 310,
       "anchor": {
         "x": 0.5,
@@ -944,8 +884,8 @@
     },
     {
       "id": "industrial_02",
-      "file": "sliced/industrial_02.png",
-      "width": 316,
+      "file": "industrial/industrial_02.png",
+      "width": 957,
       "height": 301,
       "anchor": {
         "x": 0.5,
@@ -954,142 +894,12 @@
     },
     {
       "id": "industrial_03",
-      "file": "sliced/industrial_03.png",
-      "width": 315,
+      "file": "industrial/industrial_03.png",
+      "width": 974,
       "height": 312,
       "anchor": {
         "x": 0.5,
         "y": 1
-      }
-    },
-    {
-      "id": "industrial_04",
-      "file": "sliced/industrial_04.png",
-      "width": 314,
-      "height": 312,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.97
-      }
-    },
-    {
-      "id": "industrial_05",
-      "file": "sliced/industrial_05.png",
-      "width": 317,
-      "height": 311,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial_06",
-      "file": "sliced/industrial_06.png",
-      "width": 316,
-      "height": 302,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.97
-      }
-    },
-    {
-      "id": "industrial_07",
-      "file": "sliced/industrial_07.png",
-      "width": 314,
-      "height": 275,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial_08",
-      "file": "sliced/industrial_08.png",
-      "width": 317,
-      "height": 289,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.96
-      }
-    },
-    {
-      "id": "industrial_09",
-      "file": "sliced/industrial_09.png",
-      "width": 316,
-      "height": 300,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial2_01",
-      "file": "sliced/industrial2_01.png",
-      "width": 302,
-      "height": 297,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial2_02",
-      "file": "sliced/industrial2_02.png",
-      "width": 314,
-      "height": 291,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.98
-      }
-    },
-    {
-      "id": "industrial2_03",
-      "file": "sliced/industrial2_03.png",
-      "width": 312,
-      "height": 291,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.98
-      }
-    },
-    {
-      "id": "industrial2_04",
-      "file": "sliced/industrial2_04.png",
-      "width": 302,
-      "height": 292,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial2_07",
-      "file": "sliced/industrial2_07.png",
-      "width": 310,
-      "height": 292,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    {
-      "id": "industrial2_10",
-      "file": "sliced/industrial2_10.png",
-      "width": 302,
-      "height": 316,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.98
-      }
-    },
-    {
-      "id": "industrial2_13",
-      "file": "sliced/industrial2_13.png",
-      "width": 311,
-      "height": 291,
-      "anchor": {
-        "x": 0.5,
-        "y": 0.97
       }
     }
   ],
@@ -1109,9 +919,9 @@
   "wind_turbine": [
     {
       "id": "wind_turbine_01",
-      "file": "sliced/power_plant_01.png",
-      "width": 451,
-      "height": 386,
+      "file": "electricity/wind_turbine_01.png",
+      "width": 845,
+      "height": 911,
       "tiles": 1,
       "anchor": {
         "x": 0.5,
