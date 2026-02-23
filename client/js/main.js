@@ -118,7 +118,7 @@ async function initializeApp() {
 async function loadGameConfig() {
   try {
     const data = await api.getGameConfig();
-    state.setGameConfig(data.config);
+    state.setGameConfig(data);
   } catch (error) {
     console.warn("[MoltCity] Failed to load game config:", error);
   }
@@ -143,12 +143,12 @@ async function updateUserBalance() {
   try {
     const data = await api.getMe();
     if (data.balance !== undefined) {
-      balanceDisplay.textContent = `$${data.balance.toLocaleString()}`;
+      balanceDisplay.textContent = `$${Math.ceil(data.balance).toLocaleString()}`;
     }
     // Show city treasury for mayor/admin
     if (data.treasury !== undefined && treasuryDisplay && treasuryStat) {
       treasuryStat.style.display = "";
-      treasuryDisplay.textContent = `$${Math.floor(data.treasury).toLocaleString()}`;
+      treasuryDisplay.textContent = `$${Math.ceil(data.treasury).toLocaleString()}`;
     } else if (treasuryStat) {
       treasuryStat.style.display = "none";
     }
@@ -159,7 +159,7 @@ async function updateUserBalance() {
       (a) => a.id === currentUser.agentId || a.moltbookId === currentUser.id,
     );
     if (userAgent && userAgent.wallet) {
-      balanceDisplay.textContent = `$${userAgent.wallet.balance.toLocaleString()}`;
+      balanceDisplay.textContent = `$${Math.ceil(userAgent.wallet.balance).toLocaleString()}`;
     }
   }
 }
@@ -887,8 +887,8 @@ function updateDragPreview() {
  * Update the tooltip during drag with tile count and cost
  */
 function updateDragTooltip(globalPos) {
-  const tooltip = document.getElementById("tooltip");
-  if (!tooltip || !globalPos) return;
+  const badge = document.getElementById("drag-cost");
+  if (!badge || !globalPos) return;
 
   const { selectedBuildType, dragDrawTiles, gameConfig } = state;
   const isZoning = ZONE_TYPES.includes(selectedBuildType);
@@ -904,12 +904,11 @@ function updateDragTooltip(globalPos) {
   }
 
   const totalCost = validCount * costPer;
-  const label = selectedBuildType === "road" ? "Roads" : selectedBuildType;
 
-  tooltip.innerHTML = `<strong>${label}</strong><br>Tiles: ${validCount}/${dragDrawTiles.length}<br><span style="color:#4ecdc4">Cost: $${totalCost.toLocaleString()}</span>`;
-  tooltip.style.display = "block";
-  tooltip.style.left = `${globalPos.x + 15}px`;
-  tooltip.style.top = `${globalPos.y + 15}px`;
+  badge.innerHTML = `${validCount} tile${validCount !== 1 ? 's' : ''} &middot; <span class="cost">$${Math.ceil(totalCost).toLocaleString()}</span>`;
+  badge.style.display = "block";
+  badge.style.left = `${globalPos.x + 15}px`;
+  badge.style.top = `${globalPos.y - 35}px`;
 }
 
 /**
@@ -939,6 +938,8 @@ async function handleDragEnd() {
 
   const tooltip = document.getElementById("tooltip");
   if (tooltip) tooltip.style.display = "none";
+  const dragCost = document.getElementById("drag-cost");
+  if (dragCost) dragCost.style.display = "none";
 
   if (validTiles.length === 0) return;
 
@@ -981,6 +982,8 @@ function cancelDragDraw() {
   state.setDragDrawTiles([]);
   const tooltip = document.getElementById("tooltip");
   if (tooltip) tooltip.style.display = "none";
+  const dragCost = document.getElementById("drag-cost");
+  if (dragCost) dragCost.style.display = "none";
 }
 
 /**
@@ -1073,6 +1076,26 @@ function updateTooltip(x, y, globalPos) {
   const tooltip = document.getElementById("tooltip");
   if (!tooltip) return;
 
+  const badge = document.getElementById("drag-cost");
+  const ZONE_TYPES_LOCAL = ["residential", "offices", "industrial", "suburban"];
+  const DRAG_TYPES = [...ZONE_TYPES_LOCAL, "road", "power_line", "water_pipe"];
+  const buildType = state.selectedBuildType;
+
+  // Show cost badge for single-placement buildings (park, police, hospital, etc.)
+  if (badge && globalPos && buildType && buildType !== "demolish" && !DRAG_TYPES.includes(buildType) && state.gameConfig) {
+    const cost = state.gameConfig.costs?.[buildType];
+    if (cost !== undefined) {
+      badge.innerHTML = `${buildType.replace(/_/g, ' ')} &middot; <span class="cost">$${Math.ceil(cost).toLocaleString()}</span>`;
+      badge.style.display = "block";
+      badge.style.left = `${globalPos.x + 15}px`;
+      badge.style.top = `${globalPos.y - 35}px`;
+    } else {
+      badge.style.display = "none";
+    }
+  } else if (badge) {
+    badge.style.display = "none";
+  }
+
   // In demolish mode, show what would be deleted
   if (state.selectedBuildType === "demolish") {
     const building = findBuildingAtTile(x, y);
@@ -1138,7 +1161,7 @@ function updateTooltip(x, y, globalPos) {
         cost = state.gameConfig.costs?.[state.selectedBuildType];
       }
       if (cost !== undefined) {
-        costLabel = `<br><span style="color:#4ecdc4">Cost: $${cost}</span>`;
+        costLabel = `<br><span style="color:#4ecdc4">Cost: $${Math.ceil(cost).toLocaleString()}</span>`;
       }
     }
     tooltip.innerHTML = `
@@ -1204,7 +1227,7 @@ function updateBuildMenuCosts() {
       // Add cost label after the <small> label
       const costEl = document.createElement("span");
       costEl.className = "build-cost";
-      costEl.textContent = `$${cost}`;
+      costEl.textContent = `$${Math.ceil(cost).toLocaleString()}`;
       option.appendChild(costEl);
     }
   });

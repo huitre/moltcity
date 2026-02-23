@@ -6,7 +6,12 @@ import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
 import { seededRandom } from "./sprites.js";
-import { drawGrassTile, drawHighlight, drawZoneTile, drawWaterTile } from "./render/tiles.js";
+import {
+  drawGrassTile,
+  drawHighlight,
+  drawZoneTile,
+  drawWaterTile,
+} from "./render/tiles.js";
 import { drawRoad, hasRoadAt } from "./render/roads.js";
 import { animateVehicles, initVehicles } from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
@@ -126,7 +131,8 @@ export function render() {
   // Build parcel coord lookup for zoning and water terrain
   const parcelByCoord = new Map();
   for (const p of parcels) {
-    if (p.zoning || p.terrain === 'water') parcelByCoord.set(`${p.x},${p.y}`, p);
+    if (p.zoning || p.terrain === "water")
+      parcelByCoord.set(`${p.x},${p.y}`, p);
   }
 
   // Draw grid tiles (water, zone color, or grass)
@@ -134,7 +140,7 @@ export function render() {
     for (let x = 0; x < GRID_SIZE; x++) {
       const key = `${x},${y}`;
       const parcel = parcelByCoord.get(key);
-      if (parcel && parcel.terrain === 'water') {
+      if (parcel && parcel.terrain === "water") {
         const tile = drawWaterTile(x, y);
         tilesLayer.addChild(tile);
       } else if (parcel && parcel.zoning && !occupiedTiles.has(key)) {
@@ -561,17 +567,21 @@ function drawPowerLine(from, to) {
 
   // Poles
   g.lineStyle(3, 0x8b4513);
-  g.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2);
-  g.lineTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2 - 20);
-  g.moveTo(isoTo.x, isoTo.y + TILE_HEIGHT / 2);
-  g.lineTo(isoTo.x, isoTo.y + TILE_HEIGHT / 2 - 20);
+  g.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
+  g.lineTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2 - 20);
+  g.moveTo(isoTo.x - TILE_WIDTH / 2, isoTo.y + TILE_HEIGHT / 2);
+  g.lineTo(isoTo.x - TILE_WIDTH / 2, isoTo.y + TILE_HEIGHT / 2 - 20);
 
-  // Wire
+  // Wire (from pole top to pole top)
   g.lineStyle(1, 0x333333);
-  const midX = (isoFrom.x + isoTo.x) / 2;
-  const midY = (isoFrom.y + isoTo.y) / 2 + TILE_HEIGHT / 2 - 10;
-  g.moveTo(isoFrom.x, isoFrom.y + TILE_HEIGHT / 2 - 18);
-  g.quadraticCurveTo(midX, midY, isoTo.x, isoTo.y + TILE_HEIGHT / 2 - 18);
+  const fromPoleX = isoFrom.x - TILE_WIDTH / 2;
+  const fromPoleTopY = isoFrom.y + TILE_HEIGHT / 2 - 20;
+  const toPoleX = isoTo.x - TILE_WIDTH / 2;
+  const toPoleTopY = isoTo.y + TILE_HEIGHT / 2 - 20;
+  const midX = (fromPoleX + toPoleX) / 2;
+  const midY = (fromPoleTopY + toPoleTopY) / 2 + 10;
+  g.moveTo(fromPoleX, fromPoleTopY);
+  g.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
 
   g.zIndex = Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x);
   return g;
@@ -653,10 +663,14 @@ function updateUI() {
   // Water stats
   const waterTowers = buildings.filter((b) => b.type === "water_tower");
   const waterCapacity = waterTowers.length * 1000;
-  const waterDemand = buildings.reduce((sum, b) => b.type === "water_tower" ? sum : sum + (b.waterRequired || 0), 0);
+  const waterDemand = buildings.reduce(
+    (sum, b) => (b.type === "water_tower" ? sum : sum + (b.waterRequired || 0)),
+    0,
+  );
   const waterDisplay = document.getElementById("water-display");
   if (waterDisplay) {
     waterDisplay.textContent = `${waterDemand} / ${waterCapacity}`;
-    waterDisplay.style.color = waterDemand > waterCapacity ? '#ff6b6b' : '#4ecdc4';
+    waterDisplay.style.color =
+      waterDemand > waterCapacity ? "#ff6b6b" : "#4ecdc4";
   }
 }

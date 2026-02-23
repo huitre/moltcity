@@ -25,6 +25,7 @@ export async function fetchLeaderboard(sort = 'netWorth', limit = 10) {
  * Format currency display
  */
 function formatMoney(amount) {
+  amount = Math.ceil(amount);
   if (amount >= 1000000) {
     return `$${(amount / 1000000).toFixed(1)}M`;
   } else if (amount >= 1000) {

@@ -35,7 +35,7 @@ export async function checkAuth() {
       // Update balance display immediately from auth response
       if (data.balance !== undefined) {
         const balanceDisplay = document.getElementById("balance-display");
-        if (balanceDisplay) balanceDisplay.textContent = `$${data.balance.toLocaleString()}`;
+        if (balanceDisplay) balanceDisplay.textContent = `$${Math.ceil(data.balance).toLocaleString()}`;
       }
       hideAuthModal();
       showUserInfo();

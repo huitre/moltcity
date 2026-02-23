@@ -411,6 +411,24 @@
         color: var(--accent-red);
       }
 
+      #drag-cost {
+        position: fixed;
+        display: none;
+        pointer-events: none;
+        z-index: 201;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid var(--accent-cyan, #4ecdc4);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+      }
+      #drag-cost .cost {
+        color: var(--accent-cyan, #4ecdc4);
+      }
+
       #build-menu {
         position: fixed;
         bottom: 10px;
@@ -3954,6 +3972,7 @@
     </div>
 
     <div id="tooltip"></div>
+    <div id="drag-cost"></div>
     <div id="connection-status" class="disconnected">Disconnected</div>
 
     <div class="modal-overlay" id="modal-overlay"></div>

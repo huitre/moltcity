@@ -287,7 +287,7 @@ function handleEconomyUpdate(data) {
 
   const balanceDisplay = document.getElementById("balance-display");
   if (balanceDisplay && data.treasury !== undefined) {
-    balanceDisplay.textContent = `$${Math.floor(data.treasury).toLocaleString()}`;
+    balanceDisplay.textContent = `$${Math.ceil(data.treasury).toLocaleString()}`;
     balanceDisplay.style.color = data.treasury < 0 ? '#ff6b6b' : '#ffd700';
   }
 }
