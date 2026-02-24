@@ -297,7 +297,7 @@ function drawBuilding(x, y, building) {
     fire_station: state.serviceSprites.firestation,
     hospital: state.serviceSprites.hospital,
     power_plant: state.powerPlantSprites,
-    wind_turbine: state.powerPlantSprites,
+    wind_turbine: state.windTurbineSprites,
     coal_plant: state.powerPlantSprites,
     nuclear_plant: state.powerPlantSprites,
     water_tower: state.waterTankSprites,

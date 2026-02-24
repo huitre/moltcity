@@ -269,6 +269,30 @@ export async function loadSprites() {
       }
     }
 
+    // Load wind turbine sprites
+    if (spritesConfig.wind_turbine) {
+      for (let i = 0; i < spritesConfig.wind_turbine.length; i++) {
+        const spriteConfig = spritesConfig.wind_turbine[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.windTurbineSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded wind_turbine: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load wind_turbine ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load water tank sprites (used for water_tower building type)
     if (spritesConfig.water_tank) {
       for (let i = 0; i < spritesConfig.water_tank.length; i++) {

@@ -78,6 +78,7 @@ export const suburbanSprites = [];
 export const industrialSprites = [];
 export const craneSprites = [];
 export const powerPlantSprites = [];
+export const windTurbineSprites = [];
 export const waterTankSprites = [];
 export const universitySprites = [];
 export const stadiumSprites = [];
