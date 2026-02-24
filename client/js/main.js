@@ -1064,6 +1064,87 @@ function showBuildingInfo(building) {
       ? building.ownerId.slice(0, 8) + "..."
       : "Unknown";
 
+  // Density upgrade section
+  const upgradeEl = document.getElementById("density-upgrade-info");
+  const checklistEl = document.getElementById("density-checklist");
+  const tipsEl = document.getElementById("density-tips");
+  const densityCurEl = document.getElementById("density-current");
+  const ZONE_TYPES = ["residential", "offices", "industrial", "suburban"];
+
+  if (upgradeEl && checklistEl && tipsEl && densityCurEl) {
+    if (ZONE_TYPES.includes(building.type)) {
+      upgradeEl.style.display = "block";
+      checklistEl.innerHTML = '<span style="color:#888;font-size:11px">Loading...</span>';
+      tipsEl.innerHTML = "";
+      densityCurEl.textContent = building.density || 1;
+
+      api.getUpgradeInfo(building.id).then(data => {
+        if (data.error) {
+          checklistEl.innerHTML = "";
+          upgradeEl.style.display = "none";
+          return;
+        }
+
+        densityCurEl.textContent = `${data.currentDensity} / ${data.maxDensity}`;
+
+        if (data.nextDensity === null) {
+          checklistEl.innerHTML = '<div style="color:#4ecdc4;font-size:12px;padding:2px 0">✅ Maximum density reached</div>';
+          tipsEl.innerHTML = "";
+          return;
+        }
+
+        // Render checklist
+        const reqs = data.requirements;
+        const rows = [
+          { ...reqs.powered },
+          { ...reqs.road },
+          { ...reqs.demand, current: `${reqs.demand.current} / ${reqs.demand.required}` },
+          { ...reqs.landValue, current: `${reqs.landValue.current} / ${reqs.landValue.required}` },
+        ];
+        if (reqs.gridAlign && reqs.gridAlign.required !== "N/A") {
+          rows.push({ ...reqs.gridAlign });
+        }
+
+        checklistEl.innerHTML = rows.map(r => {
+          const icon = r.met ? "✅" : "❌";
+          const color = r.met ? "#4ecdc4" : "#ff6b6b";
+          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:1px 0">
+            <span>${icon} ${r.label}</span>
+            <span style="color:${color}">${r.current}</span>
+          </div>`;
+        }).join("");
+
+        // Land value breakdown if land value not met
+        if (!reqs.landValue.met && data.landValueBreakdown) {
+          const b = data.landValueBreakdown;
+          const parts = [];
+          parts.push(`Base: ${b.base}`);
+          if (b.road) parts.push(`Road: +${b.road}`);
+          if (b.parks) parts.push(`Parks: +${b.parks}`);
+          if (b.services) parts.push(`Services: +${b.services}`);
+          if (b.water) parts.push(`Water: +${b.water}`);
+          if (b.pollution) parts.push(`Pollution: ${b.pollution}`);
+          if (b.distancePenalty) parts.push(`Distance: ${b.distancePenalty}`);
+          checklistEl.innerHTML += `<div style="font-size:10px;color:#777;margin-top:2px;padding-left:20px">${parts.join(" · ")}</div>`;
+        }
+
+        // Tips
+        if (data.tips && data.tips.length > 0) {
+          tipsEl.innerHTML = data.tips.map(t => `<div>💡 ${t}</div>`).join("");
+        } else {
+          tipsEl.innerHTML = "";
+        }
+      }).catch(() => {
+        checklistEl.innerHTML = "";
+        upgradeEl.style.display = "none";
+      });
+    } else {
+      upgradeEl.style.display = "none";
+      checklistEl.innerHTML = "";
+      tipsEl.innerHTML = "";
+    }
+  }
+
   panel.style.display = "block";
 }
 

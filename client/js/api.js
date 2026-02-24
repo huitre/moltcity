@@ -470,6 +470,10 @@ export async function getAdvisor() {
   return fetchApi(withCityId('/api/advisor'));
 }
 
+export async function getUpgradeInfo(buildingId) {
+  return fetchApi(withCityId(`/api/buildings/${buildingId}/upgrade-info`));
+}
+
 // ============================================
 // Admin Debug API
 // ============================================
