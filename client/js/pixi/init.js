@@ -195,7 +195,7 @@ export function setupInteractions(
       isPendingDragDraw = false;
       const localPos = worldContainer.toLocal(e.global);
       const gridPos = isoToCart(localPos.x, localPos.y);
-      if (onTileClick) onTileClick(gridPos.x, gridPos.y);
+      if (onTileClick) onTileClick(gridPos.x, gridPos.y, e.global);
       return;
     }
 
@@ -215,7 +215,7 @@ export function setupInteractions(
           gridPos.y < GRID_SIZE &&
           onTileClick
         ) {
-          onTileClick(gridPos.x, gridPos.y);
+          onTileClick(gridPos.x, gridPos.y, e.global);
         }
       }
     }

@@ -429,6 +429,38 @@
         color: var(--accent-cyan, #4ecdc4);
       }
 
+      #demolish-picker {
+        display: none;
+        position: fixed;
+        z-index: 300;
+        min-width: 180px;
+        background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+        border: 2px solid var(--wood-border);
+        border-radius: 4px;
+        padding: 4px 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        animation: tooltipFadeIn 0.15s ease-out;
+      }
+      .demolish-picker-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        font-size: 11px;
+        color: #eee;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .demolish-picker-item:hover {
+        background: rgba(231, 76, 60, 0.25);
+        color: #e74c3c;
+      }
+      .demolish-picker-item .dp-icon {
+        font-size: 14px;
+        width: 18px;
+        text-align: center;
+      }
+
       #build-menu {
         position: fixed;
         bottom: 10px;
@@ -1089,6 +1121,23 @@
 
       .debug-apply:hover {
         background: linear-gradient(180deg, #7ad05b, var(--accent-green));
+      }
+
+      .debug-density-btn {
+        flex: 1;
+        padding: 4px 6px;
+        font-family: "Press Start 2P", monospace;
+        font-size: 7px;
+        background: var(--wood-dark);
+        color: var(--text-cream);
+        border: 2px solid var(--wood-border);
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+
+      .debug-density-btn:hover {
+        border-color: var(--text-gold);
+        color: var(--text-gold);
       }
 
       /* Advisor Panel */
@@ -4030,6 +4079,7 @@
 
     <div id="tooltip"></div>
     <div id="drag-cost"></div>
+    <div id="demolish-picker"></div>
     <div id="connection-status" class="disconnected">Disconnected</div>
 
     <div class="modal-overlay" id="modal-overlay"></div>
@@ -4240,6 +4290,18 @@
       <div class="debug-field">
         <span>Offices</span>
         <span class="debug-readonly" id="debug-offices">0</span>
+      </div>
+
+      <div class="debug-section">Zone Density</div>
+      <div class="debug-field">
+        <span>Selected</span>
+        <span class="debug-readonly" id="debug-selected-building">None</span>
+      </div>
+      <div class="debug-field" style="display:flex;gap:4px">
+        <button class="debug-density-btn" data-density="1">Low</button>
+        <button class="debug-density-btn" data-density="2">Med</button>
+        <button class="debug-density-btn" data-density="3">High</button>
+        <button class="debug-density-btn" data-density="4">V.High</button>
       </div>
 
       <button class="debug-apply" id="debug-apply-btn">Apply</button>

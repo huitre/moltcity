@@ -21,7 +21,7 @@ import { loadActivities, addActivity } from "./ui/activity.js";
 import { loadElectionStatus, setupElectionUI } from "./ui/election.js";
 import { setupLeaderboard } from "./ui/leaderboard.js";
 import { showSpriteEditor } from "./ui/sprite-editor.js";
-import { initDebugPanel } from "./ui/debug.js";
+import { initDebugPanel, setDebugSelectedBuilding } from "./ui/debug.js";
 import { initAdvisor } from "./ui/advisor.js";
 import { subscribeToCityWs } from "./websocket.js";
 import { startScreenshotCapture } from "./screenshot.js";
@@ -378,14 +378,14 @@ function buildCitySelectorUI() {
 /**
  * Handle tile click
  */
-async function handleTileClick(x, y) {
+async function handleTileClick(x, y, globalPos) {
   console.log(`[MoltCity] Tile clicked: (${x}, ${y})`);
 
   const { selectedBuildType } = state;
 
   // Demolish mode
   if (selectedBuildType === "demolish") {
-    await handleDemolish(x, y);
+    await handleDemolish(x, y, globalPos);
     return;
   }
 
@@ -404,6 +404,7 @@ async function handleTileClick(x, y) {
 
   if (building) {
     showBuildingInfo(building);
+    setDebugSelectedBuilding(building);
     const bParcel = state.parcels.find((p) => p.id === building.parcelId);
     if (bParcel) showSpriteEditor(building, bParcel.x, bParcel.y);
   } else if (parcel) {
@@ -441,6 +442,54 @@ function isTileOccupied(x, y) {
 function isTileWater(x, y) {
   const parcel = state.parcels.find((p) => p.x === x && p.y === y);
   return parcel && parcel.terrain === "water";
+}
+
+/**
+ * Show/clear placement hint highlights (e.g. water-adjacent tiles for water tower)
+ */
+function updatePlacementHints(buildType) {
+  // Remove existing hints
+  if (state.placementHintLayer) {
+    state.placementHintLayer.destroy({ children: true });
+    state.setPlacementHintLayer(null);
+  }
+
+  if (buildType !== "water_tower") return;
+
+  // Find all land tiles adjacent to water
+  const waterSet = new Set();
+  for (const p of state.parcels) {
+    if (p.terrain === "water") waterSet.add(`${p.x},${p.y}`);
+  }
+
+  const validTiles = new Set();
+  for (const key of waterSet) {
+    const [wx, wy] = key.split(",").map(Number);
+    for (let dx = -2; dx <= 1; dx++) {
+      for (let dy = -2; dy <= 1; dy++) {
+        const tx = wx + dx;
+        const ty = wy + dy;
+        const tKey = `${tx},${ty}`;
+        if (!waterSet.has(tKey) && !validTiles.has(tKey)) {
+          const p = state.parcels.find((p) => p.x === tx && p.y === ty);
+          if (p && p.terrain !== "water") validTiles.add(tKey);
+        }
+      }
+    }
+  }
+
+  if (validTiles.size === 0) return;
+
+  const container = new PIXI.Container();
+  container.zIndex = 500;
+  container.alpha = 0.6;
+  for (const key of validTiles) {
+    const [tx, ty] = key.split(",").map(Number);
+    const h = drawHighlight(tx, ty, 0x00aaff, false);
+    container.addChild(h);
+  }
+  state.worldContainer.addChild(container);
+  state.setPlacementHintLayer(container);
 }
 
 /**
@@ -496,69 +545,217 @@ function findWaterPipeAtTile(x, y) {
 }
 
 /**
+ * Find all power lines connected to a tile
+ */
+function findAllPowerLinesAtTile(x, y) {
+  return state.powerLines.filter(
+    (l) =>
+      (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y),
+  );
+}
+
+/**
+ * Find all water pipes connected to a tile
+ */
+function findAllWaterPipesAtTile(x, y) {
+  return state.waterPipes.filter(
+    (p) =>
+      (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y),
+  );
+}
+
+/**
+ * Collect all demolishable objects at a tile
+ * Returns array of { type, label, icon, action }
+ */
+function collectDemolishTargets(x, y) {
+  const targets = [];
+
+  const building = findBuildingAtTile(x, y);
+  if (building) {
+    targets.push({
+      type: "building",
+      label: `${building.name} (${building.type})`,
+      icon: "\u{1F3E0}",
+      action: async () => {
+        await api.demolishBuilding(building.id);
+        const resp = await api.getBuildings();
+        state.setBuildings(resp.buildings || []);
+        render();
+        showToast(`Demolished ${building.name}`);
+      },
+    });
+  }
+
+  const road = findRoadAtTile(x, y);
+  if (road) {
+    targets.push({
+      type: "road",
+      label: "Road",
+      icon: "\u{1F6E4}\uFE0F",
+      action: async () => {
+        await api.deleteRoad(road.id);
+        const resp = await api.getRoads();
+        state.setRoads(resp.roads || []);
+        render();
+        showToast(`Road removed at (${x}, ${y})`);
+      },
+    });
+  }
+
+  for (const pl of findAllPowerLinesAtTile(x, y)) {
+    targets.push({
+      type: "power_line",
+      label: `Power line (${pl.from.x},${pl.from.y})\u2192(${pl.to.x},${pl.to.y})`,
+      icon: "\u26A1",
+      action: async () => {
+        await api.deletePowerLine(pl.id);
+        const resp = await api.getPowerLines();
+        state.setPowerLines(resp.powerLines || []);
+        render();
+        showToast("Power line removed");
+      },
+    });
+  }
+
+  for (const wp of findAllWaterPipesAtTile(x, y)) {
+    targets.push({
+      type: "water_pipe",
+      label: `Water pipe (${wp.from.x},${wp.from.y})\u2192(${wp.to.x},${wp.to.y})`,
+      icon: "\u{1F4A7}",
+      action: async () => {
+        await api.deleteWaterPipe(wp.id);
+        const resp = await api.getWaterPipes();
+        state.setWaterPipes(resp.waterPipes || []);
+        render();
+        showToast("Water pipe removed");
+      },
+    });
+  }
+
+  const parcel = state.parcels.find((p) => p.x === x && p.y === y);
+  if (parcel && parcel.zoning) {
+    targets.push({
+      type: "zoning",
+      label: `${parcel.zoning} zoning`,
+      icon: "\u{1F4CD}",
+      action: async () => {
+        await api.setZoning(parcel.id, null);
+        parcel.zoning = null;
+        render();
+        showToast(`Zoning removed at (${x}, ${y})`);
+      },
+    });
+  }
+
+  return targets;
+}
+
+// --- Demolish picker popup ---
+
+let demolishPickerOutsideHandler = null;
+let demolishPickerEscHandler = null;
+
+function showDemolishPicker(targets, screenX, screenY) {
+  const picker = document.getElementById("demolish-picker");
+  if (!picker) return;
+
+  picker.innerHTML = targets
+    .map(
+      (t, i) =>
+        `<div class="demolish-picker-item" data-idx="${i}"><span class="dp-icon">${t.icon}</span>${t.label}</div>`,
+    )
+    .join("");
+
+  picker.style.display = "block";
+
+  // Position clamped to viewport
+  const pad = 8;
+  const rect = picker.getBoundingClientRect();
+  let left = screenX;
+  let top = screenY;
+  if (left + rect.width > window.innerWidth - pad) left = window.innerWidth - pad - rect.width;
+  if (top + rect.height > window.innerHeight - pad) top = window.innerHeight - pad - rect.height;
+  if (left < pad) left = pad;
+  if (top < pad) top = pad;
+  picker.style.left = `${left}px`;
+  picker.style.top = `${top}px`;
+
+  // Item click handlers
+  picker.querySelectorAll(".demolish-picker-item").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const idx = parseInt(el.dataset.idx, 10);
+      closeDemolishPicker();
+      try {
+        await targets[idx].action();
+      } catch (err) {
+        console.error("[MoltCity] Demolish failed:", err.message);
+        showToast(`Demolish failed: ${err.message}`, true);
+      }
+    });
+  });
+
+  // Outside click
+  demolishPickerOutsideHandler = (e) => {
+    if (!picker.contains(e.target)) {
+      closeDemolishPicker();
+    }
+  };
+  setTimeout(() => document.addEventListener("pointerdown", demolishPickerOutsideHandler), 0);
+
+  // ESC key
+  demolishPickerEscHandler = (e) => {
+    if (e.key === "Escape") {
+      e.stopImmediatePropagation();
+      closeDemolishPicker();
+    }
+  };
+  document.addEventListener("keydown", demolishPickerEscHandler, true);
+}
+
+function closeDemolishPicker() {
+  const picker = document.getElementById("demolish-picker");
+  if (picker) {
+    picker.style.display = "none";
+    picker.innerHTML = "";
+  }
+  if (demolishPickerOutsideHandler) {
+    document.removeEventListener("pointerdown", demolishPickerOutsideHandler);
+    demolishPickerOutsideHandler = null;
+  }
+  if (demolishPickerEscHandler) {
+    document.removeEventListener("keydown", demolishPickerEscHandler, true);
+    demolishPickerEscHandler = null;
+  }
+}
+
+/**
  * Handle demolish action at a tile
  */
-async function handleDemolish(x, y) {
-  try {
-    // 1. Check for building
-    const building = findBuildingAtTile(x, y);
-    if (building) {
-      await api.demolishBuilding(building.id);
-      const buildingsResponse = await api.getBuildings();
-      state.setBuildings(buildingsResponse.buildings || []);
-      render();
-      showToast(`Demolished ${building.name}`);
-      return;
-    }
+async function handleDemolish(x, y, globalPos) {
+  closeDemolishPicker();
+  const targets = collectDemolishTargets(x, y);
 
-    // 2. Check for road
-    const road = findRoadAtTile(x, y);
-    if (road) {
-      await api.deleteRoad(road.id);
-      const roadsResponse = await api.getRoads();
-      state.setRoads(roadsResponse.roads || []);
-      render();
-      showToast(`Road removed at (${x}, ${y})`);
-      return;
-    }
-
-    // 3. Check for power line
-    const powerLine = findPowerLineAtTile(x, y);
-    if (powerLine) {
-      await api.deletePowerLine(powerLine.id);
-      const powerLinesResponse = await api.getPowerLines();
-      state.setPowerLines(powerLinesResponse.powerLines || []);
-      render();
-      showToast("Power line removed");
-      return;
-    }
-
-    // 4. Check for water pipe
-    const waterPipe = findWaterPipeAtTile(x, y);
-    if (waterPipe) {
-      await api.deleteWaterPipe(waterPipe.id);
-      const waterPipesResponse = await api.getWaterPipes();
-      state.setWaterPipes(waterPipesResponse.waterPipes || []);
-      render();
-      showToast("Water pipe removed");
-      return;
-    }
-
-    // 5. Check for zoning
-    const parcel = state.parcels.find((p) => p.x === x && p.y === y);
-    if (parcel && parcel.zoning) {
-      await api.setZoning(parcel.id, null);
-      parcel.zoning = null;
-      render();
-      showToast(`Zoning removed at (${x}, ${y})`);
-      return;
-    }
-
+  if (targets.length === 0) {
     showToast("Nothing to demolish here", true);
-  } catch (error) {
-    console.error("[MoltCity] Demolish failed:", error.message);
-    showToast(`Demolish failed: ${error.message}`, true);
+    return;
   }
+
+  if (targets.length === 1) {
+    try {
+      await targets[0].action();
+    } catch (error) {
+      console.error("[MoltCity] Demolish failed:", error.message);
+      showToast(`Demolish failed: ${error.message}`, true);
+    }
+    return;
+  }
+
+  // Multiple targets — show picker
+  const screenX = globalPos ? globalPos.x : window.innerWidth / 2;
+  const screenY = globalPos ? globalPos.y : window.innerHeight / 2;
+  showDemolishPicker(targets, screenX, screenY);
 }
 
 /**
@@ -1057,8 +1254,11 @@ function showBuildingInfo(building) {
   if (floorsEl) floorsEl.textContent = building.floors || 1;
   if (powerEl)
     powerEl.textContent = building.powered ? "Connected" : "No Power";
+  const NO_WATER_TYPES = ["wind_turbine", "water_tower", "road"];
   if (waterEl)
-    waterEl.textContent = building.hasWater ? "Connected" : "No Water";
+    waterEl.textContent = NO_WATER_TYPES.includes(building.type)
+      ? "Not Required"
+      : building.hasWater ? "Connected" : "No Water";
   if (ownerEl)
     ownerEl.textContent = building.ownerId
       ? building.ownerId.slice(0, 8) + "..."
@@ -1172,7 +1372,9 @@ function updateTooltip(x, y, globalPos) {
   if (badge && globalPos && buildType && buildType !== "demolish" && !DRAG_TYPES.includes(buildType) && state.gameConfig) {
     const cost = state.gameConfig.costs?.[buildType];
     if (cost !== undefined) {
-      badge.innerHTML = `${buildType.replace(/_/g, ' ')} &middot; <span class="cost">$${Math.ceil(cost).toLocaleString()}</span>`;
+      let hint = "";
+      if (buildType === "water_tower") hint = '<br><span style="font-size:10px;color:#00aaff">Must be adjacent to water</span>';
+      badge.innerHTML = `${buildType.replace(/_/g, ' ')} &middot; <span class="cost">$${Math.ceil(cost).toLocaleString()}</span>${hint}`;
       badge.style.display = "block";
       badge.style.left = `${globalPos.x + 15}px`;
       badge.style.top = `${globalPos.y - 35}px`;
@@ -1185,33 +1387,14 @@ function updateTooltip(x, y, globalPos) {
 
   // In demolish mode, show what would be deleted
   if (state.selectedBuildType === "demolish") {
-    const building = findBuildingAtTile(x, y);
-    if (building) {
-      tooltip.innerHTML = `<strong style="color:#e74c3c">Demolish: ${building.name}</strong><br>Type: ${building.type}`;
+    const targets = collectDemolishTargets(x, y);
+    if (targets.length > 0) {
+      const lines = targets.map((t) => `${t.icon} ${t.label}`);
+      tooltip.innerHTML = `<strong style="color:#e74c3c">Demolish (${targets.length})</strong><br>${lines.join("<br>")}`;
       tooltip.style.display = "block";
     } else {
-      const road = findRoadAtTile(x, y);
-      const powerLine = findPowerLineAtTile(x, y);
-      const waterPipe = findWaterPipeAtTile(x, y);
-      if (road) {
-        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove road</strong>`;
-        tooltip.style.display = "block";
-      } else if (powerLine) {
-        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove power line</strong>`;
-        tooltip.style.display = "block";
-      } else if (waterPipe) {
-        tooltip.innerHTML = `<strong style="color:#e74c3c">Remove water pipe</strong>`;
-        tooltip.style.display = "block";
-      } else {
-        const zParcel = state.parcels.find((p) => p.x === x && p.y === y);
-        if (zParcel && zParcel.zoning) {
-          tooltip.innerHTML = `<strong style="color:#e74c3c">Remove ${zParcel.zoning} zoning</strong>`;
-          tooltip.style.display = "block";
-        } else {
-          tooltip.innerHTML = `<strong>(${x}, ${y})</strong><br>Nothing to demolish`;
-          tooltip.style.display = "block";
-        }
-      }
+      tooltip.innerHTML = `<strong>(${x}, ${y})</strong><br>Nothing to demolish`;
+      tooltip.style.display = "block";
     }
     if (tooltip.style.display === "block" && globalPos) {
       tooltip.style.left = `${globalPos.x + 15}px`;
@@ -1340,6 +1523,9 @@ function setupBuildMenu() {
         state.setInfraStartPoint(null);
       }
 
+      // Close demolish picker if open
+      closeDemolishPicker();
+
       // Close power popover if open
       if (powerPopover) powerPopover.classList.remove("open");
 
@@ -1371,6 +1557,9 @@ function setupBuildMenu() {
           ? 0.5
           : 1;
       }
+
+      // Show placement hints (e.g. water-adjacent tiles for water tower)
+      updatePlacementHints(state.selectedBuildType);
 
       console.log("[MoltCity] Build type selected:", state.selectedBuildType);
     });
@@ -1410,6 +1599,7 @@ function setupBuildMenu() {
         buildOptions.forEach((opt) => opt.classList.remove("selected"));
         if (powerTrigger) powerTrigger.classList.remove("selected");
         if (state.sceneLayer) state.sceneLayer.alpha = 1;
+        updatePlacementHints(null);
         console.log("[MoltCity] Build type deselected");
       }
     }
