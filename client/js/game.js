@@ -185,6 +185,7 @@ export function render() {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (parcel) {
       const buildingGraphic = drawBuilding(parcel.x, parcel.y, building);
+      buildingGraphic._buildingType = building.type;
       sceneLayer.addChild(buildingGraphic);
       const icons = drawStatusIcons(parcel.x, parcel.y, building);
       if (icons) {
@@ -268,8 +269,9 @@ function drawBuilding(x, y, building) {
   if (type === "residential" || type === "offices") {
     const spriteMap =
       type === "residential" ? state.residentialSprites : state.officeSprites;
-    // Density mapping: floors 1 = low, floors 2-3 = medium, floors 4+ = high
-    const density = floors <= 1 ? "low" : floors <= 3 ? "medium" : "high";
+    // Density mapping from building's density field: 1=low, 2=medium, 3=high (1x1), 4=veryhigh (2x2)
+    const d = building.density || 1;
+    const density = d <= 1 ? "low" : d === 2 ? "medium" : d === 3 ? "high" : "veryhigh";
     const sprites = spriteMap[density];
     if (sprites && sprites.length > 0) {
       const rng = seededRandom(x * 1000 + y);

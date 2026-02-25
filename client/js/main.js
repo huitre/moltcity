@@ -651,6 +651,38 @@ function collectDemolishTargets(x, y) {
   return targets;
 }
 
+/**
+ * Apply infrastructure fade: when placing water pipes or power lines,
+ * hide buildings that don't need that utility (alpha 0) and fade the rest.
+ */
+const NO_WATER_BUILDING_TYPES = ["wind_turbine", "water_tower", "road"];
+const NO_POWER_BUILDING_TYPES = ["wind_turbine", "coal_plant", "nuclear_plant", "power_plant", "road"];
+
+function applyInfraFade(buildType) {
+  const scene = state.sceneLayer;
+  if (!scene) return;
+
+  const infraTypes = ["water_pipe", "power_line"];
+  if (!infraTypes.includes(buildType)) {
+    // Reset everything
+    scene.alpha = 1;
+    for (const child of scene.children) {
+      child.alpha = 1;
+    }
+    return;
+  }
+
+  const skipTypes = buildType === "water_pipe" ? NO_WATER_BUILDING_TYPES : NO_POWER_BUILDING_TYPES;
+  scene.alpha = 1;
+  for (const child of scene.children) {
+    if (child._buildingType) {
+      child.alpha = skipTypes.includes(child._buildingType) ? 0 : 0.5;
+    } else {
+      child.alpha = 0.5;
+    }
+  }
+}
+
 // --- Demolish picker popup ---
 
 let demolishPickerOutsideHandler = null;
@@ -1550,13 +1582,8 @@ function setupBuildMenu() {
         }
       }
 
-      // Fade buildings when placing infrastructure so pipes/lines are visible
-      const infraTypes = ["water_pipe", "power_line"];
-      if (state.sceneLayer) {
-        state.sceneLayer.alpha = infraTypes.includes(state.selectedBuildType)
-          ? 0.5
-          : 1;
-      }
+      // Fade/hide buildings when placing infrastructure so pipes/lines are visible
+      applyInfraFade(state.selectedBuildType);
 
       // Show placement hints (e.g. water-adjacent tiles for water tower)
       updatePlacementHints(state.selectedBuildType);
@@ -1598,7 +1625,7 @@ function setupBuildMenu() {
         state.setSelectedBuildType(null);
         buildOptions.forEach((opt) => opt.classList.remove("selected"));
         if (powerTrigger) powerTrigger.classList.remove("selected");
-        if (state.sceneLayer) state.sceneLayer.alpha = 1;
+        applyInfraFade(null);
         updatePlacementHints(null);
         console.log("[MoltCity] Build type deselected");
       }
