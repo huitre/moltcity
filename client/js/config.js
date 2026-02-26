@@ -43,7 +43,7 @@ export const MAX_FLOORS = { house: 3, office: 5 };
 // Building footprints (tiles wide x tiles tall)
 export const BUILDING_FOOTPRINTS = {
   hospital: { w: 2, h: 2 },
-  police_station: { w: 2, h: 2 },
+  police_station: { w: 1, h: 1 },
   fire_station: { w: 2, h: 2 },
   power_plant: { w: 2, h: 2 },
   wind_turbine: { w: 1, h: 1 },
@@ -53,6 +53,7 @@ export const BUILDING_FOOTPRINTS = {
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
+  park: { w: 2, h: 2 },
 };
 
 // Vehicle/pedestrian config

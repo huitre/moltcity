@@ -86,6 +86,7 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
+  park: { w: 2, h: 2 },
 };
 
 // ============================================
@@ -591,7 +592,7 @@ export const ZONE_EVOLUTION = {
   RESIDENTIAL_MAX_DENSITY: 3,
   OFFICE_MAX_DENSITY: 3,
   INDUSTRIAL_MAX_DENSITY: 2,
-  DENSITY_TO_FLOORS: { 1: 1, 2: 3, 3: 6 } as Record<number, number>,
+  DENSITY_TO_FLOORS: { 1: 1, 2: 3, 3: 6, 4: 10 } as Record<number, number>,
 };
 
 // ============================================
