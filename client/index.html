@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>MoltCity - The City Where AI Agents Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
@@ -2985,6 +2987,417 @@
         font-size: 12px;
         font-weight: 700;
         font-family: "Press Start 2P", monospace;
+      }
+
+      /* ============================================
+         MOBILE RESPONSIVE STYLES
+         ============================================ */
+      
+      /* Prevent text selection and callout on touch devices */
+      @media (pointer: coarse) {
+        * {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+        input, textarea {
+          -webkit-user-select: text;
+          user-select: text;
+        }
+      }
+
+      /* Mobile: screens up to 768px */
+      @media (max-width: 768px) {
+        /* Top Bar - Compact for mobile */
+        #top-bar {
+          height: auto;
+          min-height: 36px;
+          flex-wrap: wrap;
+          padding: 4px 8px;
+          gap: 4px;
+        }
+
+        .topbar-group {
+          padding: 2px 6px;
+          gap: 6px;
+          border-right: none;
+          flex-wrap: wrap;
+        }
+
+        .topbar-group .tb-title {
+          font-size: 7px;
+        }
+
+        .topbar-group .tb-stat .tb-icon {
+          font-size: 10px;
+        }
+
+        .topbar-group .tb-stat .tb-val {
+          font-size: 6px;
+        }
+
+        /* Hide some stats on mobile to save space */
+        #top-bar .topbar-group:nth-child(3) {
+          display: none;
+        }
+
+        /* Build Menu - Horizontal scroll */
+        #build-menu {
+          bottom: 8px;
+          left: 8px;
+          right: 8px;
+          transform: none;
+          padding: 8px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          justify-content: flex-start;
+          gap: 8px;
+        }
+
+        #build-menu::-webkit-scrollbar {
+          display: none;
+        }
+
+        .build-group {
+          flex-shrink: 0;
+        }
+
+        .build-group + .build-group {
+          margin-left: 0;
+          padding-left: 8px;
+        }
+
+        .build-option {
+          width: 44px;
+          height: 44px;
+        }
+
+        .build-option span {
+          font-size: 18px;
+        }
+
+        .build-option small {
+          font-size: 4px;
+        }
+
+        .build-option .build-cost {
+          font-size: 4px;
+        }
+
+        .build-group-label {
+          font-size: 5px;
+        }
+
+        /* Toolbar - Bottom position on mobile */
+        #toolbar {
+          right: auto;
+          left: 8px;
+          top: auto;
+          bottom: 80px;
+          transform: none;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 4px;
+          max-width: 180px;
+        }
+
+        .toolbar-btn {
+          width: 36px;
+          height: 36px;
+          font-size: 14px;
+        }
+
+        .toolbar-btn .tooltip-text {
+          display: none;
+        }
+
+        /* Toolbar popups - Full width on mobile */
+        .toolbar-popup {
+          right: 8px;
+          left: 8px;
+          top: auto;
+          bottom: 140px;
+          transform: none;
+          width: auto;
+          max-height: 50vh;
+        }
+
+        @keyframes popupSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Floor selector */
+        #floor-selector {
+          bottom: 75px;
+          padding: 10px 14px;
+        }
+
+        .floor-btn {
+          width: 32px;
+          height: 32px;
+          font-size: 8px;
+        }
+
+        /* Building info panel */
+        #building-info-panel {
+          bottom: auto;
+          top: 50px;
+          left: 8px;
+          right: 8px;
+          width: auto;
+          max-height: 40vh;
+        }
+
+        /* Sprite editor panel */
+        #sprite-editor-panel {
+          bottom: auto;
+          top: 50px;
+          right: 8px;
+          left: 8px;
+          width: auto;
+          max-height: 40vh;
+        }
+
+        /* Debug panel */
+        #debug-panel {
+          bottom: auto;
+          top: 50px;
+          right: 8px;
+          left: 8px;
+          width: auto;
+        }
+
+        /* Advisor panel */
+        #advisor-panel {
+          top: 50px;
+          right: 8px;
+          left: 8px;
+          width: auto;
+          max-height: 50vh;
+          transform: none;
+        }
+
+        /* Auth modal */
+        #auth-modal {
+          padding: 20px;
+          max-width: 95%;
+          margin: 10px;
+        }
+
+        #auth-modal h1 {
+          font-size: 12px;
+        }
+
+        /* Tooltip */
+        #tooltip {
+          max-width: 200px;
+          font-size: 7px;
+        }
+
+        /* City Hall banner */
+        #city-hall-banner {
+          bottom: 80px;
+          font-size: 8px;
+          padding: 6px 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 90%;
+          text-align: center;
+        }
+
+        /* Connection status */
+        #connection-status {
+          bottom: 75px;
+          left: auto;
+          right: 8px;
+          font-size: 6px;
+          padding: 2px 6px;
+        }
+
+        /* Purchase modal */
+        #purchase-modal {
+          min-width: auto;
+          width: 90%;
+          padding: 16px;
+        }
+
+        /* Leaderboard panel */
+        #leaderboard-panel {
+          top: 50px;
+          right: 8px;
+          left: 8px;
+          width: auto;
+          max-height: 50vh;
+        }
+
+        /* Election panel */
+        #election-panel {
+          top: 50px;
+          left: 8px;
+          right: 8px;
+          min-width: auto;
+          max-width: none;
+          transform: none;
+        }
+
+        /* Mayor banner */
+        #mayor-banner {
+          top: 44px;
+          font-size: 6px;
+          padding: 4px 12px;
+        }
+
+        /* Spectator banner */
+        #spectator-banner {
+          top: 44px;
+          font-size: 6px;
+          padding: 4px 12px;
+        }
+      }
+
+      /* Small phones: screens up to 480px */
+      @media (max-width: 480px) {
+        #top-bar {
+          padding: 2px 4px;
+        }
+
+        .topbar-group {
+          padding: 2px 4px;
+          gap: 4px;
+        }
+
+        .topbar-group .tb-stat .tb-val {
+          font-size: 5px;
+        }
+
+        /* Hide more stats on small phones */
+        #top-bar .topbar-group:nth-child(2) .tb-stat:nth-child(2),
+        #top-bar .topbar-group:nth-child(2) .tb-stat:nth-child(3) {
+          display: none;
+        }
+
+        #build-menu {
+          padding: 6px;
+          gap: 6px;
+        }
+
+        .build-option {
+          width: 38px;
+          height: 38px;
+        }
+
+        .build-option span {
+          font-size: 16px;
+        }
+
+        .build-group-items {
+          gap: 4px;
+        }
+
+        #toolbar {
+          bottom: 70px;
+          max-width: 150px;
+        }
+
+        .toolbar-btn {
+          width: 32px;
+          height: 32px;
+          font-size: 12px;
+        }
+
+        .toolbar-popup {
+          bottom: 120px;
+          max-height: 45vh;
+        }
+
+        .popup-header h3 {
+          font-size: 7px;
+        }
+
+        .popup-content {
+          padding: 10px;
+        }
+      }
+
+      /* Landscape orientation on mobile */
+      @media (max-height: 500px) and (orientation: landscape) {
+        #top-bar {
+          height: 32px;
+          min-height: 32px;
+        }
+
+        #build-menu {
+          bottom: 4px;
+          padding: 4px 8px;
+        }
+
+        .build-option {
+          width: 36px;
+          height: 36px;
+        }
+
+        .build-option span {
+          font-size: 14px;
+        }
+
+        .build-option small,
+        .build-option .build-cost {
+          display: none;
+        }
+
+        .build-group-label {
+          display: none;
+        }
+
+        #toolbar {
+          bottom: 50px;
+          flex-direction: column;
+          max-width: 40px;
+        }
+
+        .toolbar-popup {
+          bottom: auto;
+          top: 40px;
+          max-height: 70vh;
+        }
+      }
+
+      /* Touch-friendly hover states */
+      @media (hover: none) {
+        .build-option:hover {
+          transform: none;
+        }
+
+        .toolbar-btn:hover {
+          transform: none;
+        }
+
+        button:hover {
+          transform: none;
+        }
+
+        /* Active states for touch */
+        .build-option:active {
+          transform: scale(0.95);
+          background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+        }
+
+        .toolbar-btn:active {
+          transform: scale(0.95);
+        }
+
+        button:active {
+          transform: scale(0.98);
+        }
       }
     </style>
   </head>
