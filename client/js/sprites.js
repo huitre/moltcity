@@ -57,9 +57,9 @@ export async function loadSprites() {
       }
     }
 
-    // Load residential zone sprites (low/medium/high density)
+    // Load residential zone sprites (low/medium/high/veryhigh density)
     if (spritesConfig.residential) {
-      for (const density of ["low", "medium", "high"]) {
+      for (const density of ["low", "medium", "high", "veryhigh"]) {
         for (
           let i = 0;
           i < (spritesConfig.residential[density] || []).length;
@@ -89,9 +89,9 @@ export async function loadSprites() {
       }
     }
 
-    // Load office zone sprites (low/medium/high density)
+    // Load office zone sprites (low/medium/high/veryhigh density)
     if (spritesConfig.offices) {
-      for (const density of ["low", "medium", "high"]) {
+      for (const density of ["low", "medium", "high", "veryhigh"]) {
         for (
           let i = 0;
           i < (spritesConfig.offices[density] || []).length;
@@ -389,6 +389,54 @@ export async function loadSprites() {
       }
     }
 
+    // Load waste/garbage depot sprites
+    if (spritesConfig.waste) {
+      for (let i = 0; i < spritesConfig.waste.length; i++) {
+        const spriteConfig = spritesConfig.waste[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.wasteSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded waste: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load waste ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
+    // Load bin sprites (trash bins for garbage visual)
+    if (spritesConfig.bins) {
+      for (let i = 0; i < spritesConfig.bins.length; i++) {
+        const spriteConfig = spritesConfig.bins[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.binSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded bin: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load bin ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };
@@ -440,11 +488,13 @@ export async function loadSprites() {
     const resCount =
       state.residentialSprites.low.length +
       state.residentialSprites.medium.length +
-      state.residentialSprites.high.length;
+      state.residentialSprites.high.length +
+      state.residentialSprites.veryhigh.length;
     const offCount =
       state.officeSprites.low.length +
       state.officeSprites.medium.length +
-      state.officeSprites.high.length;
+      state.officeSprites.high.length +
+      state.officeSprites.veryhigh.length;
     const svcCount =
       state.serviceSprites.police.length +
       state.serviceSprites.hospital.length +

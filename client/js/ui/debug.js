@@ -6,8 +6,24 @@ import * as api from '../api.js';
 import * as state from '../state.js';
 import { render } from '../game.js';
 
+let selectedBuilding = null;
+
 function getPanel() {
   return document.getElementById('debug-panel');
+}
+
+export function setDebugSelectedBuilding(building) {
+  const ZONE_TYPES = ['residential', 'offices', 'industrial', 'suburban'];
+  const label = document.getElementById('debug-selected-building');
+  if (!label) return;
+
+  if (building && ZONE_TYPES.includes(building.type)) {
+    selectedBuilding = building;
+    label.textContent = `${building.name} (d${building.density || 1})`;
+  } else {
+    selectedBuilding = null;
+    label.textContent = building ? 'Not a zone' : 'None';
+  }
 }
 
 export function openDebugPanel() {
@@ -62,11 +78,40 @@ async function applyDebug() {
   }
 }
 
+async function applyDensity(density) {
+  if (!selectedBuilding) {
+    alert('No zone building selected. Click a zone building first.');
+    return;
+  }
+
+  try {
+    await api.debugSetDensity(selectedBuilding.id, density);
+    // Refresh buildings and re-render
+    const buildingsResponse = await api.getBuildings();
+    state.setBuildings(buildingsResponse.buildings || []);
+    render();
+    // Update the label with new density
+    const updated = state.buildings.find(b => b.id === selectedBuilding.id);
+    if (updated) setDebugSelectedBuilding(updated);
+  } catch (e) {
+    console.error('[Debug] Set density failed:', e.message);
+    alert('Set density failed: ' + e.message);
+  }
+}
+
 export function initDebugPanel() {
   const applyBtn = document.getElementById('debug-apply-btn');
   if (applyBtn) {
     applyBtn.addEventListener('click', applyDebug);
   }
+
+  // Density buttons
+  document.querySelectorAll('.debug-density-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const density = parseInt(btn.dataset.density, 10);
+      applyDensity(density);
+    });
+  });
 
   // Ctrl+Shift+D toggles the panel
   document.addEventListener('keydown', (e) => {

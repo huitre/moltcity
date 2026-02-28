@@ -127,6 +127,8 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
         powerDemand: 0,
         waterCapacity: 0,
         waterDemand: 0,
+        wasteCapacity: 0,
+        wasteDemand: 0,
         treasury: row.treasury,
       },
       mayor: row.mayorId,

@@ -110,6 +110,7 @@ export function createDatabase(): Database.Database {
       water_required INTEGER NOT NULL DEFAULT 0,
       powered INTEGER NOT NULL DEFAULT 0,
       has_water INTEGER NOT NULL DEFAULT 0,
+      has_waste INTEGER NOT NULL DEFAULT 0,
       operational INTEGER NOT NULL DEFAULT 0,
       built_at INTEGER NOT NULL,
       owner_id TEXT NOT NULL,
@@ -449,6 +450,20 @@ export function createDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_votes_election ON votes(election_id);
   `);
 
+  // Migration: add has_waste column to existing buildings table
+  try {
+    db.exec('ALTER TABLE buildings ADD COLUMN has_waste INTEGER NOT NULL DEFAULT 0');
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: add garbage_level column to existing buildings table
+  try {
+    db.exec('ALTER TABLE buildings ADD COLUMN garbage_level INTEGER NOT NULL DEFAULT 0');
+  } catch {
+    // Column already exists
+  }
+
   return db;
 }
 
@@ -494,6 +509,8 @@ export class CityRepository {
         powerDemand: 0,
         waterCapacity: 0,
         waterDemand: 0,
+        wasteCapacity: 0,
+        wasteDemand: 0,
         treasury: row.treasury,
       },
       economy: {
@@ -750,6 +767,11 @@ export class BuildingRepository {
       .run(hasWater ? 1 : 0, hasWater ? 1 : 0, buildingId);
   }
 
+  updateWasteStatus(buildingId: string, hasWaste: boolean): void {
+    this.db.prepare('UPDATE buildings SET has_waste = ? WHERE id = ?')
+      .run(hasWaste ? 1 : 0, buildingId);
+  }
+
   updateBuilding(buildingId: string, updates: { name?: string; sprite?: string; type?: BuildingType; ownerId?: string }): void {
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -800,6 +822,7 @@ export class BuildingRepository {
       waterRequired: row.water_required,
       powered: row.powered === 1,
       hasWater: row.has_water === 1,
+      hasWaste: row.has_waste === 1,
       operational: row.operational === 1,
       builtAt: row.built_at,
       ownerId: row.owner_id,
@@ -807,7 +830,12 @@ export class BuildingRepository {
       constructionStartedAt: row.construction_started_at,
       constructionTimeTicks: row.construction_time_ticks ?? 0,
       density: row.density || 1,
+      garbageLevel: row.garbage_level ?? 0,
     };
+  }
+
+  updateGarbageLevel(buildingId: string, level: number): void {
+    this.db.prepare('UPDATE buildings SET garbage_level = ? WHERE id = ?').run(level, buildingId);
   }
 
   updateDensityAndFloors(buildingId: string, density: number, floors: number, width?: number, height?: number): void {

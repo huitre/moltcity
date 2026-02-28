@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 import type { Agent, Vehicle, Building, CityEvent, CityEventType, Coordinate, City, CityTime, AgentState, BuildingType } from '../models/types.js';
 import { LegacyDatabaseManagerAdapter, CityScopedDatabaseAdapter, type SimulationDb } from './engine.adapter.js';
 import { Pathfinder, WalkingPathfinder } from './pathfinding.js';
-import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY, POWER_CAPACITY } from '../config/game.js';
+import { BUILDING_JOBS, TRAFFIC, INFRASTRUCTURE_FEES, BUILDING_COSTS, SC2K_ECONOMY, POWER_CAPACITY, CITY_SERVICES } from '../config/game.js';
 import type { Bond, DepartmentFunding, BudgetYtd } from '../models/types.js';
 import { LandValueSimulator } from './landvalue.simulator.js';
 import { ZoneEvolutionSimulator } from './zone-evolution.simulator.js';
@@ -594,6 +594,197 @@ export class WaterGridSimulator {
   applyWaterStatus(status: Map<string, boolean>): void {
     for (const [buildingId, hasWater] of status) {
       this.db.buildings.updateWaterStatus(buildingId, hasWater);
+    }
+  }
+}
+
+// ============================================
+// Waste Grid Simulation (road-based BFS)
+// ============================================
+
+const WASTE_CAPACITY_PER_DEPOT = 10000;
+const WASTE_DEMAND_PER_FLOOR: Partial<Record<string, number>> = {
+  residential: 2, offices: 2, suburban: 1, industrial: 8,
+  house: 2, apartment: 3, shop: 2, office: 2, factory: 8,
+};
+
+// Infrastructure and utility types always get waste service
+const WASTE_EXEMPT_TYPES = new Set([
+  'park', 'plaza', 'road', 'power_plant', 'wind_turbine', 'coal_plant',
+  'nuclear_plant', 'water_tower', 'garbage_depot', 'city_hall',
+]);
+
+export class WasteGridSimulator {
+  constructor(private db: SimulationDb) {}
+
+  private lastStats = { capacity: 0, demand: 0, connectedBuildings: 0 };
+
+  getStats() { return this.lastStats; }
+
+  /**
+   * Determine waste service via road-network BFS from garbage depots.
+   * Returns map of buildingId -> hasWaste
+   */
+  simulate(): Map<string, boolean> {
+    const buildings = this.db.buildings.getAllBuildings();
+    const roads = this.db.roads.getAllRoads();
+    const wasteStatus = new Map<string, boolean>();
+
+    // 1. Build a set of road tile coordinates and a lookup by parcelId -> (x,y)
+    const roadTileSet = new Set<string>();
+    const parcelCoordCache = new Map<string, { x: number; y: number }>();
+
+    for (const road of roads) {
+      const parcel = this.db.parcels.getParcelById(road.parcelId);
+      if (parcel) {
+        roadTileSet.add(`${parcel.x},${parcel.y}`);
+        parcelCoordCache.set(road.parcelId, { x: parcel.x, y: parcel.y });
+      }
+    }
+
+    // 2. Find garbage depot footprint tiles
+    const depotTiles = new Set<string>();
+    for (const building of buildings) {
+      if (building.type === 'garbage_depot') {
+        const parcel = this.db.parcels.getParcelById(building.parcelId);
+        if (parcel) {
+          for (let dy = 0; dy < (building.height || 1); dy++) {
+            for (let dx = 0; dx < (building.width || 1); dx++) {
+              depotTiles.add(`${parcel.x + dx},${parcel.y + dy}`);
+            }
+          }
+        }
+      }
+    }
+
+    // 3. BFS from road tiles adjacent to depot tiles through road network
+    const servedRoadTiles = new Set<string>();
+    const queue: string[] = [];
+
+    // Seed: road tiles that are 4-directionally adjacent to any depot tile
+    for (const depotTile of depotTiles) {
+      const [dx, dy] = depotTile.split(',').map(Number);
+      for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const key = `${dx + ox},${dy + oy}`;
+        if (roadTileSet.has(key) && !servedRoadTiles.has(key)) {
+          servedRoadTiles.add(key);
+          queue.push(key);
+        }
+      }
+    }
+
+    // BFS through 4-directional road adjacency
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const [cx, cy] = current.split(',').map(Number);
+      for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const key = `${cx + ox},${cy + oy}`;
+        if (roadTileSet.has(key) && !servedRoadTiles.has(key)) {
+          servedRoadTiles.add(key);
+          queue.push(key);
+        }
+      }
+    }
+
+    // 4. For each building, check if any footprint tile is 4-directionally adjacent to a served road
+    const buildingConnected = new Map<string, boolean>();
+    for (const building of buildings) {
+      if (WASTE_EXEMPT_TYPES.has(building.type)) {
+        buildingConnected.set(building.id, true);
+        continue;
+      }
+      const parcel = this.db.parcels.getParcelById(building.parcelId);
+      if (!parcel) { buildingConnected.set(building.id, false); continue; }
+
+      let connected = false;
+      for (let dy = 0; dy < (building.height || 1) && !connected; dy++) {
+        for (let dx = 0; dx < (building.width || 1) && !connected; dx++) {
+          const bx = parcel.x + dx;
+          const by = parcel.y + dy;
+          for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+            if (servedRoadTiles.has(`${bx + ox},${by + oy}`)) {
+              connected = true;
+              break;
+            }
+          }
+        }
+      }
+      buildingConnected.set(building.id, connected);
+    }
+
+    // 5. Calculate total capacity vs demand
+    let totalCapacity = 0;
+    let totalDemand = 0;
+    let connectedBuildings = 0;
+
+    for (const building of buildings) {
+      if (building.type === 'garbage_depot') {
+        totalCapacity += WASTE_CAPACITY_PER_DEPOT;
+        continue;
+      }
+      const demandPerFloor = WASTE_DEMAND_PER_FLOOR[building.type] || 0;
+      if (demandPerFloor > 0) {
+        totalDemand += demandPerFloor * (building.floors || 1);
+      }
+    }
+
+    const hasEnoughCapacity = totalCapacity >= totalDemand;
+
+    // 6. Set waste status
+    for (const building of buildings) {
+      if (WASTE_EXEMPT_TYPES.has(building.type) || building.type === 'garbage_depot') {
+        wasteStatus.set(building.id, true);
+      } else {
+        const connected = buildingConnected.get(building.id) || false;
+        wasteStatus.set(building.id, connected && hasEnoughCapacity);
+        if (connected) connectedBuildings++;
+      }
+    }
+
+    this.lastStats = { capacity: totalCapacity, demand: totalDemand, connectedBuildings };
+    return wasteStatus;
+  }
+
+  applyWasteStatus(status: Map<string, boolean>): void {
+    for (const [buildingId, hasWaste] of status) {
+      this.db.buildings.updateWasteStatus(buildingId, hasWaste);
+    }
+  }
+
+  /**
+   * Accumulate garbage on buildings without waste service,
+   * and decrease garbage on buildings with waste service.
+   * Called once per in-game day.
+   */
+  accumulateGarbage(): void {
+    const buildings = this.db.buildings.getAllBuildings();
+    const garbagePerDay = CITY_SERVICES.GARBAGE_PER_DAY as Record<string, number>;
+    const maxLevel = CITY_SERVICES.MAX_GARBAGE_LEVEL;
+    const updates: { id: string; level: number }[] = [];
+
+    for (const building of buildings) {
+      if (WASTE_EXEMPT_TYPES.has(building.type)) continue;
+      if (building.constructionProgress < 100) continue;
+
+      const current = building.garbageLevel ?? 0;
+      let newLevel: number;
+
+      const rate = garbagePerDay[building.type] || 1;
+      if (building.hasWaste) {
+        // Collection active: decrease at same rate as accumulation
+        newLevel = Math.max(0, current - rate);
+      } else {
+        // No collection: accumulate based on building type
+        newLevel = Math.min(maxLevel, current + rate);
+      }
+
+      if (newLevel !== current) {
+        updates.push({ id: building.id, level: newLevel });
+      }
+    }
+
+    if (updates.length > 0) {
+      (this.db.buildings as any).updateGarbageLevelsBatch(updates);
     }
   }
 }
@@ -1255,6 +1446,7 @@ export class TaxationSimulator {
 class CitySimulatorBundle {
   public powerGrid: PowerGridSimulator;
   public waterGrid: WaterGridSimulator;
+  public wasteGrid: WasteGridSimulator;
   public agentSimulator: AgentSimulator;
   public vehicleSimulator: VehicleSimulator;
   public rentEnforcementSimulator: RentEnforcementSimulator;
@@ -1272,6 +1464,7 @@ class CitySimulatorBundle {
   constructor(db: CityScopedDatabaseAdapter, logger?: ActivityLogger) {
     this.powerGrid = new PowerGridSimulator(db);
     this.waterGrid = new WaterGridSimulator(db);
+    this.wasteGrid = new WasteGridSimulator(db);
     this.agentSimulator = new AgentSimulator(db);
     this.vehicleSimulator = new VehicleSimulator(db);
     this.rentEnforcementSimulator = new RentEnforcementSimulator(db, logger);
@@ -1440,6 +1633,15 @@ export class SimulationEngine extends EventEmitter {
 
       const waterStatus = bundle.waterGrid.simulate();
       bundle.waterGrid.applyWaterStatus(waterStatus);
+
+      const wasteStatus = bundle.wasteGrid.simulate();
+      bundle.wasteGrid.applyWasteStatus(wasteStatus);
+    }
+
+    // Accumulate garbage once per in-game day (at hour 0, first tick of the hour)
+    if (time.hour === 0 && this.currentTick % TICKS_PER_HOUR < 10) {
+      bundle.wasteGrid.accumulateGarbage();
+      events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { action: 'garbage_accumulated' } });
     }
 
     // Simulate employment (job matching and payroll)
@@ -1585,6 +1787,18 @@ export class SimulationEngine extends EventEmitter {
     }
     if (!cityId) return { capacity: 0, demand: 0, suppliedTiles: 0, connectedBuildings: 0 };
     return this.getBundle(cityId).waterGrid.getStats();
+  }
+
+  /**
+   * Get waste system statistics for a specific city
+   */
+  getWasteStats(cityId?: string) {
+    if (!cityId) {
+      const city = this.db.city.getCity();
+      cityId = city?.id;
+    }
+    if (!cityId) return { capacity: 0, demand: 0, connectedBuildings: 0 };
+    return this.getBundle(cityId).wasteGrid.getStats();
   }
 
   /**

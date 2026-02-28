@@ -4031,6 +4031,10 @@
             <span>🏟️</span>
             <small>Stadium</small>
           </div>
+          <div class="build-option admin-only" data-type="garbage_depot">
+            <span>🗑️</span>
+            <small>Waste</small>
+          </div>
         </div>
       </div>
       <!-- Infra -->
@@ -4144,6 +4148,14 @@
       <div class="stat">
         <span class="stat-label">Water</span>
         <span class="stat-value" id="building-water">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Waste</span>
+        <span class="stat-value" id="building-waste">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Garbage</span>
+        <span class="stat-value" id="building-garbage">-</span>
       </div>
       <div class="stat">
         <span class="stat-label">Owner</span>
@@ -4847,16 +4859,27 @@
             el4.className = "service-status " + health.cls;
           }
 
-          // Sanitation
-          const garbageCount = counts.garbage_depot || 0;
-          const sanitation = svcStatus(
-            garbageCount,
-            "depot" + (garbageCount !== 1 ? "s" : ""),
-          );
+          // Sanitation (capacity/demand like power/water)
+          const wasteCap = statsRes.wasteCapacity || 0;
+          const wasteDem = statsRes.wasteDemand || 0;
           const el5 = document.getElementById("svc-sanitation");
           if (el5) {
-            el5.textContent = sanitation.text;
-            el5.className = "service-status " + sanitation.cls;
+            if (wasteCap === 0) {
+              el5.textContent = "No depots";
+              el5.className = "service-status bad";
+            } else if (wasteDem > wasteCap) {
+              el5.textContent =
+                Math.round((wasteDem / wasteCap) * 100) + "% load";
+              el5.className = "service-status bad";
+            } else if (wasteDem > wasteCap * 0.8) {
+              el5.textContent =
+                Math.round((wasteDem / wasteCap) * 100) + "% load";
+              el5.className = "service-status warning";
+            } else {
+              el5.textContent =
+                Math.round((wasteDem / wasteCap) * 100) + "% load";
+              el5.className = "service-status good";
+            }
           }
 
           // Power

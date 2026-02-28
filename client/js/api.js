@@ -484,3 +484,10 @@ export async function debugUpdateCity(params) {
     body: JSON.stringify(bodyWithCity(params)),
   });
 }
+
+export async function debugSetDensity(buildingId, density) {
+  return fetchApi('/api/admin/debug/set-density', {
+    method: 'POST',
+    body: JSON.stringify(bodyWithCity({ buildingId, density })),
+  });
+}

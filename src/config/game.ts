@@ -87,6 +87,7 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
   park: { w: 2, h: 2 },
+  garbage_depot: { w: 2, h: 2 },
 };
 
 // ============================================

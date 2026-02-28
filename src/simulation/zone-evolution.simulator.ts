@@ -71,8 +71,8 @@ export class ZoneEvolutionSimulator {
       const newDensity = building.density + 1;
       const newFloors = ZONE_EVOLUTION.DENSITY_TO_FLOORS[newDensity] || newDensity;
 
-      // Density 3 for residential/offices requires 2x2 footprint on grid-aligned position
-      if (newDensity === 3 && (type === 'residential' || type === 'offices')) {
+      // Density 4 (very high) for residential/offices requires 2x2 footprint on grid-aligned position
+      if (newDensity === 4 && (type === 'residential' || type === 'offices')) {
         if (!this.canExpandTo2x2(parcel.x, parcel.y, parcel.zoning!)) continue;
         this.mergeAdjacentBuildings(parcel.x, parcel.y);
         this.db.buildings.updateDensityAndFloors(building.id, newDensity, newFloors, 2, 2);

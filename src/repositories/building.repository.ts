@@ -213,6 +213,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       waterRequired: row.waterRequired,
       powered: row.powered,
       hasWater: row.hasWater,
+      hasWaste: row.hasWaste,
       operational: row.operational,
       builtAt: row.builtAt,
       ownerId: row.ownerId,
@@ -220,6 +221,7 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
       constructionStartedAt: row.constructionStartedAt,
       constructionTimeTicks: row.constructionTimeTicks,
       density: row.density,
+      garbageLevel: (row as any).garbageLevel ?? 0,
     };
   }
 }

@@ -894,7 +894,7 @@
       "file": "police/police_station_01.png",
       "width": 906,
       "height": 708,
-      "tiles": 2,
+      "tiles": 1,
       "anchor": {
         "x": 0.5,
         "y": 0.99
@@ -947,7 +947,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     }
   ],
@@ -1243,18 +1243,42 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.98
+        "y": 0.94
       }
     },
     {
       "id": "waste_recycling_01",
       "file": "waste/waste_recycling_01.png",
-      "width": 944,
+      "width": 940,
       "height": 702,
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.97
+        "y": 0.96
+      }
+    }
+  ],
+  "bins": [
+    {
+      "id": "bin_01",
+      "file": "waste/bin_01.png",
+      "width": 250,
+      "height": 281,
+      "tiles": 1,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    {
+      "id": "bin_02",
+      "file": "waste/bin_02.png",
+      "width": 250,
+      "height": 283,
+      "tiles": 1,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
       }
     }
   ],

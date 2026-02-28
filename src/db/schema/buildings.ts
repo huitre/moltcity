@@ -20,6 +20,7 @@ export const buildings = sqliteTable('buildings', {
   waterRequired: integer('water_required').notNull().default(0),
   powered: integer('powered', { mode: 'boolean' }).notNull().default(false),
   hasWater: integer('has_water', { mode: 'boolean' }).notNull().default(false),
+  hasWaste: integer('has_waste', { mode: 'boolean' }).notNull().default(false),
   operational: integer('operational', { mode: 'boolean' }).notNull().default(false),
   builtAt: integer('built_at').notNull(),
   ownerId: text('owner_id').notNull(),
@@ -27,6 +28,7 @@ export const buildings = sqliteTable('buildings', {
   constructionStartedAt: integer('construction_started_at'),
   constructionTimeTicks: integer('construction_time_ticks').notNull().default(0),
   density: integer('density').notNull().default(1),
+  garbageLevel: integer('garbage_level').notNull().default(0),
 }, (table) => [
   index('idx_buildings_parcel').on(table.parcelId),
   index('idx_buildings_owner').on(table.ownerId),

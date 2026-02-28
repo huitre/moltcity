@@ -1291,6 +1291,26 @@ function showBuildingInfo(building) {
     waterEl.textContent = NO_WATER_TYPES.includes(building.type)
       ? "Not Required"
       : building.hasWater ? "Connected" : "No Water";
+  const wasteEl = document.getElementById("building-waste");
+  const NO_WASTE_TYPES = ["wind_turbine", "water_tower", "road", "power_plant", "coal_plant", "nuclear_plant", "park", "plaza", "garbage_depot", "city_hall"];
+  if (wasteEl)
+    wasteEl.textContent = NO_WASTE_TYPES.includes(building.type)
+      ? "Not Required"
+      : building.hasWaste ? "Collected" : "No Collection";
+  const garbageEl = document.getElementById("building-garbage");
+  if (garbageEl) {
+    const gl = building.garbageLevel || 0;
+    if (NO_WASTE_TYPES.includes(building.type)) {
+      garbageEl.textContent = "N/A";
+      garbageEl.style.color = "#888";
+    } else if (gl === 0) {
+      garbageEl.textContent = "Clean";
+      garbageEl.style.color = "#4ecdc4";
+    } else {
+      garbageEl.textContent = `${gl}/100`;
+      garbageEl.style.color = gl > 70 ? "#ff6b6b" : gl > 40 ? "#ffa500" : "#ffd700";
+    }
+  }
   if (ownerEl)
     ownerEl.textContent = building.ownerId
       ? building.ownerId.slice(0, 8) + "..."

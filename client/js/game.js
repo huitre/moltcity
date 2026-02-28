@@ -24,6 +24,16 @@ import {
 
 let renderContainer = null;
 let statusIcons = [];
+let wasteIconTexture = null;
+
+// Pre-load waste icon texture
+PIXI.Assets.load("/sprites/ui/waste_icon.png")
+  .then((tex) => {
+    wasteIconTexture = tex;
+  })
+  .catch(() => {
+    console.warn("[Game] waste_icon.png not found, using fallback");
+  });
 
 /**
  * Initialize the game world
@@ -165,12 +175,18 @@ export function render() {
     sceneLayer.addChild(lineGraphic);
   }
 
-  // Draw roads
+  // Draw roads (stored in map so bins can be added later)
+  const roadContainers = new Map();
   for (const road of roads) {
     const parcel = parcels.find((p) => p.id === road.parcelId);
     if (parcel) {
       const roadGraphic = drawRoad(parcel.x, parcel.y);
-      sceneLayer.addChild(roadGraphic);
+      const container = new PIXI.Container();
+      container.zIndex = roadGraphic.zIndex;
+      roadGraphic.zIndex = 0;
+      container.addChild(roadGraphic);
+      sceneLayer.addChild(container);
+      roadContainers.set(`${parcel.x},${parcel.y}`, container);
     }
   }
 
@@ -192,6 +208,56 @@ export function render() {
         sceneLayer.addChild(icons);
         statusIcons.push(icons);
       }
+    }
+  }
+
+  // Place trash bins on adjacent road tiles
+  for (const building of buildings) {
+    const gl = building.garbageLevel || 0;
+    if (gl < 20) continue;
+    const parcel = parcels.find((p) => p.id === building.parcelId);
+    if (!parcel) continue;
+    const bx = parcel.x, by = parcel.y;
+    const fw = building.width || 1, fh = building.height || 1;
+    const binCount = Math.min(5, Math.ceil(gl / 20));
+
+    // Find adjacent road tiles with direction (which edge faces the building)
+    const adjRoads = [];
+    for (let dx = 0; dx < fw; dx++) {
+      if (roadContainers.has(`${bx + dx},${by - 1}`)) adjRoads.push({ rx: bx + dx, ry: by - 1, dir: 'S' });
+      if (roadContainers.has(`${bx + dx},${by + fh}`)) adjRoads.push({ rx: bx + dx, ry: by + fh, dir: 'N' });
+    }
+    for (let dy = 0; dy < fh; dy++) {
+      if (roadContainers.has(`${bx - 1},${by + dy}`)) adjRoads.push({ rx: bx - 1, ry: by + dy, dir: 'E' });
+      if (roadContainers.has(`${bx + fw},${by + dy}`)) adjRoads.push({ rx: bx + fw, ry: by + dy, dir: 'W' });
+    }
+    if (adjRoads.length === 0) continue;
+
+    const rng = seededRandom(bx * 1000 + by);
+    for (let i = 0; i < binCount; i++) {
+      const road = adjRoads[i % adjRoads.length];
+      const container = roadContainers.get(`${road.rx},${road.ry}`);
+      if (!container) continue;
+
+      if (state.binSprites.length === 0) continue;
+      const variant = Math.floor(rng() * state.binSprites.length);
+      const spriteData = state.binSprites[variant];
+      const sprite = new PIXI.Sprite(spriteData.texture);
+      const binScale = (TILE_WIDTH * 0.175) / spriteData.width;
+      sprite.scale.set(binScale);
+      sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+
+      // Place bin on the sidewalk edge closest to the building
+      const jitter = (rng() - 0.5) * 0.3;
+      let offX, offY;
+      if (road.dir === 'S') { offX = 0.5 + jitter; offY = 0.85; }       // building south → bin on bottom edge
+      else if (road.dir === 'N') { offX = 0.5 + jitter; offY = 0.15; }   // building north → bin on top edge
+      else if (road.dir === 'E') { offX = 0.85; offY = 0.5 + jitter; }   // building east → bin on right edge
+      else { offX = 0.15; offY = 0.5 + jitter; }                         // building west → bin on left edge
+      const iso = cartToIso(road.rx + offX, road.ry + offY);
+      sprite.x = iso.x;
+      sprite.y = iso.y;
+      container.addChild(sprite);
     }
   }
 
@@ -271,7 +337,8 @@ function drawBuilding(x, y, building) {
       type === "residential" ? state.residentialSprites : state.officeSprites;
     // Density mapping from building's density field: 1=low, 2=medium, 3=high (1x1), 4=veryhigh (2x2)
     const d = building.density || 1;
-    const density = d <= 1 ? "low" : d === 2 ? "medium" : d === 3 ? "high" : "veryhigh";
+    const density =
+      d <= 1 ? "low" : d === 2 ? "medium" : d === 3 ? "high" : "veryhigh";
     const sprites = spriteMap[density];
     if (sprites && sprites.length > 0) {
       const rng = seededRandom(x * 1000 + y);
@@ -306,6 +373,7 @@ function drawBuilding(x, y, building) {
     university: state.universitySprites,
     stadium: state.stadiumSprites,
     city_hall: state.cityHallSprites,
+    garbage_depot: state.wasteSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     const sprites = serviceSpriteMap[type];
@@ -386,7 +454,8 @@ function drawBuilding(x, y, building) {
 function drawStatusIcons(x, y, building) {
   const needsPower = !building.powered;
   const needsWater = building.hasWater === false;
-  if (!needsPower && !needsWater) return null;
+  const needsWaste = building.hasWaste === false;
+  if (!needsPower && !needsWater && !needsWaste) return null;
   if (building.constructionProgress < 100) return null;
 
   const fw = building.width || 1;
@@ -394,18 +463,19 @@ function drawStatusIcons(x, y, building) {
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
   const zIdx = (y + fh - 1) * GRID_SIZE + (x + fw - 1) + 0.1;
 
-  const g = new PIXI.Graphics();
-  g.x = iso.x;
-  g.y = iso.y - 8;
-  g._baseY = g.y; // stash for animation
-  g._animTime = Math.random() * Math.PI * 2; // random phase offset
+  const container = new PIXI.Container();
+  container.x = iso.x;
+  container.y = iso.y - 8;
+  container._baseY = container.y; // stash for animation
+  container._animTime = Math.random() * Math.PI * 2; // random phase offset
 
-  const iconCount = (needsPower ? 1 : 0) + (needsWater ? 1 : 0);
+  const iconCount =
+    (needsPower ? 1 : 0) + (needsWater ? 1 : 0) + (needsWaste ? 1 : 0);
   const spacing = 12;
   let ox = (-(iconCount - 1) * spacing) / 2;
 
   if (needsPower) {
-    // Lightning bolt icon (drawn in local coords around 0,0)
+    const g = new PIXI.Graphics();
     g.lineStyle(1.5, 0xffa500, 1);
     g.beginFill(0xffd700, 0.9);
     g.moveTo(ox + 2, -8);
@@ -416,22 +486,53 @@ function drawStatusIcons(x, y, building) {
     g.lineTo(ox - 1, 0);
     g.closePath();
     g.endFill();
+    container.addChild(g);
     ox += spacing;
   }
 
   if (needsWater) {
-    // Water drop icon
+    const g = new PIXI.Graphics();
     g.lineStyle(1, 0x2980b9, 1);
     g.beginFill(0x5dade2, 0.9);
     g.moveTo(ox, -8);
     g.bezierCurveTo(ox - 4, -2, ox - 4, 2, ox, 4);
     g.bezierCurveTo(ox + 4, 2, ox + 4, -2, ox, -8);
     g.endFill();
+    container.addChild(g);
+    ox += spacing;
   }
 
-  g.zIndex = zIdx;
-  return g;
+  if (needsWaste) {
+    if (wasteIconTexture) {
+      const icon = new PIXI.Sprite(wasteIconTexture);
+      const iconSize = 12;
+      icon.width = iconSize;
+      icon.height = iconSize;
+      icon.anchor.set(0.5, 0.5);
+      icon.x = ox;
+      icon.y = -2;
+      container.addChild(icon);
+    } else {
+      // Fallback: drawn trash can
+      const g = new PIXI.Graphics();
+      g.lineStyle(1, 0x6b4226, 1);
+      g.beginFill(0x8b5e3c, 0.9);
+      g.drawRect(ox - 3, -4, 6, 8);
+      g.endFill();
+      g.beginFill(0x6b4226, 0.9);
+      g.drawRect(ox - 4, -5, 8, 2);
+      g.endFill();
+      g.lineStyle(1.5, 0x6b4226, 1);
+      g.moveTo(ox, -5);
+      g.lineTo(ox, -8);
+      container.addChild(g);
+    }
+  }
+
+  container.zIndex = zIdx;
+  return container;
 }
+
 
 /**
  * Animate status icons — gentle bob + pulse
@@ -656,7 +757,12 @@ function updateUI() {
   if (buildingsDisplay) buildingsDisplay.textContent = buildings.length;
 
   // Power stats
-  const POWER_KW = { power_plant: 10, wind_turbine: 5, coal_plant: 20, nuclear_plant: 50 };
+  const POWER_KW = {
+    power_plant: 10,
+    wind_turbine: 5,
+    coal_plant: 20,
+    nuclear_plant: 50,
+  };
   const totalCapacity = buildings
     .filter((b) => POWER_KW[b.type])
     .reduce((sum, b) => sum + POWER_KW[b.type], 0);

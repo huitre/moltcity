@@ -8,6 +8,8 @@ import { CityRepository } from '../repositories/city.repository.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { AgentRepository } from '../repositories/agent.repository.js';
 import { RoadRepository } from '../repositories/road.repository.js';
+import { ParcelRepository } from '../repositories/parcel.repository.js';
+import { BuildingService } from '../services/building.service.js';
 import {
   PARCEL_LIMITS,
   ADMIN_ONLY_BUILDING_TYPES,
@@ -16,6 +18,7 @@ import {
   BUILDING_LIMITS,
   ZONING_COST,
   HOUSING,
+  ZONE_EVOLUTION,
 } from '../config/game.js';
 import { z } from 'zod';
 import fs from 'fs/promises';
@@ -76,7 +79,7 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
     const cityId = (request.query as Record<string, string>)?.cityId;
     const city = await cityService.getCity(cityId);
     if (!city) {
-      return { population: 0, totalBuildings: 0, totalRoads: 0, powerCapacity: 0, powerDemand: 0, waterCapacity: 0, waterDemand: 0, treasury: 0 };
+      return { population: 0, totalBuildings: 0, totalRoads: 0, powerCapacity: 0, powerDemand: 0, waterCapacity: 0, waterDemand: 0, wasteCapacity: 0, wasteDemand: 0, treasury: 0 };
     }
     const stats = await cityService.calculateStats(city.id);
     return stats;
@@ -181,6 +184,8 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
         floors: b.floors,
         powered: b.powered,
         hasWater: b.hasWater,
+        hasWaste: b.hasWaste,
+        garbageLevel: b.garbageLevel,
         constructionProgress: b.constructionProgress,
       })),
       agents: agents.map(a => ({
@@ -231,5 +236,64 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
       }
     }
     return { ok: true, city: await cityService.getCity(city.id) };
+  });
+
+  // Admin debug endpoint — set zone building density
+  fastify.post('/api/admin/debug/set-density', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    if (request.user?.role !== 'admin') {
+      return reply.status(403).send({ error: 'Admin only' });
+    }
+    const body = request.body as { buildingId: string; density: number; cityId?: string };
+    if (!body.buildingId || ![1, 2, 3, 4].includes(body.density)) {
+      return reply.status(400).send({ error: 'buildingId and density (1|2|3|4) required' });
+    }
+
+    const cityId = body.cityId || (request.query as Record<string, string>)?.cityId;
+    const buildingRepo = new BuildingRepository(fastify.db);
+    const parcelRepo = new ParcelRepository(fastify.db);
+    const buildingService = new BuildingService(fastify.db, fastify);
+    const building = await buildingRepo.getBuilding(body.buildingId);
+    if (!building) return reply.status(404).send({ error: 'Building not found' });
+
+    const ZONE_TYPES = ['residential', 'offices', 'industrial', 'suburban'];
+    if (!ZONE_TYPES.includes(building.type)) {
+      return reply.status(400).send({ error: 'Not a zone building' });
+    }
+
+    const floors = ZONE_EVOLUTION.DENSITY_TO_FLOORS[body.density] || 1;
+    const needsLargeFootprint = body.density >= 4 && (building.type === 'residential' || building.type === 'offices');
+
+    if (needsLargeFootprint) {
+      // Find the building's anchor parcel to get its x,y
+      const parcel = await parcelRepo.getParcelById(building.parcelId);
+      if (!parcel) return reply.status(404).send({ error: 'Parcel not found' });
+
+      // Demolish buildings on the 3 adjacent tiles that will be absorbed
+      const offsets = [[1, 0], [0, 1], [1, 1]];
+      for (const [dx, dy] of offsets) {
+        const adjParcel = await parcelRepo.getParcel(parcel.x + dx, parcel.y + dy, cityId);
+        if (!adjParcel) continue;
+        const adjBuilding = await buildingRepo.getBuildingAtParcel(adjParcel.id);
+        if (adjBuilding && adjBuilding.id !== building.id) {
+          await buildingService.demolishBuilding(adjBuilding.id);
+        }
+      }
+
+      await buildingRepo.updateDensityAndFloors(body.buildingId, body.density, floors, 2, 2);
+    } else {
+      // Downgrading from 2x2 to 1x1: shrink footprint
+      const wasLarge = building.width > 1 || building.height > 1;
+      if (wasLarge) {
+        await buildingRepo.updateDensityAndFloors(body.buildingId, body.density, floors, 1, 1);
+      } else {
+        await buildingRepo.updateDensityAndFloors(body.buildingId, body.density, floors);
+      }
+    }
+
+    const updated = await buildingRepo.getBuilding(body.buildingId);
+    if (cityId) fastify.broadcastToCity(cityId, 'buildings_update', { action: 'density_changed' });
+    return { ok: true, building: updated };
   });
 };

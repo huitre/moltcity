@@ -117,7 +117,14 @@ export class CityService {
     let powerDemand = 0;
     let waterCapacity = 0;
     let waterDemand = 0;
+    let wasteCapacity = 0;
+    let wasteDemand = 0;
     let totalJobs = 0;
+
+    const WASTE_DEMAND_PER_FLOOR: Record<string, number> = {
+      residential: 2, offices: 2, suburban: 1, industrial: 8,
+      house: 2, apartment: 3, shop: 2, office: 2, factory: 8,
+    };
 
     for (const building of buildings) {
       const cap = POWER_CAPACITY[building.type as keyof typeof POWER_CAPACITY];
@@ -131,6 +138,13 @@ export class CityService {
         waterCapacity += 10000;
       } else {
         waterDemand += building.waterRequired;
+      }
+
+      if (building.type === 'garbage_depot') {
+        wasteCapacity += 10000;
+      } else {
+        const wd = WASTE_DEMAND_PER_FLOOR[building.type] || 0;
+        if (wd > 0) wasteDemand += wd * (building.floors || 1);
       }
 
       // Count jobs from commercial/office/industrial buildings
@@ -151,6 +165,8 @@ export class CityService {
       powerDemand,
       waterCapacity,
       waterDemand,
+      wasteCapacity,
+      wasteDemand,
       treasury: city?.stats.treasury || 0,
     };
   }

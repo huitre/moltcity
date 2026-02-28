@@ -75,6 +75,7 @@ export interface Building {
   waterRequired: number;  // liters/tick
   powered: boolean;
   hasWater: boolean;
+  hasWaste: boolean;
   operational: boolean;
   builtAt: number; // Unix timestamp
   ownerId: string;
@@ -83,6 +84,7 @@ export interface Building {
   constructionStartedAt: number | null; // tick when construction started
   constructionTimeTicks: number; // total ticks needed to complete
   density: number; // zone density level (1-3)
+  garbageLevel: number; // 0-100, garbage accumulation
 }
 
 // === Infrastructure: Roads ===
@@ -209,6 +211,8 @@ export interface CityStats {
   powerDemand: number;
   waterCapacity: number;
   waterDemand: number;
+  wasteCapacity: number;
+  wasteDemand: number;
   treasury: number;
 }
 

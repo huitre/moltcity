@@ -60,6 +60,8 @@ function rowToCity(row: any): City {
       powerDemand: 0,
       waterCapacity: 0,
       waterDemand: 0,
+      wasteCapacity: 0,
+      wasteDemand: 0,
       treasury: row.treasury,
     },
     mayor: row.mayor_id,
@@ -104,6 +106,7 @@ function rowToBuilding(row: any): Building {
     waterRequired: row.water_required,
     powered: !!row.powered,
     hasWater: !!row.has_water,
+    hasWaste: !!row.has_waste,
     operational: !!row.operational,
     builtAt: row.built_at,
     ownerId: row.owner_id,
@@ -111,6 +114,7 @@ function rowToBuilding(row: any): Building {
     constructionStartedAt: row.construction_started_at,
     constructionTimeTicks: row.construction_time_ticks,
     density: row.density,
+    garbageLevel: row.garbage_level ?? 0,
   };
 }
 
@@ -605,6 +609,22 @@ class LegacyBuildingRepository {
 
   updateWaterStatus(buildingId: string, hasWater: boolean): void {
     this.raw.prepare('UPDATE buildings SET has_water = ? WHERE id = ?').run(hasWater ? 1 : 0, buildingId);
+  }
+
+  updateWasteStatus(buildingId: string, hasWaste: boolean): void {
+    this.raw.prepare('UPDATE buildings SET has_waste = ? WHERE id = ?').run(hasWaste ? 1 : 0, buildingId);
+  }
+
+  updateGarbageLevel(buildingId: string, level: number): void {
+    this.raw.prepare('UPDATE buildings SET garbage_level = ? WHERE id = ?').run(level, buildingId);
+  }
+
+  updateGarbageLevelsBatch(updates: { id: string; level: number }[]): void {
+    const stmt = this.raw.prepare('UPDATE buildings SET garbage_level = ? WHERE id = ?');
+    const tx = this.raw.transaction(() => {
+      for (const u of updates) stmt.run(u.level, u.id);
+    });
+    tx();
   }
 
   updateDensityAndFloors(buildingId: string, density: number, floors: number, width?: number, height?: number): void {
