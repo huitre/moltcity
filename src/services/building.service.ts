@@ -112,7 +112,15 @@ export class BuildingService {
 
     // Check building type restrictions
     const isMayor = params.isMayor || false;
-    if (!canUserBuild(params.type, role, isMayor)) {
+    
+    // Special case: allow anyone to build city_hall if none exists in the city
+    let canBuildCityHall = false;
+    if (params.type === 'city_hall') {
+      const existingCityHalls = await this.buildingRepo.getBuildingsByType('city_hall', params.cityId);
+      canBuildCityHall = existingCityHalls.length === 0;
+    }
+    
+    if (!canUserBuild(params.type, role, isMayor) && !canBuildCityHall) {
       throw new ForbiddenError(`Building type '${params.type}' requires elevated privileges`);
     }
 

@@ -97,6 +97,18 @@ export class BuildingRepository extends BaseRepository<typeof buildings, Buildin
     return results.map(row => this.rowToBuilding(row));
   }
 
+  async getBuildingsByType(type: string, cityId?: string): Promise<Building[]> {
+    if (!cityId) {
+      const results = await this.db.select().from(buildings).where(eq(buildings.type, type));
+      return results.map(row => this.rowToBuilding(row));
+    }
+    const results = await this.db
+      .select()
+      .from(buildings)
+      .where(and(eq(buildings.type, type), eq(buildings.cityId, cityId)));
+    return results.map(row => this.rowToBuilding(row));
+  }
+
   async createBuilding(
     parcelId: string,
     type: BuildingType,
