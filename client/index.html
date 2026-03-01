@@ -62,11 +62,23 @@
           0 2px 0 2px var(--wood-border);
       }
 
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
         background: #1a1a2e;
         overflow: hidden;
         font-family: "Press Start 2P", monospace;
         image-rendering: pixelated;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      /* Better text selection */
+      ::selection {
+        background: var(--text-gold);
+        color: var(--wood-dark);
       }
 
       /* Pixel-art scrollbars */
@@ -95,7 +107,7 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 44px;
+        height: 48px;
         display: flex;
         align-items: center;
         background: linear-gradient(
@@ -271,10 +283,36 @@
       }
 
       button:active {
-        transform: translateY(1px);
+        transform: translateY(1px) scale(0.98);
         box-shadow:
           inset -1px -1px 0 var(--wood-highlight),
           inset 1px 1px 0 var(--wood-grain);
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--text-gold);
+        outline-offset: 2px;
+      }
+
+      /* Disable hover effects on touch devices */
+      @media (hover: none) {
+        button:hover {
+          transform: none;
+          background: linear-gradient(
+            180deg,
+            var(--wood-light) 0%,
+            var(--wood-mid) 100%
+          );
+          border-color: var(--wood-border);
+        }
+        button:active {
+          transform: scale(0.95);
+          background: linear-gradient(
+            180deg,
+            var(--wood-mid) 0%,
+            var(--wood-dark) 100%
+          );
+        }
       }
 
       button.active {
@@ -514,6 +552,28 @@
           inset 1px 1px 0 var(--wood-highlight),
           inset -1px -1px 0 var(--wood-grain),
           0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+
+      .build-option:active {
+        transform: scale(0.92);
+        transition: transform 0.05s ease;
+      }
+
+      .build-option:focus-visible {
+        outline: 2px solid var(--text-gold);
+        outline-offset: 2px;
+      }
+
+      @media (hover: none) {
+        .build-option:hover {
+          transform: none;
+          border-color: var(--wood-border);
+          background: linear-gradient(180deg, var(--wood-dark) 0%, #4a2e18 100%);
+        }
+        .build-option:active {
+          transform: scale(0.92);
+          border-color: var(--text-gold);
+        }
       }
 
       .build-option.selected {
@@ -777,6 +837,16 @@
           var(--wood-dark) 100%
         );
         transform: translateY(-1px);
+      }
+
+      .floor-btn:active {
+        transform: scale(0.92);
+        transition: transform 0.05s ease;
+      }
+
+      .floor-btn:focus-visible {
+        outline: 2px solid var(--text-gold);
+        outline-offset: 2px;
       }
 
       .floor-btn.selected {
@@ -2478,10 +2548,36 @@
         transform: translateY(-1px);
       }
 
+      .toolbar-btn:active {
+        transform: scale(0.92);
+        transition: transform 0.05s ease;
+      }
+
+      .toolbar-btn:focus-visible {
+        outline: 2px solid var(--text-gold);
+        outline-offset: 2px;
+      }
+
       .toolbar-btn.active {
         background: linear-gradient(180deg, #8b6914 0%, #6b4f10 100%);
         border-color: var(--text-gold);
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+      }
+
+      @media (hover: none) {
+        .toolbar-btn:hover {
+          transform: none;
+          border-color: var(--wood-border);
+          background: linear-gradient(
+            180deg,
+            var(--wood-light) 0%,
+            var(--wood-mid) 100%
+          );
+        }
+        .toolbar-btn:active {
+          transform: scale(0.92);
+          border-color: var(--text-gold);
+        }
       }
 
       .toolbar-btn .badge {
@@ -3054,6 +3150,8 @@
           scrollbar-width: none;
           justify-content: flex-start;
           gap: 8px;
+          scroll-snap-type: x mandatory;
+          scroll-behavior: smooth;
         }
 
         #build-menu::-webkit-scrollbar {
@@ -3062,6 +3160,7 @@
 
         .build-group {
           flex-shrink: 0;
+          scroll-snap-align: start;
         }
 
         .build-group + .build-group {
