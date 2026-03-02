@@ -684,17 +684,14 @@
       /* Power popover menu */
       .build-popover {
         display: none;
-        position: absolute;
-        bottom: calc(100% + 10px);
-        left: 50%;
-        transform: translateX(-50%);
+        position: fixed;
         flex-direction: row;
         gap: 6px;
         background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
         border: 3px solid var(--wood-border);
         padding: 8px;
         box-shadow: inset 2px 2px 0 var(--wood-highlight), inset -2px -2px 0 var(--wood-grain), 0 6px 20px rgba(0, 0, 0, 0.6);
-        z-index: 100;
+        z-index: 1000;
       }
       .build-popover::after {
         content: "";

@@ -1616,7 +1616,20 @@ function setupBuildMenu() {
   if (powerTrigger && powerPopover) {
     powerTrigger.addEventListener("click", (e) => {
       e.stopPropagation();
-      powerPopover.classList.toggle("open");
+      const wasOpen = powerPopover.classList.contains("open");
+      if (wasOpen) {
+        powerPopover.classList.remove("open");
+      } else {
+        // Show popover to measure it, then position
+        powerPopover.classList.add("open");
+        const rect = powerTrigger.getBoundingClientRect();
+        const popoverWidth = powerPopover.offsetWidth;
+        let left = rect.left + rect.width / 2 - popoverWidth / 2;
+        // Clamp to viewport
+        left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
+        powerPopover.style.left = `${left}px`;
+        powerPopover.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+      }
     });
 
     // Close popover on outside click
