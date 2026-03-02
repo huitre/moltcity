@@ -100,6 +100,7 @@ export class BuildingService {
     role?: UserRole;
     isMayor?: boolean;
     cityId?: string;
+    userId?: string;
     internal?: boolean; // true when called by simulation engine (bypasses zone restriction)
   }): Promise<Building> {
     const role: UserRole = params.role || 'user';
@@ -339,6 +340,12 @@ export class BuildingService {
       parcel.y,
       params.cityId || city?.id
     );
+
+    // If this was the first city_hall, make the builder the mayor
+    if (params.type === 'city_hall' && canBuildCityHall && params.userId && params.cityId) {
+      await this.cityRepo.updateMayor(params.cityId, params.userId);
+      console.log(`[Building] ${params.userId} became mayor after building first City Hall`);
+    }
 
     return building;
   }

@@ -3104,20 +3104,28 @@
 
       /* Mobile: screens up to 768px */
       @media (max-width: 768px) {
-        /* Top Bar - Compact for mobile */
+        /* Top Bar - Horizontal scroll for mobile */
         #top-bar {
-          height: auto;
-          min-height: 36px;
-          flex-wrap: wrap;
-          padding: 4px 8px;
-          gap: 4px;
+          height: 40px;
+          min-height: 40px;
+          flex-wrap: nowrap;
+          padding: 0 8px;
+          gap: 0;
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+
+        #top-bar::-webkit-scrollbar {
+          display: none;
         }
 
         .topbar-group {
-          padding: 2px 6px;
+          padding: 2px 8px;
           gap: 6px;
-          border-right: none;
-          flex-wrap: wrap;
+          border-right: 1px solid var(--wood-border);
+          flex-shrink: 0;
         }
 
         .topbar-group .tb-title {
@@ -3132,8 +3140,8 @@
           font-size: 6px;
         }
 
-        /* Hide some stats on mobile to save space */
-        #top-bar .topbar-group:nth-child(3) {
+        /* Hide treasury on mobile to save space */
+        #top-bar .topbar-group:nth-child(2) {
           display: none;
         }
 

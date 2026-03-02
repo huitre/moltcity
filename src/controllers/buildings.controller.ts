@@ -82,6 +82,7 @@ export const buildingsController: FastifyPluginAsync = async (fastify) => {
       role,
       isMayor,
       cityId,
+      userId: request.user?.userId,
     });
 
     reply.status(201);
