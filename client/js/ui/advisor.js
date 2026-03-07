@@ -4,6 +4,7 @@
 // ============================================
 
 import * as api from '../api.js';
+import { makeDraggable } from './draggable.js';
 
 let advisorOpen = false;
 let popupQueue = [];
@@ -236,9 +237,16 @@ export function showAdvisorPopup(popup) {
   
   container.style.display = 'flex';
   
+  // Make popup draggable by header
+  const popupEl = container.querySelector('.advisor-popup');
+  const headerEl = container.querySelector('.advisor-popup-header');
+  if (popupEl && headerEl) {
+    makeDraggable(popupEl, headerEl);
+  }
+  
   // Animate in
   setTimeout(() => {
-    container.querySelector('.advisor-popup').classList.add('visible');
+    popupEl.classList.add('visible');
   }, 10);
 }
 
