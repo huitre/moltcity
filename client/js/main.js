@@ -202,6 +202,8 @@ async function loadCityData() {
       const city = newCity.city || newCity;
       state.setCurrentCityId(city.id);
       state.setCitiesList([city]);
+      // Trigger welcome popup for new city
+      window.dispatchEvent(new CustomEvent('city-created', { detail: city }));
     }
 
     // Subscribe WebSocket to this city
@@ -368,6 +370,8 @@ function buildCitySelectorUI() {
       state.setCitiesList([...state.citiesList, city]);
       await switchCity(city.id);
       buildCitySelectorUI();
+      // Trigger welcome popup for new city
+      window.dispatchEvent(new CustomEvent('city-created', { detail: city }));
     } catch (e) {
       alert("Failed to create city: " + e.message);
     }

@@ -10,3 +10,4 @@ export { RentalService } from './rental.service.js';
 export { AuthService, type AuthResult, type GoogleUserInfo } from './auth.service.js';
 export { PaymentService, type PriceQuote, type PaymentResult, verifySignature, createSignMessage } from './payment.service.js';
 export { SpriteService, type SpriteMetadata, type ValidationResult, type UploadResult } from './sprite.service.js';
+export { AdvisorService, ADVISORS, type AdvisorType, type Advisor, type PopupContext, type AdvisorPopup } from './advisor.service.js';

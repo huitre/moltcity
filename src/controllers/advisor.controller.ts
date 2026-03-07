@@ -1,5 +1,5 @@
 // ============================================
-// MOLTCITY - City Advisor Controller
+// MOLTCITY - City Advisor Controller (SimCity 2000 Style)
 // ============================================
 
 import { FastifyPluginAsync } from 'fastify';
@@ -7,11 +7,21 @@ import { CityRepository } from '../repositories/city.repository.js';
 import { BuildingRepository } from '../repositories/building.repository.js';
 import { extractOptionalCityId } from '../utils/city-context.js';
 import { DEMAND_BALANCE, TAX_PENALTIES, SC2K_ECONOMY, POWER_CAPACITY } from '../config/game.js';
+import { AdvisorService, PopupContext, ADVISORS } from '../services/advisor.service.js';
+import { CityService } from '../services/city.service.js';
 import type { Building } from '../models/types.js';
 
 const RESIDENTIAL_TYPES = ['house', 'apartment'];
 const OFFICE_TYPES = ['office', 'shop'];
 const INDUSTRIAL_TYPES = ['factory'];
+
+// Helper to extract display name from email
+function getUserDisplayName(email?: string): string {
+  if (!email) return 'Maire';
+  const namePart = email.split('@')[0];
+  // Capitalize first letter
+  return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+}
 
 function countByZone(buildings: Building[]) {
   let residential = 0, office = 0, industrial = 0;
@@ -180,5 +190,128 @@ export const advisorController: FastifyPluginAsync = async (fastify) => {
         warnings,
       },
     };
+  });
+
+  // ============================================
+  // ADVISOR POPUP SYSTEM (SimCity 2000 Style)
+  // ============================================
+
+  const advisorService = new AdvisorService();
+  const cityService = new CityService(fastify.db);
+
+  /**
+   * GET /api/advisor/popup
+   * Get a contextual advisor popup
+   * Query params:
+   *   - context: PopupContext (e.g., 'city_created', 'low_power')
+   *   - cityId: optional city ID
+   */
+  fastify.get('/api/advisor/popup', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+
+    const query = request.query as { context?: string; cityId?: string };
+    const context = query.context as PopupContext;
+    const cityId = extractOptionalCityId(request);
+
+    if (!context) {
+      return reply.status(400).send({ error: 'Missing context parameter' });
+    }
+
+    const city = await cityRepo.getCity(cityId);
+    const userName = getUserDisplayName(request.user?.email);
+
+    // Build context data based on popup type
+    const data: Record<string, string | number> = {
+      userName,
+      cityName: city?.name || 'Nouvelle Ville',
+    };
+
+    // Add city-specific data if available
+    if (city) {
+      const stats = await cityService.calculateStats(city.id);
+      data.population = stats.population;
+      data.treasury = stats.treasury;
+      data.powerCapacity = Math.round(stats.powerCapacity / 1000);
+      data.powerDemand = Math.round(stats.powerDemand / 1000);
+      data.waterCapacity = stats.waterCapacity;
+      data.waterDemand = stats.waterDemand;
+    }
+
+    const popup = advisorService.getPopup(context, data);
+    return popup;
+  });
+
+  /**
+   * GET /api/advisor/popup/welcome
+   * Get the city creation welcome popup
+   */
+  fastify.get('/api/advisor/popup/welcome', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+
+    const cityId = extractOptionalCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    const userName = getUserDisplayName(request.user?.email);
+    const cityName = city?.name || 'Nouvelle Ville';
+
+    return advisorService.getCityCreatedPopup(userName, cityName);
+  });
+
+  /**
+   * GET /api/advisor/popup/checkup
+   * Get a periodic checkup popup with city overview
+   */
+  fastify.get('/api/advisor/popup/checkup', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+
+    const cityId = extractOptionalCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) {
+      return reply.status(404).send({ error: 'City not found' });
+    }
+
+    const userName = getUserDisplayName(request.user?.email);
+    const stats = await cityService.calculateStats(city.id);
+
+    return advisorService.getPeriodicCheckup(city, stats, userName);
+  });
+
+  /**
+   * GET /api/advisor/popup/warnings
+   * Get all current warning popups for a city
+   */
+  fastify.get('/api/advisor/popup/warnings', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+
+    const cityId = extractOptionalCityId(request);
+    const city = await cityRepo.getCity(cityId);
+    if (!city) {
+      return reply.status(404).send({ error: 'City not found' });
+    }
+
+    const userName = getUserDisplayName(request.user?.email);
+    const allBuildings = await buildingRepo.getAllBuildings(city.id);
+    const stats = await cityService.calculateStats(city.id);
+
+    const warnings = advisorService.analyzeCity(city, stats, allBuildings, userName);
+    return { warnings, count: warnings.length };
+  });
+
+  /**
+   * GET /api/advisor/popup/tip
+   * Get a random tip of the day
+   */
+  fastify.get('/api/advisor/popup/tip', async (request, reply) => {
+    await fastify.optionalAuth(request, reply);
+
+    const userName = getUserDisplayName(request.user?.email);
+    return advisorService.getTipOfTheDay(userName);
+  });
+
+  /**
+   * GET /api/advisor/list
+   * Get all available advisors
+   */
+  fastify.get('/api/advisor/list', async () => {
+    return { advisors: ADVISORS };
   });
 };

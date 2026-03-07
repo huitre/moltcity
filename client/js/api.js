@@ -470,6 +470,31 @@ export async function getAdvisor() {
   return fetchApi(withCityId('/api/advisor'));
 }
 
+// === Advisor Popup System (SimCity 2000 Style) ===
+export async function getAdvisorPopup(context) {
+  return fetchApi(withCityId(`/api/advisor/popup?context=${context}`));
+}
+
+export async function getAdvisorWelcome() {
+  return fetchApi(withCityId('/api/advisor/popup/welcome'));
+}
+
+export async function getAdvisorCheckup() {
+  return fetchApi(withCityId('/api/advisor/popup/checkup'));
+}
+
+export async function getAdvisorWarnings() {
+  return fetchApi(withCityId('/api/advisor/popup/warnings'));
+}
+
+export async function getAdvisorTip() {
+  return fetchApi(withCityId('/api/advisor/popup/tip'));
+}
+
+export async function getAdvisorList() {
+  return fetchApi('/api/advisor/list');
+}
+
 export async function getUpgradeInfo(buildingId) {
   return fetchApi(withCityId(`/api/buildings/${buildingId}/upgrade-info`));
 }
