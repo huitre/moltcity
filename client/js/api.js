@@ -526,3 +526,13 @@ export async function getPollutionMap() {
   if (!cityId) return { pollutionMap: [] };
   return fetchApi(`/api/cities/${cityId}/pollution-map`);
 }
+
+// ============================================
+// Coverage Map API
+// ============================================
+
+export async function getCoverageMap(type) {
+  const cityId = state.currentCityId;
+  if (!cityId) return { coverageMap: [] };
+  return fetchApi(`/api/cities/${cityId}/coverage-map?type=${encodeURIComponent(type)}`);
+}

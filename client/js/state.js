@@ -51,6 +51,8 @@ export let sceneLayer = null;
 export let placementHintLayer = null;
 export let pollutionLayer = null;
 export let pollutionLayerVisible = false;
+export let overlayLayers = {};
+export let overlayVisible = {};
 
 // Ambient elements
 export const clouds = [];
@@ -151,6 +153,8 @@ export function setSceneLayer(layer) { sceneLayer = layer; }
 export function setPlacementHintLayer(layer) { placementHintLayer = layer; }
 export function setPollutionLayer(layer) { pollutionLayer = layer; }
 export function setPollutionLayerVisible(visible) { pollutionLayerVisible = visible; }
+export function setOverlayLayer(type, layer) { overlayLayers[type] = layer; }
+export function setOverlayVisible(type, visible) { overlayVisible[type] = visible; }
 export function setCurrentPopulation(pop) { currentPopulation = pop; }
 export function setCurrentHour(hour) { currentHour = hour; }
 export function setMaxAnimatedVehicles(max) { MAX_ANIMATED_VEHICLES = max; }

@@ -54,9 +54,19 @@ export function spawnVehicle(vehicleTypes) {
   const parcel = parcels.find((p) => p.id === road.parcelId);
   if (!parcel) return;
 
+  // Filter out service vehicles if their building doesn't exist
+  const { buildings } = state;
+  const hasPolice = buildings.some((b) => b.type === "police_station");
+  const hasHospital = buildings.some((b) => b.type === "hospital");
+  const allowed = vehicleTypes.filter((t) => {
+    if (t === "police" && !hasPolice) return false;
+    if (t === "ambulance" && !hasHospital) return false;
+    return true;
+  });
+  if (allowed.length === 0) return;
+
   // Pick random vehicle type
-  const vehicleType =
-    vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
+  const vehicleType = allowed[Math.floor(Math.random() * allowed.length)];
   const vehicleData = vehicleSprites.get(vehicleType);
   if (!vehicleData) return;
 
@@ -122,9 +132,11 @@ export function animateVehicles(delta) {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < 0.1) {
-      // Reached target, pick new direction
-      const currentX = Math.floor(vehicle.x);
-      const currentY = Math.floor(vehicle.y);
+      // Snap to tile center to prevent drift
+      const currentX = Math.round(vehicle.targetX);
+      const currentY = Math.round(vehicle.targetY);
+      vehicle.x = currentX + 0.5;
+      vehicle.y = currentY + 0.5;
 
       const targetRoad = getRoadAt(currentX, currentY);
       if (!targetRoad) {
@@ -143,7 +155,7 @@ export function animateVehicles(delta) {
         continue;
       }
 
-      // Prefer continuing straight
+      // Always continue straight if possible
       let nextDir = validDirs.includes(vehicle.dir)
         ? vehicle.dir
         : validDirs[Math.floor(Math.random() * validDirs.length)];
@@ -157,8 +169,8 @@ export function animateVehicles(delta) {
         CARDINAL_TO_ISO[nextDir],
       );
       if (newTexture) {
-        vehicle.sprite.scale.set(12 / newTexture.width, 12 / newTexture.height);
         vehicle.sprite.texture = newTexture;
+        vehicle.sprite.scale.set(31 / newTexture.width, 30 / newTexture.height);
       }
     } else {
       // Move toward target

@@ -2881,6 +2881,50 @@
         color: var(--accent-red);
       }
 
+      /* Map Layers Popup */
+      .layer-toggle-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.15s;
+      }
+      .layer-toggle-row:last-child {
+        border-bottom: none;
+      }
+      .layer-toggle-row:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .layer-toggle-row.active {
+        background: rgba(78, 205, 196, 0.1);
+      }
+      .layer-icon {
+        font-size: 18px;
+        margin-right: 10px;
+        width: 24px;
+        text-align: center;
+      }
+      .layer-name {
+        flex: 1;
+        color: var(--text-cream);
+        font-size: 13px;
+      }
+      .layer-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .layer-toggle-row.active .layer-indicator {
+        background: #4ecdc4;
+        border-color: #4ecdc4;
+        box-shadow: 0 0 6px rgba(78, 205, 196, 0.5);
+      }
+
       /* Hide old activity panel by default (replaced by toolbar popup) */
       #activity-feed-panel {
         display: none !important;
@@ -3543,9 +3587,9 @@
         🏛️
         <span class="tooltip-text">City Services</span>
       </button>
-      <button class="toolbar-btn" id="pollution-toggle" onclick="togglePollutionLayer()">
-        ☢️
-        <span class="tooltip-text">Pollution Map (P)</span>
+      <button class="toolbar-btn" id="tb-layers" data-popup="popup-layers">
+        🗺️
+        <span class="tooltip-text">Map Layers (P)</span>
       </button>
       <button class="toolbar-btn" id="tb-demand" data-popup="popup-demand">
         📈
@@ -3757,6 +3801,38 @@
               "
             ></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Layers Popup -->
+    <div class="toolbar-popup" id="popup-layers">
+      <div class="popup-header">
+        <h3>🗺️ Map Layers</h3>
+        <button class="popup-close" onclick="closePopup('popup-layers')">
+          &times;
+        </button>
+      </div>
+      <div class="popup-content" style="padding: 8px 12px;">
+        <div class="layer-toggle-row" data-layer="pollution" onclick="toggleLayer('pollution')">
+          <span class="layer-icon">☢️</span>
+          <span class="layer-name">Pollution</span>
+          <span class="layer-indicator" id="layer-ind-pollution"></span>
+        </div>
+        <div class="layer-toggle-row" data-layer="police_station" onclick="toggleLayer('police_station')">
+          <span class="layer-icon">🚔</span>
+          <span class="layer-name">Police Coverage</span>
+          <span class="layer-indicator" id="layer-ind-police_station"></span>
+        </div>
+        <div class="layer-toggle-row" data-layer="fire_station" onclick="toggleLayer('fire_station')">
+          <span class="layer-icon">🚒</span>
+          <span class="layer-name">Fire Coverage</span>
+          <span class="layer-indicator" id="layer-ind-fire_station"></span>
+        </div>
+        <div class="layer-toggle-row" data-layer="hospital" onclick="toggleLayer('hospital')">
+          <span class="layer-icon">🏥</span>
+          <span class="layer-name">Hospital Coverage</span>
+          <span class="layer-indicator" id="layer-ind-hospital"></span>
         </div>
       </div>
     </div>

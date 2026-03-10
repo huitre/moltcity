@@ -375,9 +375,9 @@ function getAvatarUrl(advisorId) {
 export function showAdvisorPopup(popup) {
   if (!popup) return;
 
-  // Don't stack popups from the same advisor
-  if (currentPopup && currentPopup.advisor === popup.advisor) return;
-  if (popupQueue.some((p) => p.advisor === popup.advisor)) return;
+  // Don't stack duplicate popups (same advisor + same title)
+  if (currentPopup && currentPopup.advisor === popup.advisor && currentPopup.title === popup.title) return;
+  if (popupQueue.some((p) => p.advisor === popup.advisor && p.title === popup.title)) return;
 
   // If a popup is currently showing, queue this one
   if (currentPopup) {
@@ -597,12 +597,14 @@ export async function checkWarnings() {
   try {
     const result = await api.getAdvisorWarnings();
     if (result && result.warnings && result.warnings.length > 0) {
-      // Show the most severe warning
+      // Show all warnings, most severe first
       const sorted = result.warnings.sort((a, b) => {
         const order = { danger: 0, warning: 1, info: 2, success: 3 };
         return (order[a.severity] || 3) - (order[b.severity] || 3);
       });
-      showAdvisorPopup(sorted[0]);
+      for (const warning of sorted) {
+        showAdvisorPopup(warning);
+      }
     }
   } catch (e) {
     console.error("Failed to check warnings:", e);
@@ -846,8 +848,9 @@ function injectPopupStyles() {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.35);
+      background: transparent;
       z-index: 10000;
+      pointer-events: none;
     }
 
     .advisor-popup {
@@ -863,6 +866,7 @@ function injectPopupStyles() {
       transform: translateY(60px);
       opacity: 0;
       transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+      pointer-events: auto;
     }
 
     .advisor-popup.visible {

@@ -1671,9 +1671,11 @@ function setupBuildMenu() {
       }
     }
     
-    // P key - Toggle pollution layer
+    // P key - Open layers popup
     if (e.key === "p" || e.key === "P") {
-      togglePollutionLayer();
+      if (typeof window.openPopup === "function") {
+        window.openPopup("popup-layers");
+      }
     }
   });
 
@@ -1744,21 +1746,83 @@ function exitCityHallMode() {
 }
 
 // ============================================
-// Pollution Layer
+// Map Layers System (Pollution + Coverage)
 // ============================================
 
+const LAYER_COLORS = {
+  pollution: null, // uses gradient
+  police_station: 0x4488ff,
+  fire_station: 0xff8844,
+  hospital: 0x44cc88,
+};
+
+const LAYER_LABELS = {
+  pollution: "Pollution",
+  police_station: "Police coverage",
+  fire_station: "Fire coverage",
+  hospital: "Hospital coverage",
+};
+
 /**
- * Create/update pollution layer overlay
+ * Draw a heatmap tile at (x,y) with given color and level-based alpha
  */
-async function renderPollutionLayer() {
-  // Remove existing layer
-  if (state.pollutionLayer) {
+function drawHeatmapTile(container, x, y, color, level) {
+  const iso = cartToIso(x, y);
+  const graphics = new PIXI.Graphics();
+  const alpha = 0.4 + (level / 100) * 0.3;
+  graphics.beginFill(color, alpha);
+  graphics.moveTo(iso.x, iso.y);
+  graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+  graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+  graphics.closePath();
+  graphics.endFill();
+  graphics.zIndex = y * GRID_SIZE + x;
+  container.addChild(graphics);
+}
+
+/**
+ * Get pollution gradient color for a level (0-100)
+ */
+function getPollutionColor(level) {
+  if (level < 30) {
+    const t = level / 30;
+    const r = Math.round(0x4e + (0xff - 0x4e) * t);
+    const g = Math.round(0xcd + (0xa5 - 0xcd) * t);
+    const b = Math.round(0xc4 + (0x00 - 0xc4) * t);
+    return (r << 16) | (g << 8) | b;
+  } else {
+    const t = (level - 30) / 70;
+    const r = 0xff;
+    const g = Math.round(0xa5 * (1 - t));
+    const b = 0x00;
+    return (r << 16) | (g << 8) | b;
+  }
+}
+
+/**
+ * Remove an overlay layer from the world
+ */
+function removeOverlayLayer(type) {
+  const layer = state.overlayLayers[type];
+  if (layer) {
+    state.worldContainer.removeChild(layer);
+    layer.destroy({ children: true });
+    state.setOverlayLayer(type, null);
+  }
+  // Also handle legacy pollution state
+  if (type === "pollution" && state.pollutionLayer) {
     state.worldContainer.removeChild(state.pollutionLayer);
     state.pollutionLayer.destroy({ children: true });
     state.setPollutionLayer(null);
   }
+}
 
-  if (!state.pollutionLayerVisible) return;
+/**
+ * Render pollution layer overlay
+ */
+async function renderPollutionLayer() {
+  removeOverlayLayer("pollution");
 
   try {
     const data = await api.getPollutionMap();
@@ -1769,79 +1833,92 @@ async function renderPollutionLayer() {
 
     const container = new PIXI.Container();
     container.sortableChildren = true;
-    container.zIndex = 50000; // Above buildings but below UI
+    container.zIndex = 50000;
 
     for (const point of data.pollutionMap) {
-      const iso = cartToIso(point.x, point.y);
-      const graphics = new PIXI.Graphics();
-
-      // Color gradient: green (0) -> yellow (50) -> red (100)
-      let color;
-      if (point.level < 30) {
-        // Green to yellow
-        const t = point.level / 30;
-        const r = Math.round(0x4e + (0xff - 0x4e) * t);
-        const g = Math.round(0xcd + (0xa5 - 0xcd) * t);
-        const b = Math.round(0xc4 + (0x00 - 0xc4) * t);
-        color = (r << 16) | (g << 8) | b;
-      } else {
-        // Yellow to red
-        const t = (point.level - 30) / 70;
-        const r = 0xff;
-        const g = Math.round(0xa5 * (1 - t));
-        const b = 0x00;
-        color = (r << 16) | (g << 8) | b;
-      }
-
-      // Draw semi-transparent isometric tile
-      const alpha = 0.4 + (point.level / 100) * 0.3; // 0.4-0.7 based on level
-      graphics.beginFill(color, alpha);
-      graphics.moveTo(iso.x, iso.y);
-      graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
-      graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
-      graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
-      graphics.closePath();
-      graphics.endFill();
-
-      graphics.zIndex = point.y * GRID_SIZE + point.x;
-      container.addChild(graphics);
+      const color = getPollutionColor(point.level);
+      drawHeatmapTile(container, point.x, point.y, color, point.level);
     }
 
     state.worldContainer.addChild(container);
     state.setPollutionLayer(container);
-    console.log(`[Pollution] Rendered ${data.pollutionMap.length} pollution tiles`);
+    state.setOverlayLayer("pollution", container);
+    console.log(`[Layers] Rendered ${data.pollutionMap.length} pollution tiles`);
   } catch (err) {
-    console.error("[Pollution] Failed to load pollution map:", err);
+    console.error("[Layers] Failed to load pollution map:", err);
     showToast("Failed to load pollution data", true);
   }
 }
 
 /**
- * Toggle pollution layer visibility
+ * Render a service coverage layer overlay
  */
-async function togglePollutionLayer() {
-  state.setPollutionLayerVisible(!state.pollutionLayerVisible);
-  
-  const btn = document.getElementById("pollution-toggle");
-  if (btn) {
-    btn.classList.toggle("active", state.pollutionLayerVisible);
+async function renderCoverageLayer(type) {
+  removeOverlayLayer(type);
+
+  const color = LAYER_COLORS[type];
+  if (!color) return;
+
+  try {
+    const data = await api.getCoverageMap(type);
+    if (!data.coverageMap || data.coverageMap.length === 0) {
+      showToast(`No ${LAYER_LABELS[type]} in the city`);
+      return;
+    }
+
+    const container = new PIXI.Container();
+    container.sortableChildren = true;
+    container.zIndex = 50000;
+
+    for (const point of data.coverageMap) {
+      drawHeatmapTile(container, point.x, point.y, color, point.level);
+    }
+
+    state.worldContainer.addChild(container);
+    state.setOverlayLayer(type, container);
+    console.log(`[Layers] Rendered ${data.coverageMap.length} ${type} coverage tiles`);
+  } catch (err) {
+    console.error(`[Layers] Failed to load ${type} coverage:`, err);
+    showToast(`Failed to load ${LAYER_LABELS[type]} data`, true);
+  }
+}
+
+/**
+ * Toggle a map layer on/off
+ */
+async function toggleLayer(type) {
+  const isVisible = !!state.overlayVisible[type];
+  state.setOverlayVisible(type, !isVisible);
+
+  // Sync legacy pollution state
+  if (type === "pollution") {
+    state.setPollutionLayerVisible(!isVisible);
   }
 
-  if (state.pollutionLayerVisible) {
-    showToast("Loading pollution map...");
-    await renderPollutionLayer();
-  } else {
-    if (state.pollutionLayer) {
-      state.worldContainer.removeChild(state.pollutionLayer);
-      state.pollutionLayer.destroy({ children: true });
-      state.setPollutionLayer(null);
+  // Update row UI
+  const row = document.querySelector(`.layer-toggle-row[data-layer="${type}"]`);
+  if (row) row.classList.toggle("active", !isVisible);
+
+  // Update layers button active state
+  const anyActive = Object.values(state.overlayVisible).some(Boolean);
+  const layersBtn = document.getElementById("tb-layers");
+  if (layersBtn) layersBtn.classList.toggle("active", anyActive);
+
+  if (!isVisible) {
+    showToast(`Loading ${LAYER_LABELS[type]}...`);
+    if (type === "pollution") {
+      await renderPollutionLayer();
+    } else {
+      await renderCoverageLayer(type);
     }
-    showToast("Pollution layer hidden");
+  } else {
+    removeOverlayLayer(type);
+    showToast(`${LAYER_LABELS[type]} hidden`);
   }
 }
 
 // Expose toggle function globally
-window.togglePollutionLayer = togglePollutionLayer;
+window.toggleLayer = toggleLayer;
 
 /**
  * Main application entry point

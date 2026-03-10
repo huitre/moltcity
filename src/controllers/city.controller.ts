@@ -386,4 +386,70 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
 
     return { pollutionMap };
   });
+
+  // Coverage map - returns service coverage level per parcel for heatmap overlay
+  fastify.get('/api/cities/:cityId/coverage-map', async (request, reply) => {
+    const { cityId } = request.params as { cityId: string };
+    const { type } = request.query as { type?: string };
+
+    const validTypes = ['police_station', 'fire_station', 'hospital'] as const;
+    if (!type || !validTypes.includes(type as any)) {
+      return reply.status(400).send({ error: 'type must be one of: police_station, fire_station, hospital' });
+    }
+
+    const city = await cityService.getCity(cityId);
+    if (!city) return reply.status(404).send({ error: 'City not found' });
+
+    const parcelRepo = new ParcelRepository(fastify.db);
+    const buildingRepo = new BuildingRepository(fastify.db);
+
+    const parcels = await parcelRepo.getParcelsByCityId(cityId);
+    const buildings = await buildingRepo.getAllBuildings(cityId);
+
+    const radius = CITY_SERVICES.COVERAGE_RADIUS[type as keyof typeof CITY_SERVICES.COVERAGE_RADIUS];
+    if (!radius) return reply.status(400).send({ error: 'Unknown service type' });
+
+    // Collect coordinates of all buildings of this type
+    const serviceCoords: { x: number; y: number; width: number; height: number }[] = [];
+    for (const b of buildings) {
+      if (b.type !== type) continue;
+      const p = await parcelRepo.getParcelById(b.parcelId);
+      if (p) {
+        serviceCoords.push({ x: p.x, y: p.y, width: b.width || 1, height: b.height || 1 });
+      }
+    }
+
+    if (serviceCoords.length === 0) {
+      return { coverageMap: [] };
+    }
+
+    // Calculate coverage for each parcel
+    const coverageMap: { x: number; y: number; level: number }[] = [];
+
+    for (const parcel of parcels) {
+      let maxLevel = 0;
+
+      for (const sc of serviceCoords) {
+        // Find min distance to any tile of the building footprint
+        let minDist = Infinity;
+        for (let dy = 0; dy < sc.height; dy++) {
+          for (let dx = 0; dx < sc.width; dx++) {
+            const dist = Math.abs((sc.x + dx) - parcel.x) + Math.abs((sc.y + dy) - parcel.y);
+            if (dist < minDist) minDist = dist;
+          }
+        }
+
+        if (minDist <= radius) {
+          const level = Math.round(100 * (1 - minDist / (radius + 1)));
+          if (level > maxLevel) maxLevel = level;
+        }
+      }
+
+      if (maxLevel > 0) {
+        coverageMap.push({ x: parcel.x, y: parcel.y, level: maxLevel });
+      }
+    }
+
+    return { coverageMap };
+  });
 };
