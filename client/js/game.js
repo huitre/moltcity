@@ -217,19 +217,25 @@ export function render() {
     if (gl < 20) continue;
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
-    const bx = parcel.x, by = parcel.y;
-    const fw = building.width || 1, fh = building.height || 1;
+    const bx = parcel.x,
+      by = parcel.y;
+    const fw = building.width || 1,
+      fh = building.height || 1;
     const binCount = Math.min(5, Math.ceil(gl / 20));
 
     // Find adjacent road tiles with direction (which edge faces the building)
     const adjRoads = [];
     for (let dx = 0; dx < fw; dx++) {
-      if (roadContainers.has(`${bx + dx},${by - 1}`)) adjRoads.push({ rx: bx + dx, ry: by - 1, dir: 'S' });
-      if (roadContainers.has(`${bx + dx},${by + fh}`)) adjRoads.push({ rx: bx + dx, ry: by + fh, dir: 'N' });
+      if (roadContainers.has(`${bx + dx},${by - 1}`))
+        adjRoads.push({ rx: bx + dx, ry: by - 1, dir: "S" });
+      if (roadContainers.has(`${bx + dx},${by + fh}`))
+        adjRoads.push({ rx: bx + dx, ry: by + fh, dir: "N" });
     }
     for (let dy = 0; dy < fh; dy++) {
-      if (roadContainers.has(`${bx - 1},${by + dy}`)) adjRoads.push({ rx: bx - 1, ry: by + dy, dir: 'E' });
-      if (roadContainers.has(`${bx + fw},${by + dy}`)) adjRoads.push({ rx: bx + fw, ry: by + dy, dir: 'W' });
+      if (roadContainers.has(`${bx - 1},${by + dy}`))
+        adjRoads.push({ rx: bx - 1, ry: by + dy, dir: "E" });
+      if (roadContainers.has(`${bx + fw},${by + dy}`))
+        adjRoads.push({ rx: bx + fw, ry: by + dy, dir: "W" });
     }
     if (adjRoads.length === 0) continue;
 
@@ -250,10 +256,22 @@ export function render() {
       // Place bin on the sidewalk edge closest to the building
       const jitter = (rng() - 0.5) * 0.3;
       let offX, offY;
-      if (road.dir === 'S') { offX = 0.5 + jitter; offY = 0.85; }       // building south → bin on bottom edge
-      else if (road.dir === 'N') { offX = 0.5 + jitter; offY = 0.15; }   // building north → bin on top edge
-      else if (road.dir === 'E') { offX = 0.85; offY = 0.5 + jitter; }   // building east → bin on right edge
-      else { offX = 0.15; offY = 0.5 + jitter; }                         // building west → bin on left edge
+      if (road.dir === "S") {
+        offX = 0.5 + jitter;
+        offY = 0.85;
+      } // building south → bin on bottom edge
+      else if (road.dir === "N") {
+        offX = 0.5 + jitter;
+        offY = 0.15;
+      } // building north → bin on top edge
+      else if (road.dir === "E") {
+        offX = 0.85;
+        offY = 0.5 + jitter;
+      } // building east → bin on right edge
+      else {
+        offX = 0.15;
+        offY = 0.5 + jitter;
+      } // building west → bin on left edge
       const iso = cartToIso(road.rx + offX, road.ry + offY);
       sprite.x = iso.x;
       sprite.y = iso.y;
@@ -532,7 +550,6 @@ function drawStatusIcons(x, y, building) {
   container.zIndex = zIdx;
   return container;
 }
-
 
 /**
  * Animate status icons — gentle bob + pulse

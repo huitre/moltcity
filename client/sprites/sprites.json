@@ -184,9 +184,9 @@
   "vehicles": {
     "sedan_blue": {
       "type": "directional",
-      "basePath": "vehicles/PNG/Civilian/Blue/Sedan 1/carBlue2_",
-      "width": 31,
-      "height": 30
+      "basePath": "vehicles/car01_",
+      "width": 129,
+      "height": 112
     },
     "sedan_red": {
       "type": "directional",
@@ -217,6 +217,12 @@
       "basePath": "vehicles/PNG/Police/police_",
       "width": 31,
       "height": 30
+    },
+    "truck": {
+      "type": "static",
+      "file": "vehicles/truck_01.png",
+      "width": 190,
+      "height": 519
     }
   },
   "residential": {
@@ -258,7 +264,7 @@
         "height": 415,
         "anchor": {
           "x": 0.5,
-          "y": 0.96
+          "y": 0.98
         }
       },
       {
@@ -360,7 +366,7 @@
         "height": 425,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.97
         }
       },
       {
@@ -400,7 +406,7 @@
         "height": 459,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.97
         }
       },
       {
@@ -651,6 +657,76 @@
           "x": 0.5,
           "y": 0.96
         }
+      },
+      {
+        "id": "sheet04_buildings_12",
+        "file": "office/low/sheet04_buildings_12.png",
+        "width": 966,
+        "height": 922,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_13",
+        "file": "office/low/sheet04_buildings_13.png",
+        "width": 959,
+        "height": 766,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_14",
+        "file": "office/low/sheet04_buildings_14.png",
+        "width": 944,
+        "height": 860,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_15",
+        "file": "office/low/sheet04_buildings_15.png",
+        "width": 926,
+        "height": 852,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_16",
+        "file": "office/low/sheet04_buildings_16.png",
+        "width": 948,
+        "height": 893,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_17",
+        "file": "office/low/sheet04_buildings_17.png",
+        "width": 943,
+        "height": 914,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_18",
+        "file": "office/low/sheet04_buildings_18.png",
+        "width": 906,
+        "height": 962,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
       }
     ],
     "medium": [
@@ -763,16 +839,16 @@
         "height": 1024,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.95
         }
       },
       {
         "id": "sheet03_offices_07_1x1",
         "file": "office/high/sheet03_offices_07.png",
-        "width": 576,
+        "width": 559,
         "height": 1024,
         "anchor": {
-          "x": 0.5,
+          "x": 0.51,
           "y": 0.94
         }
       },
