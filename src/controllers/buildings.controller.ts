@@ -315,7 +315,10 @@ async function computeLandValueBreakdown(
     const dist = Math.abs(bc.bx - x) + Math.abs(bc.by - y);
     if ((bc.type === 'park' || bc.type === 'plaza') && dist <= 5) parks += 10;
     if ((bc.type === 'factory' || bc.type === 'industrial') && dist <= HAPPINESS.POLLUTION_RADIUS) pollution -= 10;
-    if (bc.type === 'garbage_depot' && dist <= HAPPINESS.GARBAGE_POLLUTION_RADIUS) pollution -= HAPPINESS.GARBAGE_POLLUTION_PENALTY;
+    if (bc.type === 'garbage_depot' && dist <= HAPPINESS.GARBAGE_POLLUTION_RADIUS) {
+      const falloff = 1 - (dist / (HAPPINESS.GARBAGE_POLLUTION_RADIUS + 1));
+      pollution -= Math.round(HAPPINESS.GARBAGE_POLLUTION_PENALTY * falloff);
+    }
     if ((bc.type === 'police_station' || bc.type === 'fire_station') && dist <= 15) services += 5;
   }
 
