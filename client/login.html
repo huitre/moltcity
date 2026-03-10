@@ -7,21 +7,21 @@
   <meta name="description" content="Sign in or create an account to start building your city in AgentCity - the free browser-based city builder game.">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-primary: #ffffff;
-      --bg-secondary: #f8fafa;
-      --bg-dark: #0a1628;
-      --text-primary: #1a1a2e;
-      --text-secondary: #5a6a7a;
-      --text-muted: #8a9aaa;
-      --accent: #14b8a6;
-      --accent-hover: #0d9488;
-      --accent-light: #ccfbf1;
-      --border: #e2e8f0;
-      --error: #ef4444;
-      --success: #10b981;
+      --wood-dark: #5c3a1e;
+      --wood-mid: #7a4f2b;
+      --wood-light: #9e6b3a;
+      --wood-highlight: #c49a6c;
+      --wood-border: #3d2510;
+      --wood-grain: #6b4423;
+      --text-light: #f5e6d0;
+      --text-gold: #ffd700;
+      --text-cream: #ffe4b5;
+      --accent-green: #6abf4b;
+      --accent-red: #d94040;
+      --bg-dark: #1a1a2e;
     }
 
     * {
@@ -31,46 +31,60 @@
     }
 
     body {
-      background: var(--bg-secondary);
+      background: var(--bg-dark);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      font-family: "IBM Plex Sans", system-ui, sans-serif;
-      color: var(--text-primary);
+      font-family: "Press Start 2P", monospace;
+      color: var(--text-light);
+      image-rendering: pixelated;
+    }
+
+    ::selection {
+      background: var(--text-gold);
+      color: var(--wood-dark);
     }
 
     /* Header */
     header {
-      padding: 16px 32px;
+      padding: 12px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
-      border-bottom: 1px solid var(--border);
+      background: linear-gradient(
+        180deg,
+        var(--wood-light) 0%,
+        var(--wood-mid) 60%,
+        var(--wood-dark) 100%
+      );
+      border-bottom: 3px solid var(--wood-border);
+      box-shadow:
+        inset 0 1px 0 var(--wood-highlight),
+        0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .logo {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-primary);
+      font-size: 14px;
+      color: var(--text-cream);
       text-decoration: none;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: "Press Start 2P", monospace;
+      text-shadow: 2px 2px 0 var(--wood-border);
     }
 
     .logo span {
-      color: var(--accent);
+      color: var(--text-gold);
     }
 
     .header-link {
-      color: var(--text-secondary);
+      color: var(--text-cream);
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 8px;
+      font-family: "Press Start 2P", monospace;
       transition: color 0.2s;
     }
 
     .header-link:hover {
-      color: var(--accent);
+      color: var(--text-gold);
     }
 
     /* Main content */
@@ -84,179 +98,211 @@
 
     .container {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
     }
 
     .welcome {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .welcome h1 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--text-gold);
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
     }
 
     .welcome p {
-      color: var(--text-secondary);
-      font-size: 15px;
+      color: var(--text-cream);
+      font-size: 8px;
+      line-height: 2;
     }
 
     .card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      background: linear-gradient(
+        180deg,
+        var(--wood-mid) 0%,
+        var(--wood-dark) 100%
+      );
+      border: 3px solid var(--wood-border);
+      border-radius: 0;
+      padding: 28px;
+      box-shadow:
+        inset 2px 2px 0 var(--wood-highlight),
+        inset -2px -2px 0 var(--wood-grain),
+        4px 4px 0 rgba(0, 0, 0, 0.4);
     }
 
     .tabs {
       display: flex;
-      margin-bottom: 24px;
-      background: var(--bg-secondary);
-      border-radius: 10px;
-      padding: 4px;
+      margin-bottom: 20px;
+      background: var(--wood-dark);
+      border-radius: 0;
+      border: 2px solid var(--wood-border);
+      padding: 3px;
     }
 
     .tab {
       flex: 1;
-      padding: 10px 16px;
+      padding: 10px 12px;
       text-align: center;
       cursor: pointer;
-      color: var(--text-secondary);
-      font-size: 14px;
-      font-weight: 600;
-      border-radius: 8px;
-      transition: all 0.2s;
+      color: var(--text-cream);
+      font-size: 8px;
+      font-family: "Press Start 2P", monospace;
+      border-radius: 0;
+      transition: all 0.15s;
     }
 
     .tab:hover {
-      color: var(--text-primary);
+      color: var(--text-gold);
     }
 
     .tab.active {
-      background: white;
-      color: var(--accent);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      background: linear-gradient(
+        180deg,
+        var(--wood-light) 0%,
+        var(--wood-mid) 100%
+      );
+      color: var(--text-gold);
+      border: 1px solid var(--wood-border);
+      box-shadow:
+        inset 1px 1px 0 var(--wood-highlight),
+        inset -1px -1px 0 var(--wood-grain);
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     label {
       display: block;
       margin-bottom: 6px;
-      color: var(--text-primary);
-      font-size: 14px;
-      font-weight: 500;
+      color: var(--text-gold);
+      font-size: 8px;
+      font-family: "Press Start 2P", monospace;
     }
 
     input {
       width: 100%;
-      padding: 12px 16px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 15px;
-      font-family: inherit;
+      padding: 10px 12px;
+      background: var(--wood-dark);
+      border: 2px solid var(--wood-border);
+      border-radius: 0;
+      color: var(--text-light);
+      font-size: 10px;
+      font-family: "Press Start 2P", monospace;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     input:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-light);
+      border-color: var(--text-gold);
+      box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
     }
 
     input::placeholder {
-      color: var(--text-muted);
+      color: var(--wood-highlight);
+      font-size: 7px;
     }
 
     button {
       width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: inherit;
+      padding: 12px;
+      border: 2px solid var(--wood-border);
+      border-radius: 0;
+      font-size: 9px;
+      font-family: "Press Start 2P", monospace;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: #fff;
+      background: linear-gradient(
+        180deg,
+        var(--wood-light) 0%,
+        var(--wood-mid) 100%
+      );
+      color: var(--text-gold);
+      box-shadow:
+        inset 1px 1px 0 var(--wood-highlight),
+        inset -1px -1px 0 var(--wood-grain);
     }
 
     .btn-primary:hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
+      background: linear-gradient(
+        180deg,
+        var(--wood-highlight) 0%,
+        var(--wood-light) 100%
+      );
+      color: #fff;
     }
 
     .btn-google {
-      background: white;
-      color: var(--text-primary);
-      border: 1px solid var(--border);
+      background: var(--wood-dark);
+      color: var(--text-cream);
+      border: 2px solid var(--wood-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-top: 14px;
+      font-size: 8px;
     }
 
     .btn-google:hover {
-      background: var(--bg-secondary);
-      border-color: var(--text-muted);
+      background: var(--wood-mid);
+      color: var(--text-gold);
+      border-color: var(--wood-light);
     }
 
     .btn-google svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
 
     .divider {
       display: flex;
       align-items: center;
-      margin: 24px 0;
-      color: var(--text-muted);
+      margin: 20px 0;
+      color: var(--wood-highlight);
     }
 
     .divider::before,
     .divider::after {
       content: '';
       flex: 1;
-      height: 1px;
-      background: var(--border);
+      height: 2px;
+      background: var(--wood-border);
     }
 
     .divider span {
-      padding: 0 16px;
-      font-size: 13px;
+      padding: 0 14px;
+      font-size: 7px;
+      font-family: "Press Start 2P", monospace;
     }
 
     .error-message {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid var(--error);
-      color: var(--error);
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-size: 14px;
+      background: rgba(217, 64, 64, 0.15);
+      border: 2px solid var(--accent-red);
+      color: var(--accent-red);
+      padding: 10px 14px;
+      border-radius: 0;
+      margin-bottom: 16px;
+      font-size: 8px;
+      line-height: 2;
     }
 
     .success-message {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-size: 14px;
+      background: rgba(106, 191, 75, 0.15);
+      border: 2px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 10px 14px;
+      border-radius: 0;
+      margin-bottom: 16px;
+      font-size: 8px;
+      line-height: 2;
     }
 
     .form-panel {
@@ -269,10 +315,10 @@
 
     .benefits {
       display: flex;
-      gap: 16px;
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
+      gap: 14px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid var(--wood-border);
     }
 
     .benefit {
@@ -281,24 +327,25 @@
     }
 
     .benefit .icon {
-      font-size: 24px;
+      font-size: 20px;
       margin-bottom: 6px;
     }
 
     .benefit p {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 7px;
+      color: var(--wood-highlight);
     }
 
     .footer-text {
       text-align: center;
-      margin-top: 24px;
-      color: var(--text-muted);
-      font-size: 13px;
+      margin-top: 20px;
+      color: var(--wood-highlight);
+      font-size: 7px;
+      line-height: 2;
     }
 
     .footer-text a {
-      color: var(--accent);
+      color: var(--text-gold);
       text-decoration: none;
     }
 
@@ -314,12 +361,12 @@
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--wood-border);
+      border-top-color: var(--text-gold);
+      border-radius: 0;
+      animation: spin 1s steps(8) infinite;
       margin: 0 auto;
     }
 
@@ -329,41 +376,46 @@
 
     /* Footer */
     footer {
-      padding: 24px;
+      padding: 20px;
       text-align: center;
-      border-top: 1px solid var(--border);
-      background: white;
+      border-top: 3px solid var(--wood-border);
+      background: linear-gradient(
+        180deg,
+        var(--wood-dark) 0%,
+        var(--wood-mid) 100%
+      );
     }
 
     .footer-links {
       display: flex;
       justify-content: center;
-      gap: 24px;
+      gap: 20px;
     }
 
     .footer-links a {
-      color: var(--text-muted);
+      color: var(--text-cream);
       text-decoration: none;
-      font-size: 13px;
+      font-size: 7px;
+      font-family: "Press Start 2P", monospace;
       transition: color 0.2s;
     }
 
     .footer-links a:hover {
-      color: var(--accent);
+      color: var(--text-gold);
     }
 
     @media (max-width: 480px) {
       header {
-        padding: 12px 16px;
+        padding: 10px 12px;
       }
 
       .card {
-        padding: 24px;
+        padding: 20px;
       }
 
       .benefits {
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
       }
     }
   </style>

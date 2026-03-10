@@ -1676,6 +1676,21 @@ function setupBuildMenu() {
       togglePollutionLayer();
     }
   });
+
+  // Listen for advisor "select-building" actions
+  window.addEventListener("select-building", (e) => {
+    const type = e.detail;
+
+    // For power_plant, open the power popover so user can pick a type
+    if (type === "power_plant") {
+      if (powerTrigger) powerTrigger.click();
+      return;
+    }
+
+    // For everything else, simulate clicking the matching build option
+    const option = document.querySelector(`.build-option[data-type="${type}"]`);
+    if (option) option.click();
+  });
 }
 
 /**

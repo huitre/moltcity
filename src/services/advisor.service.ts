@@ -20,42 +20,42 @@ export const ADVISORS: Record<AdvisorType, Advisor> = {
   mayor: {
     id: 'mayor',
     name: 'Marie Dupont',
-    title: 'Chef de Cabinet',
+    title: 'Chief of Staff',
     avatar: '/assets/advisors/mayor.png',
     personality: 'Professional, welcoming, encouraging. Handles general guidance and milestones.',
   },
   finance: {
     id: 'finance',
     name: 'Henri Ledger',
-    title: 'Conseiller Finances',
+    title: 'Finance Advisor',
     avatar: '/assets/advisors/finance.png',
     personality: 'Cautious, numbers-focused, slightly worried about spending. Handles budget, taxes, treasury.',
   },
   urban: {
     id: 'urban',
     name: 'Sophie Urbain',
-    title: 'Directrice Urbanisme',
+    title: 'Urban Planning Director',
     avatar: '/assets/advisors/urban.png',
     personality: 'Creative, enthusiastic about growth. Handles zoning, density, development.',
   },
   utilities: {
     id: 'utilities',
     name: 'Marc Courant',
-    title: 'Directeur Services Publics',
+    title: 'Public Services Director',
     avatar: '/assets/advisors/utilities.png',
     personality: 'Practical, technical, matter-of-fact. Handles power, water, waste.',
   },
   safety: {
     id: 'safety',
-    name: 'Capitaine Renard',
-    title: 'Chef de la Sécurité',
+    name: 'Captain Renard',
+    title: 'Head of Security',
     avatar: '/assets/advisors/safety.png',
     personality: 'Stern, protective, serious about crime. Handles police, fire, emergencies.',
   },
   education: {
     id: 'education',
     name: 'Dr. Claire Savoir',
-    title: 'Directrice Éducation',
+    title: 'Education Director',
     avatar: '/assets/advisors/education.png',
     personality: 'Warm, passionate about learning. Handles schools, universities, culture.',
   },
@@ -126,266 +126,266 @@ const MESSAGE_TEMPLATES: Record<PopupContext, MessageTemplate> = {
   // === Onboarding ===
   city_created: {
     advisor: 'mayor',
-    title: 'Bienvenue, Maire !',
-    message: `Bonjour {userName}, en tant que nouveau maire de {cityName}, je suis ravie de vous accueillir à l'hôtel de ville ! 
+    title: 'Welcome, Mayor!',
+    message: `Hello {userName}, as the new mayor of {cityName}, I'm delighted to welcome you to City Hall!
 
-Votre mission : transformer ce terrain vague en une métropole florissante. Commencez par zoner des parcelles résidentielles pour attirer vos premiers habitants.`,
+Your mission: transform this empty lot into a thriving metropolis. Start by zoning residential parcels to attract your first residents.`,
     tips: [
-      'Cliquez sur une parcelle vide pour la zoner',
-      'Les zones résidentielles attirent des habitants',
-      'Construisez une centrale pour alimenter vos bâtiments',
+      'Click on an empty parcel to zone it',
+      'Residential zones attract residents',
+      'Build a power plant to supply your buildings',
     ],
     severity: 'info',
     actions: [
-      { label: 'Commencer', action: 'dismiss', primary: true },
-      { label: 'Voir le tutoriel', action: 'open_tutorial' },
+      { label: 'Get Started', action: 'dismiss', primary: true },
+      { label: 'View Tutorial', action: 'open_tutorial' },
     ],
   },
 
   first_zoning: {
     advisor: 'urban',
-    title: 'Première zone créée !',
-    message: `Excellent {userName} ! Vous avez créé votre première zone {zoneType}. 
+    title: 'First zone created!',
+    message: `Excellent {userName}! You created your first {zoneType} zone.
 
-Les zones se développent automatiquement quand les conditions sont réunies : accès routier, électricité, et eau.`,
+Zones develop automatically when conditions are met: road access, electricity, and water.`,
     tips: [
-      'Connectez la zone avec une route',
-      "N'oubliez pas l'électricité !",
+      'Connect the zone with a road',
+      "Don't forget electricity!",
     ],
     severity: 'success',
   },
 
   first_building: {
     advisor: 'urban',
-    title: 'Premier bâtiment !',
-    message: `Félicitations ! Le premier bâtiment de {cityName} est en construction. Bientôt, des habitants et des entreprises s'installeront.`,
+    title: 'First building!',
+    message: `Congratulations! The first building in {cityName} is under construction. Soon, residents and businesses will move in.`,
     severity: 'success',
   },
 
   first_resident: {
     advisor: 'mayor',
-    title: 'Premier habitant !',
-    message: `Formidable ! {cityName} accueille son tout premier résident. C'est le début d'une grande aventure !
+    title: 'First resident!',
+    message: `Wonderful! {cityName} welcomes its very first resident. This is the beginning of a great adventure!
 
-Continuez à développer votre ville pour attirer plus de population.`,
+Keep developing your city to attract more population.`,
     severity: 'success',
   },
 
   // === Milestones ===
   population_100: {
     advisor: 'mayor',
-    title: 'Village ! 🏘️',
-    message: `{cityName} compte maintenant 100 habitants ! Votre petit village prend forme. 
+    title: 'Village! 🏘️',
+    message: `{cityName} now has 100 residents! Your small village is taking shape.
 
-Pensez à construire des commerces pour créer des emplois.`,
+Consider building shops to create jobs.`,
     severity: 'success',
   },
 
   population_500: {
     advisor: 'mayor',
-    title: 'Bourg ! 🏠',
-    message: `500 habitants ! {cityName} devient un véritable bourg. 
+    title: 'Town! 🏠',
+    message: `500 residents! {cityName} is becoming a real town.
 
-Il est temps de penser aux services publics : école, poste de police...`,
+It's time to think about public services: schools, police stations...`,
     severity: 'success',
   },
 
   population_1000: {
     advisor: 'mayor',
-    title: 'Petite ville ! 🏙️',
-    message: `1 000 habitants ! {cityName} est officiellement une petite ville.
+    title: 'Small city! 🏙️',
+    message: `1,000 residents! {cityName} is officially a small city.
 
-Diversifiez votre économie avec des zones industrielles.`,
+Diversify your economy with industrial zones.`,
     severity: 'success',
   },
 
   population_5000: {
     advisor: 'mayor',
-    title: 'Ville ! 🌆',
-    message: `5 000 habitants ! {cityName} est une vraie ville maintenant.
+    title: 'City! 🌆',
+    message: `5,000 residents! {cityName} is a real city now.
 
-Vous pouvez construire des bâtiments plus denses et des monuments.`,
+You can build denser buildings and monuments.`,
     severity: 'success',
   },
 
   population_10000: {
     advisor: 'mayor',
-    title: 'Grande ville ! 🌃',
-    message: `10 000 habitants ! {cityName} rayonne dans toute la région.
+    title: 'Big city! 🌃',
+    message: `10,000 residents! {cityName} shines across the entire region.
 
-Félicitations, Maire {userName} ! Vous êtes un vrai bâtisseur.`,
+Congratulations, Mayor {userName}! You are a true builder.`,
     severity: 'success',
   },
 
   // === Warnings - Utilities ===
   low_power: {
     advisor: 'utilities',
-    title: 'Capacité électrique faible ⚡',
-    message: `Attention {userName}, nos réserves d'électricité sont presque épuisées.
+    title: 'Low power capacity ⚡',
+    message: `Warning {userName}, our power reserves are nearly depleted.
 
-Capacité : {powerCapacity} MW | Demande : {powerDemand} MW
+Capacity: {powerCapacity} MW | Demand: {powerDemand} MW
 
-Si la demande dépasse la capacité, des bâtiments seront privés de courant.`,
-    tips: ['Construisez une nouvelle centrale', 'Les éoliennes sont économiques'],
+If demand exceeds capacity, buildings will lose power.`,
+    tips: ['Build a new power plant', 'Wind turbines are cost-effective'],
     severity: 'warning',
-    actions: [{ label: 'Construire une centrale', action: 'build_power_plant', primary: true }],
+    actions: [{ label: 'Build power plant', action: 'build_power_plant', primary: true }],
   },
 
   no_power: {
     advisor: 'utilities',
-    title: 'Panne de courant ! ⚠️',
-    message: `URGENT : {unpoweredCount} bâtiment(s) sans électricité !
+    title: 'Power outage! ⚠️',
+    message: `URGENT: {unpoweredCount} building(s) without electricity!
 
-Les habitants sont mécontents et les entreprises ferment. Agissez vite !`,
+Residents are unhappy and businesses are closing. Act fast!`,
     severity: 'danger',
-    actions: [{ label: 'Construire une centrale', action: 'build_power_plant', primary: true }],
+    actions: [{ label: 'Build power plant', action: 'build_power_plant', primary: true }],
   },
 
   low_water: {
     advisor: 'utilities',
-    title: 'Réserves d\'eau basses 💧',
-    message: `Les réserves d'eau de {cityName} sont insuffisantes.
+    title: 'Low water reserves 💧',
+    message: `Water reserves in {cityName} are insufficient.
 
-Capacité : {waterCapacity}L | Demande : {waterDemand}L
+Capacity: {waterCapacity}L | Demand: {waterDemand}L
 
-Construisez un château d'eau pour éviter une pénurie.`,
+Build a water tower to avoid a shortage.`,
     severity: 'warning',
-    actions: [{ label: 'Construire château d\'eau', action: 'build_water_tower', primary: true }],
+    actions: [{ label: 'Build water tower', action: 'build_water_tower', primary: true }],
   },
 
   no_water: {
     advisor: 'utilities',
-    title: 'Pénurie d\'eau ! 🚱',
-    message: `CRITIQUE : {noWaterCount} bâtiment(s) sans eau !
+    title: 'Water shortage! 🚱',
+    message: `CRITICAL: {noWaterCount} building(s) without water!
 
-Sans eau, la population fuit. C'est une priorité absolue.`,
+Without water, the population flees. This is a top priority.`,
     severity: 'danger',
-    actions: [{ label: 'Construire château d\'eau', action: 'build_water_tower', primary: true }],
+    actions: [{ label: 'Build water tower', action: 'build_water_tower', primary: true }],
   },
 
   // === Warnings - Economy ===
   high_taxes: {
     advisor: 'finance',
-    title: 'Taxes trop élevées ! 📊',
-    message: `Maire {userName}, les contribuables se plaignent !
+    title: 'Taxes too high! 📊',
+    message: `Mayor {userName}, taxpayers are complaining!
 
-Le taux de taxe {taxZone} ({taxRate}%) dépasse le seuil acceptable de {threshold}%.
+The {taxZone} tax rate ({taxRate}%) exceeds the acceptable threshold of {threshold}%.
 
-Conséquence : {taxEffect}`,
-    tips: ['Baissez les taxes progressivement', 'Équilibrez avec des économies sur les services'],
+Consequence: {taxEffect}`,
+    tips: ['Lower taxes gradually', 'Balance with savings on services'],
     severity: 'warning',
-    actions: [{ label: 'Ajuster les taxes', action: 'open_budget', primary: true }],
+    actions: [{ label: 'Adjust taxes', action: 'open_budget', primary: true }],
   },
 
   low_treasury: {
     advisor: 'finance',
-    title: 'Trésorerie faible 💰',
-    message: `Attention, la trésorerie de {cityName} est basse : {treasury} §
+    title: 'Low treasury 💰',
+    message: `Warning, the treasury of {cityName} is low: {treasury} §
 
-Évitez les dépenses inutiles et considérez d'augmenter légèrement les taxes.`,
+Avoid unnecessary expenses and consider slightly raising taxes.`,
     severity: 'warning',
   },
 
   negative_treasury: {
     advisor: 'finance',
-    title: 'Déficit budgétaire ! 🚨',
-    message: `ALERTE : {cityName} est en déficit : {treasury} §
+    title: 'Budget deficit! 🚨',
+    message: `ALERT: {cityName} is in deficit: {treasury} §
 
-Sans action immédiate, vous ne pourrez plus payer les services publics !`,
-    tips: ['Réduisez le financement des départements', 'Augmentez les taxes', 'Émettez des obligations'],
+Without immediate action, you won't be able to pay for public services!`,
+    tips: ['Reduce department funding', 'Raise taxes', 'Issue bonds'],
     severity: 'danger',
-    actions: [{ label: 'Voir le budget', action: 'open_budget', primary: true }],
+    actions: [{ label: 'View budget', action: 'open_budget', primary: true }],
   },
 
   budget_surplus: {
     advisor: 'finance',
-    title: 'Excédent budgétaire ! 🎉',
-    message: `Excellente nouvelle ! {cityName} dégage un excédent de {surplus} § ce mois-ci.
+    title: 'Budget surplus! 🎉',
+    message: `Great news! {cityName} has a surplus of {surplus} § this month.
 
-Vous pouvez investir dans de nouvelles infrastructures ou baisser les taxes.`,
+You can invest in new infrastructure or lower taxes.`,
     severity: 'success',
   },
 
   budget_deficit: {
     advisor: 'finance',
-    title: 'Déficit mensuel',
-    message: `{cityName} a un déficit de {deficit} § ce mois-ci.
+    title: 'Monthly deficit',
+    message: `{cityName} has a deficit of {deficit} § this month.
 
-Surveillez vos dépenses pour éviter la faillite.`,
+Watch your spending to avoid bankruptcy.`,
     severity: 'warning',
   },
 
   // === Warnings - Safety ===
   high_crime: {
     advisor: 'safety',
-    title: 'Criminalité en hausse ! 🚔',
-    message: `Le taux de criminalité est préoccupant dans {cityName}.
+    title: 'Crime on the rise! 🚔',
+    message: `The crime rate is concerning in {cityName}.
 
-{crimeCount} crimes ont été signalés récemment. Renforcez la présence policière.`,
-    tips: ['Construisez des postes de police', 'Augmentez le financement de la police'],
+{crimeCount} crimes have been reported recently. Strengthen police presence.`,
+    tips: ['Build police stations', 'Increase police funding'],
     severity: 'warning',
-    actions: [{ label: 'Construire un poste', action: 'build_police_station', primary: true }],
+    actions: [{ label: 'Build station', action: 'build_police_station', primary: true }],
   },
 
   fire_outbreak: {
     advisor: 'safety',
-    title: 'Incendie déclaré ! 🔥',
-    message: `URGENCE : Un incendie fait rage à {fireLocation} !
+    title: 'Fire reported! 🔥',
+    message: `EMERGENCY: A fire is raging at {fireLocation}!
 
-Intensité : {fireIntensity}/5
+Intensity: {fireIntensity}/5
 
-Les pompiers sont {fireStatus}.`,
+Firefighters are {fireStatus}.`,
     severity: 'danger',
   },
 
   // === Zoning ===
   need_residential: {
     advisor: 'urban',
-    title: 'Besoin de logements 🏠',
-    message: `La demande en logements est forte à {cityName} !
+    title: 'Housing needed 🏠',
+    message: `Housing demand is high in {cityName}!
 
-Les entreprises ont besoin de main-d'œuvre. Zonez plus de résidentiel.`,
+Businesses need workers. Zone more residential areas.`,
     severity: 'info',
-    actions: [{ label: 'Zoner résidentiel', action: 'zone_residential', primary: true }],
+    actions: [{ label: 'Zone residential', action: 'zone_residential', primary: true }],
   },
 
   need_commercial: {
     advisor: 'urban',
-    title: 'Besoin de commerces 🏪',
-    message: `Les habitants veulent des commerces et des emplois de bureau.
+    title: 'Shops needed 🏪',
+    message: `Residents want shops and office jobs.
 
-La demande commerciale est élevée. Zonez des bureaux !`,
+Commercial demand is high. Zone some offices!`,
     severity: 'info',
-    actions: [{ label: 'Zoner commercial', action: 'zone_commercial', primary: true }],
+    actions: [{ label: 'Zone commercial', action: 'zone_commercial', primary: true }],
   },
 
   need_industrial: {
     advisor: 'urban',
-    title: 'Besoin d\'industries 🏭',
-    message: `L'économie a besoin d'industries pour produire des biens.
+    title: 'Industry needed 🏭',
+    message: `The economy needs industry to produce goods.
 
-La demande industrielle est forte. Attention à la pollution !`,
+Industrial demand is high. Watch out for pollution!`,
     severity: 'info',
-    actions: [{ label: 'Zoner industriel', action: 'zone_industrial', primary: true }],
+    actions: [{ label: 'Zone industrial', action: 'zone_industrial', primary: true }],
   },
 
   // === Generic ===
   tip_of_the_day: {
     advisor: 'mayor',
-    title: 'Conseil du jour 💡',
+    title: 'Tip of the day 💡',
     message: '{tip}',
     severity: 'info',
   },
 
   periodic_checkup: {
     advisor: 'mayor',
-    title: 'Point de situation',
-    message: `Bonjour {userName} ! Voici l'état de {cityName} :
+    title: 'Status report',
+    message: `Hello {userName}! Here's the state of {cityName}:
 
-👥 Population : {population}
-💰 Trésorerie : {treasury} §
-⚡ Énergie : {powerStatus}
-💧 Eau : {waterStatus}
+👥 Population: {population}
+💰 Treasury: {treasury} §
+⚡ Power: {powerStatus}
+💧 Water: {waterStatus}
 
 {recommendation}`,
     severity: 'info',
@@ -394,16 +394,16 @@ La demande industrielle est forte. Attention à la pollution !`,
 
 // === Tips of the Day ===
 const TIPS_OF_THE_DAY = [
-  'Les parcs augmentent la valeur des terrains adjacents.',
-  'Les zones industrielles créent de la pollution. Éloignez-les des résidences !',
-  'Une route bien connectée réduit le temps de trajet et rend les habitants heureux.',
-  'Les écoles augmentent la valeur foncière et attirent les familles.',
-  'Diversifiez vos sources d\'énergie : charbon, éolien, nucléaire...',
-  'Les obligations permettent de financer de grands projets, mais attention aux intérêts !',
-  'Un maire populaire attire plus d\'investisseurs.',
-  'Les zones denses génèrent plus de taxes mais nécessitent plus de services.',
-  'Construisez un hôpital pour augmenter l\'espérance de vie des citoyens.',
-  'Les monuments et stades augmentent le bonheur et le tourisme.',
+  'Parks increase the land value of adjacent plots.',
+  'Industrial zones create pollution. Keep them away from residences!',
+  'A well-connected road network reduces commute times and makes residents happy.',
+  'Schools increase property value and attract families.',
+  'Diversify your energy sources: coal, wind, nuclear...',
+  'Bonds let you fund large projects, but watch out for interest!',
+  'A popular mayor attracts more investors.',
+  'Dense zones generate more taxes but require more services.',
+  'Build a hospital to increase citizens\' life expectancy.',
+  'Monuments and stadiums boost happiness and tourism.',
 ];
 
 // === Service Class ===
@@ -514,28 +514,28 @@ export class AdvisorService {
     if (taxRateR > threshold) {
       popups.push(this.getPopup('high_taxes', {
         userName,
-        taxZone: 'résidentielle',
+        taxZone: 'residential',
         taxRate: taxRateR,
         threshold,
-        taxEffect: 'Exode de population',
+        taxEffect: 'Population exodus',
       }));
     }
     if (taxRateC > threshold) {
       popups.push(this.getPopup('high_taxes', {
         userName,
-        taxZone: 'commerciale',
+        taxZone: 'commercial',
         taxRate: taxRateC,
         threshold,
-        taxEffect: 'Baisse des salaires',
+        taxEffect: 'Wage decline',
       }));
     }
     if (taxRateI > threshold) {
       popups.push(this.getPopup('high_taxes', {
         userName,
-        taxZone: 'industrielle',
+        taxZone: 'industrial',
         taxRate: taxRateI,
         threshold,
-        taxEffect: 'Fermetures d\'usines',
+        taxEffect: 'Factory closures',
       }));
     }
 
@@ -590,13 +590,13 @@ export class AdvisorService {
       ? `${Math.round((stats.waterCapacity / stats.waterDemand) * 100)}%`
       : 'OK';
 
-    let recommendation = 'Tout va bien ! Continuez comme ça.';
+    let recommendation = 'Everything is going well! Keep it up.';
     if (stats.powerCapacity < stats.powerDemand) {
-      recommendation = '⚠️ Priorité : construire plus de centrales électriques.';
+      recommendation = '⚠️ Priority: build more power plants.';
     } else if (stats.waterCapacity < stats.waterDemand) {
-      recommendation = '⚠️ Priorité : construire plus de châteaux d\'eau.';
+      recommendation = '⚠️ Priority: build more water towers.';
     } else if (stats.treasury < 500) {
-      recommendation = '⚠️ Priorité : augmenter les revenus fiscaux.';
+      recommendation = '⚠️ Priority: increase tax revenue.';
     }
 
     return this.getPopup('periodic_checkup', {

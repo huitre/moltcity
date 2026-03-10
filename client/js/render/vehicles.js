@@ -68,9 +68,11 @@ export function spawnVehicle(vehicleTypes) {
   const texture = vehicleData.directions.get(CARDINAL_TO_ISO[dir]);
   if (!texture) return;
 
+  const TARGET_W = 31;
+  const TARGET_H = 30;
   const sprite = new PIXI.Sprite(texture);
   sprite.anchor.set(0.5, 0.8);
-  sprite.scale.set(0.5);
+  sprite.scale.set(TARGET_W / texture.width, TARGET_H / texture.height);
 
   const vehicle = {
     x: parcel.x + 0.5,
@@ -86,7 +88,8 @@ export function spawnVehicle(vehicleTypes) {
   const iso = cartToIso(vehicle.x, vehicle.y);
   sprite.x = iso.x;
   sprite.y = iso.y + TILE_HEIGHT / 2;
-  sprite.zIndex = Math.floor(vehicle.y) * GRID_SIZE + Math.floor(vehicle.x) + 0.5;
+  sprite.zIndex =
+    Math.floor(vehicle.y) * GRID_SIZE + Math.floor(vehicle.x) + 0.5;
 
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
@@ -150,11 +153,12 @@ export function animateVehicles(delta) {
       vehicle.targetY = currentY + DIR_VECTORS[nextDir].dy;
 
       // Update sprite texture for new direction
-      const texture = vehicle.vehicleData.directions.get(
+      const newTexture = vehicle.vehicleData.directions.get(
         CARDINAL_TO_ISO[nextDir],
       );
-      if (texture) {
-        vehicle.sprite.texture = texture;
+      if (newTexture) {
+        vehicle.sprite.scale.set(12 / newTexture.width, 12 / newTexture.height);
+        vehicle.sprite.texture = newTexture;
       }
     } else {
       // Move toward target
@@ -167,7 +171,8 @@ export function animateVehicles(delta) {
     const iso = cartToIso(vehicle.x, vehicle.y);
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 12;
-    vehicle.sprite.zIndex = Math.floor(vehicle.y) * GRID_SIZE + Math.floor(vehicle.x) + 1;
+    vehicle.sprite.zIndex =
+      Math.floor(vehicle.y) * GRID_SIZE + Math.floor(vehicle.x) + 1;
 
     // Remove if out of bounds
     if (
