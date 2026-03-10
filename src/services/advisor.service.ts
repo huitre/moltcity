@@ -79,6 +79,8 @@ export type PopupContext =
   | 'no_power'
   | 'low_water'
   | 'no_water'
+  | 'no_waste'
+  | 'high_garbage'
   | 'high_taxes'
   | 'low_treasury'
   | 'negative_treasury'
@@ -261,6 +263,28 @@ Build a water tower to avoid a shortage.`,
 Without water, the population flees. This is a top priority.`,
     severity: 'danger',
     actions: [{ label: 'Build water tower', action: 'build_water_tower', primary: true }],
+  },
+
+  // === Warnings - Waste ===
+  no_waste: {
+    advisor: 'utilities',
+    title: 'No garbage collection! 🗑️',
+    message: `URGENT: {noWasteCount} building(s) have no garbage collection!
+
+Trash is piling up, residents are unhappy and property values are dropping. Build a garbage depot to restore sanitation.`,
+    severity: 'danger',
+    actions: [{ label: 'Build garbage depot', action: 'build_garbage_depot', primary: true }],
+  },
+
+  high_garbage: {
+    advisor: 'utilities',
+    title: 'Garbage piling up! 🗑️',
+    message: `Warning {userName}, {dirtyCount} building(s) in {cityName} have critically high garbage levels.
+
+Sanitation coverage is insufficient. Consider building another garbage depot.`,
+    tips: ['Garbage depots have a limited coverage radius', 'Buildings far from depots accumulate trash faster'],
+    severity: 'warning',
+    actions: [{ label: 'Build garbage depot', action: 'build_garbage_depot', primary: true }],
   },
 
   // === Warnings - Economy ===
@@ -498,6 +522,18 @@ export class AdvisorService {
           waterDemand: stats.waterDemand,
         }));
       }
+    }
+
+    // Garbage analysis
+    const NO_WASTE_TYPES = ['wind_turbine', 'water_tower', 'road', 'power_plant', 'coal_plant', 'nuclear_plant', 'park', 'plaza', 'garbage_depot', 'city_hall'];
+    const wasteBuildings = buildings.filter(b => b.constructionProgress >= 100 && !NO_WASTE_TYPES.includes(b.type));
+    const noWasteCount = wasteBuildings.filter(b => !b.hasWaste).length;
+    if (noWasteCount > 0) {
+      popups.push(this.getPopup('no_waste', { userName, cityName: city.name, noWasteCount }));
+    }
+    const dirtyCount = wasteBuildings.filter(b => (b.garbageLevel || 0) > 70).length;
+    if (dirtyCount > 0) {
+      popups.push(this.getPopup('high_garbage', { userName, cityName: city.name, dirtyCount }));
     }
 
     // Treasury analysis

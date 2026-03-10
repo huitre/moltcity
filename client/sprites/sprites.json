@@ -182,12 +182,6 @@
     }
   },
   "vehicles": {
-    "sedan_blue": {
-      "type": "directional",
-      "basePath": "vehicles/car01_",
-      "width": 129,
-      "height": 112
-    },
     "sedan_red": {
       "type": "directional",
       "basePath": "vehicles/PNG/Civilian/Red/Sedan 1/carRed2_",
@@ -217,12 +211,6 @@
       "basePath": "vehicles/PNG/Police/police_",
       "width": 31,
       "height": 30
-    },
-    "truck": {
-      "type": "static",
-      "file": "vehicles/truck_01.png",
-      "width": 190,
-      "height": 519
     }
   },
   "residential": {
@@ -356,7 +344,7 @@
         "height": 469,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.96
         }
       },
       {
@@ -575,7 +563,7 @@
         "height": 422,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.97
         }
       },
       {
@@ -1197,12 +1185,12 @@
     {
       "id": "power_plant_01",
       "file": "sliced/power_plant_01.png",
-      "width": 451,
-      "height": 386,
+      "width": 955,
+      "height": 862,
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     }
   ],
@@ -1215,7 +1203,7 @@
       "tiles": 1,
       "anchor": {
         "x": 0.5,
-        "y": 1
+        "y": 0.95
       }
     }
   ],
@@ -1293,7 +1281,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.93
+        "y": 1
       }
     }
   ],

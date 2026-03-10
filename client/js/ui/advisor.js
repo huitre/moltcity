@@ -13,6 +13,39 @@ let warningCheckInterval = null;
 let lastWarningCheck = 0;
 const WARNING_CHECK_INTERVAL = 60000; // Check every 60 seconds
 
+// Track repeated warnings — key: warning title, value: consecutive count
+const warningRepeatCounts = {};
+
+const NAG_PREFIXES = [
+  null, // count 1: no prefix
+  null, // count 2: no prefix
+  "I've mentioned this before... ",
+  "This is the 4th time I bring this up. ",
+  "Mayor, are you ignoring me?! ",
+  "I INSIST. This is getting critical! ",
+  "Do I need to spell it out?? ",
+  "At this point I'm talking to a wall. ",
+  "My resignation letter is half-written. ",
+  "I'm billing you overtime for repeating myself. ",
+  "Even the pigeons outside City Hall get it by now. ",
+  "I've run out of polite ways to say this. ",
+  "Fine. I'll just stand here. Waiting. AGAIN. ",
+  "This is now a public safety crisis AND a patience crisis. ",
+  "I'm going to tape this memo to your forehead. ",
+];
+
+function getNagMessage(warning) {
+  const key = warning.title;
+  const count = warningRepeatCounts[key] || 0;
+  if (count < 3) return warning;
+
+  const idx = Math.min(count, NAG_PREFIXES.length - 1);
+  const prefix = NAG_PREFIXES[idx];
+  if (!prefix) return warning;
+
+  return { ...warning, message: prefix + warning.message };
+}
+
 // === Advisor Avatars (Pixel Art Generated) ===
 const ADVISOR_COLORS = {
   mayor: {
@@ -558,6 +591,12 @@ export function handleAdvisorAction(action) {
         new CustomEvent("select-building", { detail: "industrial" }),
       );
       break;
+    case "build_garbage_depot":
+      closeAdvisorPopup();
+      window.dispatchEvent(
+        new CustomEvent("select-building", { detail: "garbage_depot" }),
+      );
+      break;
     default:
       console.log("Unknown advisor action:", action);
       closeAdvisorPopup();
@@ -597,13 +636,31 @@ export async function checkWarnings() {
   try {
     const result = await api.getAdvisorWarnings();
     if (result && result.warnings && result.warnings.length > 0) {
+      // Track which warnings are active this round
+      const activeKeys = new Set();
+
       // Show all warnings, most severe first
       const sorted = result.warnings.sort((a, b) => {
         const order = { danger: 0, warning: 1, info: 2, success: 3 };
         return (order[a.severity] || 3) - (order[b.severity] || 3);
       });
       for (const warning of sorted) {
-        showAdvisorPopup(warning);
+        const key = warning.title;
+        activeKeys.add(key);
+        warningRepeatCounts[key] = (warningRepeatCounts[key] || 0) + 1;
+        showAdvisorPopup(getNagMessage(warning));
+      }
+
+      // Reset counts for warnings that resolved
+      for (const key of Object.keys(warningRepeatCounts)) {
+        if (!activeKeys.has(key)) {
+          delete warningRepeatCounts[key];
+        }
+      }
+    } else {
+      // No warnings — reset all counts
+      for (const key of Object.keys(warningRepeatCounts)) {
+        delete warningRepeatCounts[key];
       }
     }
   } catch (e) {

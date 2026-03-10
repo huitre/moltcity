@@ -561,7 +561,7 @@ export const HAPPINESS = {
   
   // Penalties
   CRIME_PENALTY: 2, // -2 safety per active crime nearby
-  POLLUTION_RADIUS: 5, // factory pollution radius
+  POLLUTION_RADIUS: 8, // factory pollution radius
   POLLUTION_PENALTY: 10, // -10 happiness if within factory pollution
   
   // Garbage depot pollution (smells bad, attracts pests)
