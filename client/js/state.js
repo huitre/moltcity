@@ -49,6 +49,8 @@ export let vehiclesContainer = null;
 export let pedestriansContainer = null;
 export let sceneLayer = null;
 export let placementHintLayer = null;
+export let pollutionLayer = null;
+export let pollutionLayerVisible = false;
 
 // Ambient elements
 export const clouds = [];
@@ -147,6 +149,8 @@ export function setVehiclesContainer(container) { vehiclesContainer = container;
 export function setPedestriansContainer(container) { pedestriansContainer = container; }
 export function setSceneLayer(layer) { sceneLayer = layer; }
 export function setPlacementHintLayer(layer) { placementHintLayer = layer; }
+export function setPollutionLayer(layer) { pollutionLayer = layer; }
+export function setPollutionLayerVisible(visible) { pollutionLayerVisible = visible; }
 export function setCurrentPopulation(pop) { currentPopulation = pop; }
 export function setCurrentHour(hour) { currentHour = hour; }
 export function setMaxAnimatedVehicles(max) { MAX_ANIMATED_VEHICLES = max; }

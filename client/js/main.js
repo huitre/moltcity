@@ -4,8 +4,8 @@
 
 import * as state from "./state.js";
 import * as api from "./api.js";
-import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS } from "./config.js";
-import { bresenhamLine } from "./utils.js";
+import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS, TILE_WIDTH, TILE_HEIGHT } from "./config.js";
+import { bresenhamLine, cartToIso } from "./utils.js";
 import { initPixi, setupInteractions } from "./pixi/init.js";
 import { initGame, render } from "./game.js";
 import { connectWebSocket } from "./websocket.js";
@@ -1646,6 +1646,9 @@ function setupBuildMenu() {
 
   // ESC key to deselect
   document.addEventListener("keydown", (e) => {
+    // Don't handle shortcuts when typing in inputs
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    
     if (e.key === "Escape") {
       // Close power popover
       if (powerPopover) powerPopover.classList.remove("open");
@@ -1666,6 +1669,11 @@ function setupBuildMenu() {
         updatePlacementHints(null);
         console.log("[MoltCity] Build type deselected");
       }
+    }
+    
+    // P key - Toggle pollution layer
+    if (e.key === "p" || e.key === "P") {
+      togglePollutionLayer();
     }
   });
 }
@@ -1719,6 +1727,106 @@ function exitCityHallMode() {
 
   showToast("City Hall placed! Full build menu unlocked.");
 }
+
+// ============================================
+// Pollution Layer
+// ============================================
+
+/**
+ * Create/update pollution layer overlay
+ */
+async function renderPollutionLayer() {
+  // Remove existing layer
+  if (state.pollutionLayer) {
+    state.worldContainer.removeChild(state.pollutionLayer);
+    state.pollutionLayer.destroy({ children: true });
+    state.setPollutionLayer(null);
+  }
+
+  if (!state.pollutionLayerVisible) return;
+
+  try {
+    const data = await api.getPollutionMap();
+    if (!data.pollutionMap || data.pollutionMap.length === 0) {
+      showToast("No pollution detected in the city");
+      return;
+    }
+
+    const container = new PIXI.Container();
+    container.sortableChildren = true;
+    container.zIndex = 50000; // Above buildings but below UI
+
+    for (const point of data.pollutionMap) {
+      const iso = cartToIso(point.x, point.y);
+      const graphics = new PIXI.Graphics();
+
+      // Color gradient: green (0) -> yellow (50) -> red (100)
+      let color;
+      if (point.level < 30) {
+        // Green to yellow
+        const t = point.level / 30;
+        const r = Math.round(0x4e + (0xff - 0x4e) * t);
+        const g = Math.round(0xcd + (0xa5 - 0xcd) * t);
+        const b = Math.round(0xc4 + (0x00 - 0xc4) * t);
+        color = (r << 16) | (g << 8) | b;
+      } else {
+        // Yellow to red
+        const t = (point.level - 30) / 70;
+        const r = 0xff;
+        const g = Math.round(0xa5 * (1 - t));
+        const b = 0x00;
+        color = (r << 16) | (g << 8) | b;
+      }
+
+      // Draw semi-transparent isometric tile
+      const alpha = 0.4 + (point.level / 100) * 0.3; // 0.4-0.7 based on level
+      graphics.beginFill(color, alpha);
+      graphics.moveTo(iso.x, iso.y);
+      graphics.lineTo(iso.x + TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+      graphics.lineTo(iso.x, iso.y + TILE_HEIGHT);
+      graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+      graphics.closePath();
+      graphics.endFill();
+
+      graphics.zIndex = point.y * GRID_SIZE + point.x;
+      container.addChild(graphics);
+    }
+
+    state.worldContainer.addChild(container);
+    state.setPollutionLayer(container);
+    console.log(`[Pollution] Rendered ${data.pollutionMap.length} pollution tiles`);
+  } catch (err) {
+    console.error("[Pollution] Failed to load pollution map:", err);
+    showToast("Failed to load pollution data", true);
+  }
+}
+
+/**
+ * Toggle pollution layer visibility
+ */
+async function togglePollutionLayer() {
+  state.setPollutionLayerVisible(!state.pollutionLayerVisible);
+  
+  const btn = document.getElementById("pollution-toggle");
+  if (btn) {
+    btn.classList.toggle("active", state.pollutionLayerVisible);
+  }
+
+  if (state.pollutionLayerVisible) {
+    showToast("Loading pollution map...");
+    await renderPollutionLayer();
+  } else {
+    if (state.pollutionLayer) {
+      state.worldContainer.removeChild(state.pollutionLayer);
+      state.pollutionLayer.destroy({ children: true });
+      state.setPollutionLayer(null);
+    }
+    showToast("Pollution layer hidden");
+  }
+}
+
+// Expose toggle function globally
+window.togglePollutionLayer = togglePollutionLayer;
 
 /**
  * Main application entry point

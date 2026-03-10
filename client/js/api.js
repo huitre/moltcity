@@ -516,3 +516,13 @@ export async function debugSetDensity(buildingId, density) {
     body: JSON.stringify(bodyWithCity({ buildingId, density })),
   });
 }
+
+// ============================================
+// Pollution Map API
+// ============================================
+
+export async function getPollutionMap() {
+  const cityId = state.currentCityId;
+  if (!cityId) return { pollutionMap: [] };
+  return fetchApi(`/api/cities/${cityId}/pollution-map`);
+}

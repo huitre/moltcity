@@ -19,6 +19,8 @@ import {
   ZONING_COST,
   HOUSING,
   ZONE_EVOLUTION,
+  HAPPINESS,
+  CITY_SERVICES,
 } from '../config/game.js';
 import { z } from 'zod';
 import fs from 'fs/promises';
@@ -295,5 +297,78 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
     const updated = await buildingRepo.getBuilding(body.buildingId);
     if (cityId) fastify.broadcastToCity(cityId, 'buildings_update', { action: 'density_changed' });
     return { ok: true, building: updated };
+  });
+
+  // Pollution map - returns pollution level per parcel for heatmap overlay
+  fastify.get('/api/cities/:cityId/pollution-map', async (request, reply) => {
+    const { cityId } = request.params as { cityId: string };
+    const city = await cityService.getCity(cityId);
+    if (!city) return reply.status(404).send({ error: 'City not found' });
+
+    const parcelRepo = new ParcelRepository(fastify.db);
+    const buildingRepo = new BuildingRepository(fastify.db);
+
+    const parcels = await parcelRepo.getParcelsByCityId(cityId);
+    const buildings = await buildingRepo.getAllBuildings(cityId);
+
+    // Build coordinate lookup for buildings
+    const buildingCoords: { type: string; x: number; y: number; garbageLevel: number; width: number; height: number }[] = [];
+    for (const b of buildings) {
+      const p = await parcelRepo.getParcelById(b.parcelId);
+      if (p) {
+        buildingCoords.push({
+          type: b.type,
+          x: p.x,
+          y: p.y,
+          garbageLevel: b.garbageLevel || 0,
+          width: b.width || 1,
+          height: b.height || 1,
+        });
+      }
+    }
+
+    // Calculate pollution for each parcel
+    const pollutionMap: { x: number; y: number; level: number }[] = [];
+
+    for (const parcel of parcels) {
+      let pollution = 0;
+
+      for (const bc of buildingCoords) {
+        // Check distance to all tiles of the building footprint
+        let minDist = Infinity;
+        for (let dy = 0; dy < bc.height; dy++) {
+          for (let dx = 0; dx < bc.width; dx++) {
+            const dist = Math.abs((bc.x + dx) - parcel.x) + Math.abs((bc.y + dy) - parcel.y);
+            if (dist < minDist) minDist = dist;
+          }
+        }
+
+        // Factory/industrial pollution
+        if ((bc.type === 'factory' || bc.type === 'industrial') && minDist <= HAPPINESS.POLLUTION_RADIUS) {
+          const falloff = 1 - (minDist / (HAPPINESS.POLLUTION_RADIUS + 1));
+          pollution += Math.round(HAPPINESS.POLLUTION_PENALTY * falloff);
+        }
+
+        // Garbage depot pollution
+        if (bc.type === 'garbage_depot' && minDist <= HAPPINESS.GARBAGE_POLLUTION_RADIUS) {
+          const falloff = 1 - (minDist / (HAPPINESS.GARBAGE_POLLUTION_RADIUS + 1));
+          pollution += Math.round(HAPPINESS.GARBAGE_POLLUTION_PENALTY * falloff);
+        }
+
+        // High garbage buildings emit local pollution
+        if (bc.garbageLevel > 50 && minDist <= 2) {
+          const garbagePollution = Math.round((bc.garbageLevel - 50) / 10);
+          const falloff = 1 - (minDist / 3);
+          pollution += Math.round(garbagePollution * falloff);
+        }
+      }
+
+      // Only include parcels with pollution > 0
+      if (pollution > 0) {
+        pollutionMap.push({ x: parcel.x, y: parcel.y, level: Math.min(pollution, 100) });
+      }
+    }
+
+    return { pollutionMap };
   });
 };
