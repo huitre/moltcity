@@ -349,6 +349,12 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
           pollution += Math.round(HAPPINESS.POLLUTION_PENALTY * falloff);
         }
 
+        // Coal plant pollution (higher than factory - dirty energy)
+        if (bc.type === 'coal_plant' && minDist <= 7) {
+          const falloff = 1 - (minDist / 8);
+          pollution += Math.round(15 * falloff); // 15 max pollution
+        }
+
         // Garbage depot pollution
         if (bc.type === 'garbage_depot' && minDist <= HAPPINESS.GARBAGE_POLLUTION_RADIUS) {
           const falloff = 1 - (minDist / (HAPPINESS.GARBAGE_POLLUTION_RADIUS + 1));
@@ -360,6 +366,15 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
           const garbagePollution = Math.round((bc.garbageLevel - 50) / 10);
           const falloff = 1 - (minDist / 3);
           pollution += Math.round(garbagePollution * falloff);
+        }
+
+        // Parks REDUCE pollution (clean air!)
+        if ((bc.type === 'park' || bc.type === 'plaza') && minDist <= 3) {
+          if (minDist <= 1) {
+            pollution -= 2; // -2 pollution for adjacent tiles
+          } else {
+            pollution -= 1; // -1 pollution for tiles 2-3 away
+          }
         }
       }
 
