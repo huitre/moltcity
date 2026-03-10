@@ -76,6 +76,11 @@ export class LandValueSimulator {
           value -= 10;
         }
 
+        // Garbage depots decrease land value (smell, pests, trucks)
+        if (bc.b.type === 'garbage_depot' && dist <= HAPPINESS.GARBAGE_POLLUTION_RADIUS) {
+          value -= HAPPINESS.GARBAGE_LAND_VALUE_PENALTY;
+        }
+
         // Police/fire station coverage
         if ((bc.b.type === 'police_station' || bc.b.type === 'fire_station') && dist <= 15) {
           value += 5;
