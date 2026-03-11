@@ -86,7 +86,7 @@ function scheduleRender() {
  * Show the sprite editor for a building.
  */
 export function showSpriteEditor(building, parcelX, parcelY) {
-  const panel = document.getElementById('sprite-editor-panel');
+  const panel = document.getElementById('admin-panel');
   const content = document.getElementById('se-content');
   const noSprite = document.getElementById('se-no-sprite');
   if (!panel) return;
@@ -97,6 +97,8 @@ export function showSpriteEditor(building, parcelX, parcelY) {
     content.style.display = 'none';
     noSprite.style.display = 'block';
     panel.style.display = 'block';
+    const spritesTab = document.querySelector('#admin-panel .admin-tab[data-tab="admin-tab-sprites"]');
+    if (spritesTab) spritesTab.click();
     currentResolved = null;
     return;
   }
@@ -253,14 +255,17 @@ export function showSpriteEditor(building, parcelX, parcelY) {
     scheduleRender();
   });
 
+  // Open admin panel on Sprites tab
   panel.style.display = 'block';
+  const spritesTab = document.querySelector('#admin-panel .admin-tab[data-tab="admin-tab-sprites"]');
+  if (spritesTab) spritesTab.click();
 }
 
 /**
- * Close the sprite editor panel.
+ * Close the sprite editor (admin panel).
  */
 export function closeSpriteEditor() {
-  const panel = document.getElementById('sprite-editor-panel');
+  const panel = document.getElementById('admin-panel');
   if (panel) panel.style.display = 'none';
   currentResolved = null;
   originalValues = null;

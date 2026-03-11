@@ -21,7 +21,7 @@ export async function initPixi() {
   const app = new PIXI.Application({
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: 0x87ceeb,
+    backgroundColor: 0x000000,
     antialias: true,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true,
@@ -29,6 +29,14 @@ export async function initPixi() {
 
   document.getElementById("game-container").appendChild(app.view);
   state.setApp(app);
+
+  // Skybox background — added first so it renders behind everything
+  const skyboxTexture = PIXI.Texture.from("/sprites/ui/skybox.png");
+  const skybox = new PIXI.Sprite(skyboxTexture);
+  skybox.width = app.screen.width;
+  skybox.height = app.screen.height;
+  app.stage.addChild(skybox);
+  state.setSkybox(skybox);
 
   // Create world container for camera movement
   const worldContainer = new PIXI.Container();
@@ -77,9 +85,21 @@ export async function initPixi() {
   app.stage.addChild(dayNightOverlay);
   state.setDayNightOverlay(dayNightOverlay);
 
+  // Tilt-shift filter on world container for miniature/diorama effect
+  // Coordinates are in worldContainer local (isometric) space
+  const tiltShift = new PIXI.filters.TiltShiftFilter();
+  tiltShift.blur = 8;
+  tiltShift.gradientBlur = 1150;
+  tiltShift.start = new PIXI.Point(WORLD_MIN_X, 550);
+  tiltShift.end = new PIXI.Point(WORLD_MAX_X, centerIso.y);
+  worldContainer.filters = [tiltShift];
+  state.setTiltShiftFilter(tiltShift);
+
   // Handle window resize
   window.addEventListener("resize", () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
+    skybox.width = app.screen.width;
+    skybox.height = app.screen.height;
   });
 
   return app;
@@ -249,7 +269,7 @@ export function setupInteractions(
   // ============================================
   // MOBILE TOUCH SUPPORT: Pinch to zoom + pan
   // ============================================
-  
+
   let touchState = {
     isMultiTouch: false,
     initialDistance: 0,
@@ -275,84 +295,109 @@ export function setupInteractions(
   }
 
   // Prevent default touch behaviors (scrolling, zooming page)
-  app.view.addEventListener("touchstart", (e) => {
-    if (e.touches.length >= 2) {
-      e.preventDefault();
-      touchState.isMultiTouch = true;
-      touchState.initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
-      touchState.initialScale = worldContainer.scale.x;
-      touchState.initialCenter = getTouchCenter(e.touches[0], e.touches[1]);
-      touchState.lastCenter = touchState.initialCenter;
-      
-      // Cancel any drag-draw in progress
-      if (isDragging) {
-        isDragging = false;
-      }
-      if (isPendingDragDraw || isInDragDraw) {
-        isPendingDragDraw = false;
-        isInDragDraw = false;
-        if (onDragEnd) onDragEnd();
-      }
-    }
-    touchState.lastTouchCount = e.touches.length;
-  }, { passive: false });
+  app.view.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        touchState.isMultiTouch = true;
+        touchState.initialDistance = getTouchDistance(
+          e.touches[0],
+          e.touches[1],
+        );
+        touchState.initialScale = worldContainer.scale.x;
+        touchState.initialCenter = getTouchCenter(e.touches[0], e.touches[1]);
+        touchState.lastCenter = touchState.initialCenter;
 
-  app.view.addEventListener("touchmove", (e) => {
-    if (e.touches.length >= 2) {
-      e.preventDefault();
-      
-      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
-      const currentCenter = getTouchCenter(e.touches[0], e.touches[1]);
-      
-      // Calculate new scale based on pinch
-      const scaleRatio = currentDistance / touchState.initialDistance;
-      const newScale = clamp(touchState.initialScale * scaleRatio, 0.3, 2);
-      
-      // Apply zoom centered on pinch center
-      const worldPos = worldContainer.toLocal(touchState.initialCenter);
-      worldContainer.scale.set(newScale);
-      const newScreenPos = worldContainer.toGlobal(worldPos);
-      worldContainer.x += touchState.initialCenter.x - newScreenPos.x;
-      worldContainer.y += touchState.initialCenter.y - newScreenPos.y;
-      
-      // Also apply pan based on center movement
-      const dx = currentCenter.x - touchState.lastCenter.x;
-      const dy = currentCenter.y - touchState.lastCenter.y;
-      worldContainer.x = clamp(
-        worldContainer.x + dx,
-        -WORLD_MAX_X + app.screen.width / 2,
-        -WORLD_MIN_X + app.screen.width / 2,
-      );
-      worldContainer.y = clamp(
-        worldContainer.y + dy,
-        -WORLD_MAX_Y + app.screen.height / 2,
-        app.screen.height / 2,
-      );
-      
-      touchState.lastCenter = currentCenter;
-    }
-  }, { passive: false });
+        // Cancel any drag-draw in progress
+        if (isDragging) {
+          isDragging = false;
+        }
+        if (isPendingDragDraw || isInDragDraw) {
+          isPendingDragDraw = false;
+          isInDragDraw = false;
+          if (onDragEnd) onDragEnd();
+        }
+      }
+      touchState.lastTouchCount = e.touches.length;
+    },
+    { passive: false },
+  );
 
-  app.view.addEventListener("touchend", (e) => {
-    if (e.touches.length < 2) {
+  app.view.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+
+        const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        const currentCenter = getTouchCenter(e.touches[0], e.touches[1]);
+
+        // Calculate new scale based on pinch
+        const scaleRatio = currentDistance / touchState.initialDistance;
+        const newScale = clamp(touchState.initialScale * scaleRatio, 0.3, 2);
+
+        // Apply zoom centered on pinch center
+        const worldPos = worldContainer.toLocal(touchState.initialCenter);
+        worldContainer.scale.set(newScale);
+        const newScreenPos = worldContainer.toGlobal(worldPos);
+        worldContainer.x += touchState.initialCenter.x - newScreenPos.x;
+        worldContainer.y += touchState.initialCenter.y - newScreenPos.y;
+
+        // Also apply pan based on center movement
+        const dx = currentCenter.x - touchState.lastCenter.x;
+        const dy = currentCenter.y - touchState.lastCenter.y;
+        worldContainer.x = clamp(
+          worldContainer.x + dx,
+          -WORLD_MAX_X + app.screen.width / 2,
+          -WORLD_MIN_X + app.screen.width / 2,
+        );
+        worldContainer.y = clamp(
+          worldContainer.y + dy,
+          -WORLD_MAX_Y + app.screen.height / 2,
+          app.screen.height / 2,
+        );
+
+        touchState.lastCenter = currentCenter;
+      }
+    },
+    { passive: false },
+  );
+
+  app.view.addEventListener(
+    "touchend",
+    (e) => {
+      if (e.touches.length < 2) {
+        touchState.isMultiTouch = false;
+      }
+      if (e.touches.length === 1 && touchState.lastTouchCount >= 2) {
+        // Transitioning from multi-touch to single touch
+        // Reset drag state to prevent jumps
+        lastPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        startPos = lastPos;
+      }
+      touchState.lastTouchCount = e.touches.length;
+    },
+    { passive: false },
+  );
+
+  app.view.addEventListener(
+    "touchcancel",
+    () => {
       touchState.isMultiTouch = false;
-    }
-    if (e.touches.length === 1 && touchState.lastTouchCount >= 2) {
-      // Transitioning from multi-touch to single touch
-      // Reset drag state to prevent jumps
-      lastPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      startPos = lastPos;
-    }
-    touchState.lastTouchCount = e.touches.length;
-  }, { passive: false });
-
-  app.view.addEventListener("touchcancel", () => {
-    touchState.isMultiTouch = false;
-    touchState.lastTouchCount = 0;
-  }, { passive: false });
+      touchState.lastTouchCount = 0;
+    },
+    { passive: false },
+  );
 
   // Prevent iOS Safari bounce/zoom
-  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
-  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
-  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), {
+    passive: false,
+  });
+  document.addEventListener("gesturechange", (e) => e.preventDefault(), {
+    passive: false,
+  });
+  document.addEventListener("gestureend", (e) => e.preventDefault(), {
+    passive: false,
+  });
 }

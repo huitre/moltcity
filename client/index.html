@@ -7,6 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <title>MoltCity - The City Where AI Agents Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
@@ -1084,13 +1085,15 @@
         text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
       }
 
-      /* Debug Panel */
-      #debug-panel {
+      /* Admin Panel */
+      #admin-panel {
         display: none;
         position: fixed;
         bottom: 80px;
         right: 10px;
-        width: 280px;
+        width: 300px;
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
         background: linear-gradient(
           180deg,
           var(--wood-mid) 0%,
@@ -1106,7 +1109,7 @@
         animation: panelSlideIn 0.2s ease-out;
       }
 
-      #debug-panel h3 {
+      #admin-panel h3 {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -1117,7 +1120,7 @@
         color: var(--text-gold);
       }
 
-      #debug-panel .close-btn {
+      #admin-panel .close-btn {
         background: var(--wood-dark);
         border: 2px solid var(--wood-border);
         color: var(--wood-highlight);
@@ -1129,9 +1132,83 @@
         transition: all 0.1s;
       }
 
-      #debug-panel .close-btn:hover {
+      #admin-panel .close-btn:hover {
         color: var(--accent-red);
         border-color: var(--accent-red);
+      }
+
+      .admin-tabs {
+        display: flex;
+        gap: 2px;
+        margin-bottom: 10px;
+      }
+
+      .admin-tab {
+        flex: 1;
+        padding: 5px 4px;
+        font-size: 6px;
+        text-transform: uppercase;
+        background: var(--wood-dark);
+        border: 2px solid var(--wood-border);
+        color: var(--wood-highlight);
+        cursor: pointer;
+        transition: all 0.1s;
+      }
+
+      .admin-tab.active {
+        background: var(--wood-light);
+        color: var(--text-gold);
+        border-color: var(--text-gold);
+      }
+
+      .admin-tab:hover:not(.active) {
+        background: var(--wood-grain);
+      }
+
+      .admin-tab-content {
+        display: none;
+      }
+
+      .admin-tab-content.active {
+        display: block;
+      }
+
+      .admin-slider-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+      }
+
+      .admin-slider-row label {
+        min-width: 60px;
+        font-size: 7px;
+        color: var(--text-cream);
+      }
+
+      .admin-slider-row input[type="range"] {
+        flex: 1;
+        height: 4px;
+        accent-color: var(--accent-cyan);
+      }
+
+      .admin-slider-row .slider-val {
+        min-width: 36px;
+        text-align: right;
+        font-size: 7px;
+        color: var(--accent-cyan);
+        font-family: "Press Start 2P", monospace;
+      }
+
+      .admin-checkbox-row {
+        padding: 6px 0;
+        font-size: 7px;
+        color: var(--text-cream);
+      }
+
+      .admin-checkbox-row input[type="checkbox"] {
+        accent-color: var(--accent-cyan);
+        margin-right: 6px;
       }
 
       .debug-field {
@@ -1537,67 +1614,12 @@
       }
 
       /* Sprite Editor Panel */
-      #sprite-editor-panel {
-        display: none;
-        position: fixed;
-        bottom: 80px;
-        right: 10px;
-        width: 320px;
-        max-height: 500px;
-        overflow-y: auto;
-        background: linear-gradient(
-          180deg,
-          var(--wood-mid) 0%,
-          var(--wood-dark) 100%
-        );
-        border: 3px solid var(--wood-border);
-        border-radius: 0;
-        padding: 14px;
-        color: var(--text-light);
-        box-shadow:
-          inset 2px 2px 0 var(--wood-highlight),
-          inset -2px -2px 0 var(--wood-grain),
-          0 8px 32px rgba(0, 0, 0, 0.5);
-        z-index: 200;
-        animation: panelSlideIn 0.2s ease-out;
-      }
-
-      #sprite-editor-panel h3 {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--wood-border);
-        margin-bottom: 12px;
-        color: var(--text-gold);
-        font-size: 8px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
-      }
-
-      #sprite-editor-panel .close-btn {
-        background: var(--wood-dark);
-        border: 2px solid var(--wood-border);
-        color: var(--wood-highlight);
-        font-size: 12px;
-        cursor: pointer;
-        padding: 4px 8px;
-        line-height: 1;
-        border-radius: 0;
-        transition: all 0.1s;
-      }
-
-      #sprite-editor-panel .close-btn:hover {
-        color: var(--accent-red);
-        border-color: var(--accent-red);
-      }
-
-      #sprite-editor-panel .se-field {
+      /* Sprite editor fields (inside admin panel) */
+      .se-field {
         margin: 8px 0;
       }
 
-      #sprite-editor-panel .se-field label {
+      .se-field label {
         display: block;
         font-size: 7px;
         color: var(--wood-highlight);
@@ -1606,13 +1628,13 @@
         letter-spacing: 0.5px;
       }
 
-      #sprite-editor-panel .se-field .se-readonly {
+      .se-field .se-readonly {
         color: var(--text-gold);
         font-size: 8px;
         font-family: "Press Start 2P", monospace;
       }
 
-      #sprite-editor-panel .se-field input[type="number"] {
+      .se-field input[type="number"] {
         width: 80px;
         background: rgba(0, 0, 0, 0.3);
         border: 2px solid var(--wood-border);
@@ -1623,24 +1645,24 @@
         font-family: "Press Start 2P", monospace;
       }
 
-      #sprite-editor-panel .se-field input[type="number"]:focus {
+      .se-field input[type="number"]:focus {
         outline: none;
         border-color: var(--text-gold);
       }
 
-      #sprite-editor-panel .se-field input[type="range"] {
-        width: 160px;
+      .se-field input[type="range"] {
+        width: 140px;
         vertical-align: middle;
         accent-color: var(--text-gold);
       }
 
-      #sprite-editor-panel .se-anchor-row {
+      .se-anchor-row {
         display: flex;
         align-items: center;
         gap: 8px;
       }
 
-      #sprite-editor-panel .se-section {
+      .se-section {
         font-size: 7px;
         color: var(--text-gold);
         text-transform: uppercase;
@@ -1651,13 +1673,13 @@
         text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
       }
 
-      #sprite-editor-panel .se-buttons {
+      .se-buttons {
         display: flex;
         gap: 8px;
         margin-top: 14px;
       }
 
-      #sprite-editor-panel .se-buttons button {
+      .se-buttons button {
         flex: 1;
         padding: 8px 12px;
         border-radius: 0;
@@ -1666,7 +1688,7 @@
         transition: all 0.1s;
       }
 
-      #sprite-editor-panel .se-btn-save {
+      .se-btn-save {
         background: linear-gradient(
           180deg,
           var(--accent-green) 0%,
@@ -1676,7 +1698,7 @@
         color: #fff;
       }
 
-      #sprite-editor-panel .se-btn-save:hover {
+      .se-btn-save:hover {
         background: linear-gradient(
           180deg,
           #7ad95a 0%,
@@ -1685,13 +1707,13 @@
         transform: translateY(-1px);
       }
 
-      #sprite-editor-panel .se-btn-reset {
+      .se-btn-reset {
         background: linear-gradient(180deg, var(--wood-dark) 0%, #4a2e18 100%);
         border: 2px solid var(--wood-border);
         color: var(--text-cream);
       }
 
-      #sprite-editor-panel .se-btn-reset:hover {
+      .se-btn-reset:hover {
         background: linear-gradient(
           180deg,
           var(--wood-mid) 0%,
@@ -1700,7 +1722,7 @@
         transform: translateY(-1px);
       }
 
-      #sprite-editor-panel .se-status {
+      .se-status {
         font-size: 7px;
         margin-top: 8px;
         text-align: center;
@@ -3305,23 +3327,14 @@
           max-height: 40vh;
         }
 
-        /* Sprite editor panel */
-        #sprite-editor-panel {
+        /* Admin panel */
+        #admin-panel {
           bottom: auto;
           top: 50px;
           right: 8px;
           left: 8px;
           width: auto;
-          max-height: 40vh;
-        }
-
-        /* Debug panel */
-        #debug-panel {
-          bottom: auto;
-          top: 50px;
-          right: 8px;
-          left: 8px;
-          width: auto;
+          max-height: 60vh;
         }
 
         /* Advisor panel */
@@ -4790,130 +4803,185 @@
       </div>
     </div>
 
-    <!-- Sprite Editor Panel -->
-    <div id="sprite-editor-panel">
+    <!-- Admin Panel -->
+    <div class="panel" id="admin-panel">
       <h3>
-        <span>Sprite Editor</span>
-        <button class="close-btn" onclick="closeSpriteEditor()">&times;</button>
-      </h3>
-      <div id="se-content">
-        <div class="se-field">
-          <label>ID</label>
-          <span class="se-readonly" id="se-id">-</span>
-        </div>
-        <div class="se-field">
-          <label>File</label>
-          <span class="se-readonly" id="se-file">-</span>
-        </div>
-        <div class="se-field">
-          <label>Source</label>
-          <span class="se-readonly" id="se-source">-</span>
-        </div>
-        <div class="se-field">
-          <label>Tiles</label>
-          <span class="se-readonly" id="se-tiles">-</span>
-        </div>
-
-        <div class="se-section">Dimensions</div>
-        <div class="se-field">
-          <label>Width</label>
-          <input type="number" id="se-width" min="1" step="1" />
-        </div>
-        <div class="se-field">
-          <label>Height</label>
-          <input type="number" id="se-height" min="1" step="1" />
-        </div>
-
-        <div class="se-section">Anchor</div>
-        <div class="se-field">
-          <label>Anchor X</label>
-          <div class="se-anchor-row">
-            <input
-              type="range"
-              id="se-anchor-x-range"
-              min="0"
-              max="1"
-              step="0.01"
-            />
-            <input type="number" id="se-anchor-x" min="0" max="1" step="0.01" />
-          </div>
-        </div>
-        <div class="se-field">
-          <label>Anchor Y</label>
-          <div class="se-anchor-row">
-            <input
-              type="range"
-              id="se-anchor-y-range"
-              min="0"
-              max="1"
-              step="0.01"
-            />
-            <input type="number" id="se-anchor-y" min="0" max="1" step="0.01" />
-          </div>
-        </div>
-
-        <div class="se-buttons">
-          <button class="se-btn-save" id="se-save">Save to sprites.json</button>
-          <button class="se-btn-reset" id="se-reset">Reset</button>
-        </div>
-        <div class="se-status" id="se-status"></div>
-      </div>
-      <div
-        id="se-no-sprite"
-        style="display: none; color: #888; text-align: center; padding: 20px 0"
-      >
-        No sprite data (procedural building)
-      </div>
-    </div>
-
-    <!-- Debug Panel -->
-    <div class="panel" id="debug-panel">
-      <h3>
-        <span>Debug</span>
-        <button class="close-btn" onclick="closeDebugPanel()">&times;</button>
+        <span>Admin</span>
+        <button class="close-btn" onclick="closeAdminPanel()">&times;</button>
       </h3>
 
-      <div class="debug-section">Editable</div>
-      <div class="debug-field">
-        <span>Treasury</span>
-        <input type="number" class="debug-input" id="debug-treasury" value="0" />
-      </div>
-      <div class="debug-field">
-        <span>Hour (0-23)</span>
-        <input type="number" class="debug-input" id="debug-hour" min="0" max="23" value="0" />
-      </div>
-      <div class="debug-field">
-        <span>Day (1-365)</span>
-        <input type="number" class="debug-input" id="debug-day" min="1" max="365" value="1" />
-      </div>
-      <div class="debug-field">
-        <span>Year</span>
-        <input type="number" class="debug-input" id="debug-year" min="1" value="1" />
+      <!-- Tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="admin-tab-city">City</button>
+        <button class="admin-tab" data-tab="admin-tab-camera">Camera</button>
+        <button class="admin-tab" data-tab="admin-tab-vehicles">Vehicles</button>
+        <button class="admin-tab" data-tab="admin-tab-sprites">Sprites</button>
       </div>
 
-      <div class="debug-section">Read-only</div>
-      <div class="debug-field">
-        <span>Population</span>
-        <span class="debug-readonly" id="debug-population">0</span>
-      </div>
-      <div class="debug-field">
-        <span>Offices</span>
-        <span class="debug-readonly" id="debug-offices">0</span>
+      <!-- Tab: City -->
+      <div class="admin-tab-content active" id="admin-tab-city">
+        <div class="debug-section">Editable</div>
+        <div class="debug-field">
+          <span>Treasury</span>
+          <input type="number" class="debug-input" id="debug-treasury" value="0" />
+        </div>
+        <div class="debug-field">
+          <span>Hour (0-23)</span>
+          <input type="number" class="debug-input" id="debug-hour" min="0" max="23" value="0" />
+        </div>
+        <div class="debug-field">
+          <span>Day (1-365)</span>
+          <input type="number" class="debug-input" id="debug-day" min="1" max="365" value="1" />
+        </div>
+        <div class="debug-field">
+          <span>Year</span>
+          <input type="number" class="debug-input" id="debug-year" min="1" value="1" />
+        </div>
+
+        <div class="debug-section">Read-only</div>
+        <div class="debug-field">
+          <span>Population</span>
+          <span class="debug-readonly" id="debug-population">0</span>
+        </div>
+        <div class="debug-field">
+          <span>Offices</span>
+          <span class="debug-readonly" id="debug-offices">0</span>
+        </div>
+
+        <div class="debug-section">Zone Density</div>
+        <div class="debug-field">
+          <span>Selected</span>
+          <span class="debug-readonly" id="debug-selected-building">None</span>
+        </div>
+        <div class="debug-field" style="display:flex;gap:4px">
+          <button class="debug-density-btn" data-density="1">Low</button>
+          <button class="debug-density-btn" data-density="2">Med</button>
+          <button class="debug-density-btn" data-density="3">High</button>
+          <button class="debug-density-btn" data-density="4">V.High</button>
+        </div>
+
+        <button class="debug-apply" id="debug-apply-btn">Apply</button>
       </div>
 
-      <div class="debug-section">Zone Density</div>
-      <div class="debug-field">
-        <span>Selected</span>
-        <span class="debug-readonly" id="debug-selected-building">None</span>
-      </div>
-      <div class="debug-field" style="display:flex;gap:4px">
-        <button class="debug-density-btn" data-density="1">Low</button>
-        <button class="debug-density-btn" data-density="2">Med</button>
-        <button class="debug-density-btn" data-density="3">High</button>
-        <button class="debug-density-btn" data-density="4">V.High</button>
+      <!-- Tab: Camera (Tilt-Shift) -->
+      <div class="admin-tab-content" id="admin-tab-camera">
+        <div class="debug-section">Tilt-Shift</div>
+        <div class="admin-slider-row">
+          <label>Blur</label>
+          <input type="range" id="ts-blur" min="0" max="30" step="1" value="8" />
+          <span class="slider-val" id="ts-blur-val">8</span>
+        </div>
+        <div class="admin-slider-row">
+          <label>Gradient</label>
+          <input type="range" id="ts-gradient" min="100" max="2000" step="50" value="600" />
+          <span class="slider-val" id="ts-gradient-val">600</span>
+        </div>
+        <div class="admin-slider-row">
+          <label>Offset</label>
+          <input type="range" id="ts-start-y" min="-500" max="2000" step="10" value="800" />
+          <span class="slider-val" id="ts-start-y-val">800</span>
+        </div>
+        <div class="admin-checkbox-row">
+          <label>
+            <input type="checkbox" id="ts-enabled" checked />
+            Enabled
+          </label>
+        </div>
       </div>
 
-      <button class="debug-apply" id="debug-apply-btn">Apply</button>
+      <!-- Tab: Vehicles -->
+      <div class="admin-tab-content" id="admin-tab-vehicles">
+        <div id="vd-no-selection" style="color:#888;text-align:center;padding:20px 0">
+          Click a vehicle to inspect
+        </div>
+        <div id="vd-content" style="display:none">
+          <div class="debug-section"><span id="vd-type">Vehicle</span></div>
+          <div class="debug-field">
+            <span>Direction</span>
+            <span class="debug-readonly" id="vd-direction">-</span>
+          </div>
+          <div class="debug-field">
+            <span>Texture</span>
+            <span class="debug-readonly" id="vd-texture-size">-</span>
+          </div>
+
+          <div class="debug-section">Size</div>
+          <div class="admin-slider-row">
+            <label>Width</label>
+            <input type="range" id="vd-width" min="4" max="80" step="1" />
+            <span class="slider-val" id="vd-width-val">24</span>
+          </div>
+          <div class="admin-slider-row">
+            <label>Height</label>
+            <input type="range" id="vd-height" min="4" max="80" step="1" />
+            <span class="slider-val" id="vd-height-val">24</span>
+          </div>
+
+          <div class="debug-section">Rotation</div>
+          <div class="admin-slider-row">
+            <label>Angle</label>
+            <input type="range" id="vd-rotation" min="-45" max="45" step="1" />
+            <span class="slider-val" id="vd-rotation-val">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Sprites -->
+      <div class="admin-tab-content" id="admin-tab-sprites">
+        <div id="se-no-sprite" style="color:#888;text-align:center;padding:20px 0">
+          Click a building to edit its sprite
+        </div>
+        <div id="se-content" style="display:none">
+          <div class="se-field">
+            <label>ID</label>
+            <span class="se-readonly" id="se-id">-</span>
+          </div>
+          <div class="se-field">
+            <label>File</label>
+            <span class="se-readonly" id="se-file">-</span>
+          </div>
+          <div class="se-field">
+            <label>Source</label>
+            <span class="se-readonly" id="se-source">-</span>
+          </div>
+          <div class="se-field">
+            <label>Tiles</label>
+            <span class="se-readonly" id="se-tiles">-</span>
+          </div>
+
+          <div class="se-section">Dimensions</div>
+          <div class="se-field">
+            <label>Width</label>
+            <input type="number" id="se-width" min="1" step="1" />
+          </div>
+          <div class="se-field">
+            <label>Height</label>
+            <input type="number" id="se-height" min="1" step="1" />
+          </div>
+
+          <div class="se-section">Anchor</div>
+          <div class="se-field">
+            <label>Anchor X</label>
+            <div class="se-anchor-row">
+              <input type="range" id="se-anchor-x-range" min="0" max="1" step="0.01" />
+              <input type="number" id="se-anchor-x" min="0" max="1" step="0.01" />
+            </div>
+          </div>
+          <div class="se-field">
+            <label>Anchor Y</label>
+            <div class="se-anchor-row">
+              <input type="range" id="se-anchor-y-range" min="0" max="1" step="0.01" />
+              <input type="number" id="se-anchor-y" min="0" max="1" step="0.01" />
+            </div>
+          </div>
+
+          <div class="se-buttons">
+            <button class="se-btn-save" id="se-save">Save to sprites.json</button>
+            <button class="se-btn-reset" id="se-reset">Reset</button>
+          </div>
+          <div class="se-status" id="se-status"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Advisor Panel -->
@@ -4937,13 +5005,8 @@
         if (panel) panel.style.display = "none";
       }
 
-      function closeSpriteEditor() {
-        const panel = document.getElementById("sprite-editor-panel");
-        if (panel) panel.style.display = "none";
-      }
-
-      function closeDebugPanel() {
-        const panel = document.getElementById("debug-panel");
+      function closeAdminPanel() {
+        const panel = document.getElementById("admin-panel");
         if (panel) panel.style.display = "none";
       }
 

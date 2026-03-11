@@ -209,7 +209,43 @@ function drawStars(overlay, width, height, alpha = 1) {
 }
 
 /**
- * Update day/night overlay with time-based color cycle
+ * Smoothly interpolate between two values
+ */
+function lerp(a, b, t) {
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+
+/**
+ * Interpolate between two hex colors
+ */
+function lerpColor(c1, c2, t) {
+  t = Math.max(0, Math.min(1, t));
+  const r = Math.round(((c1 >> 16) & 0xff) * (1 - t) + ((c2 >> 16) & 0xff) * t);
+  const g = Math.round(((c1 >> 8) & 0xff) * (1 - t) + ((c2 >> 8) & 0xff) * t);
+  const b = Math.round((c1 & 0xff) * (1 - t) + (c2 & 0xff) * t);
+  return (r << 16) | (g << 8) | b;
+}
+
+// Day/night keyframes: [hour, overlayColor, overlayAlpha, starsAlpha, cloudsAlpha, shadowsAlpha, birdsAlpha]
+const CYCLE_KEYFRAMES = [
+  //  hr   color       alpha  stars clouds shadows birds
+  [  0,  0x0a1128,   0.40,  1.0,  0.20,  0.00,  0.30 ],
+  [  4,  0x0a1128,   0.40,  1.0,  0.20,  0.00,  0.30 ],
+  [  5,  0x1a1040,   0.30,  0.8,  0.40,  0.00,  0.40 ],
+  [  6,  0xffa060,   0.15,  0.2,  0.70,  0.40,  0.70 ],
+  [  7,  0xffecd2,   0.10,  0.0,  0.90,  0.80,  0.90 ],
+  [  8,  0x000000,   0.00,  0.0,  1.00,  1.00,  1.00 ],
+  [ 16,  0x000000,   0.00,  0.0,  1.00,  1.00,  1.00 ],
+  [ 17,  0xffa040,   0.08,  0.0,  1.00,  0.80,  1.00 ],
+  [ 18,  0xff6030,   0.18,  0.0,  0.80,  0.40,  0.80 ],
+  [ 19,  0x4a235a,   0.25,  0.2,  0.60,  0.10,  0.60 ],
+  [ 20,  0x1a1a4a,   0.35,  0.6,  0.40,  0.00,  0.40 ],
+  [ 21,  0x0a1128,   0.40,  1.0,  0.20,  0.00,  0.30 ],
+  [ 24,  0x0a1128,   0.40,  1.0,  0.20,  0.00,  0.30 ],
+];
+
+/**
+ * Update day/night overlay with smooth time-based gradient cycle
  */
 export function updateDayNightOverlay() {
   const {
@@ -226,96 +262,47 @@ export function updateDayNightOverlay() {
   const width = app.screen.width;
   const height = app.screen.height;
 
-  // Time-based color cycle
-  // 5-7: Sunrise (orange/gold)
-  // 7-8: Early morning (warm yellow fading)
-  // 8-17: Day (no overlay)
-  // 17-19: Sunset (orange/red)
-  // 19-21: Dusk (purple transition)
-  // 21-5: Night (dark blue)
+  // Find surrounding keyframes and interpolate
+  let prev = CYCLE_KEYFRAMES[0];
+  let next = CYCLE_KEYFRAMES[CYCLE_KEYFRAMES.length - 1];
 
-  if (currentHour >= 5 && currentHour < 7) {
-    // Sunrise - use gradient sprite, fading out as sun rises
-    const progress = (currentHour - 5) / 2; // 0 to 1
-    const sprite = getSunsetSprite();
-    sprite.alpha = 0.3 - progress * 0.2;
-
-    // Fading stars
-    if (currentHour < 6) {
-      drawStars(dayNightOverlay, width, height, 1 - progress);
+  for (let i = 0; i < CYCLE_KEYFRAMES.length - 1; i++) {
+    if (currentHour >= CYCLE_KEYFRAMES[i][0] && currentHour < CYCLE_KEYFRAMES[i + 1][0]) {
+      prev = CYCLE_KEYFRAMES[i];
+      next = CYCLE_KEYFRAMES[i + 1];
+      break;
     }
-
-    cloudsContainer.alpha = 0.5 + progress * 0.5;
-    cloudShadowsContainer.alpha = progress * 0.8; // Shadows fade in with sunrise
-    birdsContainer.alpha = 0.5 + progress * 0.5;
-  } else if (currentHour >= 7 && currentHour < 8) {
-    // Early morning - light golden warmth fading
-    const progress = currentHour - 7; // 0 to 1
-    const alpha = 0.15 * (1 - progress);
-
-    dayNightOverlay.beginFill(0xffecd2, alpha);
-    dayNightOverlay.drawRect(0, 0, width, height);
-    dayNightOverlay.endFill();
-
-    getSunsetSprite().alpha = 0;
-    cloudsContainer.alpha = 1;
-    cloudShadowsContainer.alpha = 1;
-    birdsContainer.alpha = 1;
-  } else if (currentHour >= 8 && currentHour < 17) {
-    // Daytime - no overlay, full visibility
-    getSunsetSprite().alpha = 0;
-    cloudsContainer.alpha = 1;
-    cloudShadowsContainer.alpha = 1;
-    birdsContainer.alpha = 1;
-  } else if (currentHour >= 17 && currentHour < 19) {
-    // Sunset - use gradient sprite overlay
-    const progress = (currentHour - 17) / 2; // 0 to 1
-    const sprite = getSunsetSprite();
-    sprite.alpha = 0.1 + progress * 0.25;
-
-    cloudsContainer.alpha = 1 - progress * 0.3;
-    cloudShadowsContainer.alpha = 1 - progress; // Shadows fade out at sunset
-    birdsContainer.alpha = 1 - progress * 0.3;
-  } else if (currentHour >= 21 && currentHour < 23) {
-    // Dusk - purple/blue transition
-    const progress = (currentHour - 19) / 2; // 0 to 1
-    const alpha = 0.25 + progress * 0.15;
-
-    getSunsetSprite().alpha = 0;
-
-    // Purple-blue gradient
-    dayNightOverlay.beginFill(0x4a235a, alpha * 0.5);
-    dayNightOverlay.drawRect(0, 0, width, height);
-    dayNightOverlay.endFill();
-
-    dayNightOverlay.beginFill(0x1a1a4a, alpha * 0.45);
-    dayNightOverlay.drawRect(0, 0, width, height * 0.6);
-    dayNightOverlay.endFill();
-
-    // Fading in stars
-    if (currentHour >= 20) {
-      drawStars(dayNightOverlay, width, height, progress);
-    }
-
-    cloudsContainer.alpha = 0.7 - progress * 0.5;
-    cloudShadowsContainer.alpha = 0; // No shadows at dusk
-    birdsContainer.alpha = 0.7 - progress * 0.5;
-  } else {
-    // Night (21-5) - dark blue tint with stars
-    getSunsetSprite().alpha = 0;
-
-    dayNightOverlay.beginFill(0x0a1128, 0.4);
-    dayNightOverlay.drawRect(0, 0, width, height);
-    dayNightOverlay.endFill();
-
-    // Draw stars
-    drawStars(dayNightOverlay, width, height, 1);
-
-    // Hide clouds at night, show fewer birds
-    cloudsContainer.alpha = 0.2;
-    cloudShadowsContainer.alpha = 0; // No shadows at night
-    birdsContainer.alpha = 0.3;
   }
+
+  const range = next[0] - prev[0];
+  const t = range > 0 ? (currentHour - prev[0]) / range : 0;
+
+  const color = lerpColor(prev[1], next[1], t);
+  const alpha = lerp(prev[2], next[2], t);
+  const starsAlpha = lerp(prev[3], next[3], t);
+  const cloudsAlpha = lerp(prev[4], next[4], t);
+  const shadowsAlpha = lerp(prev[5], next[5], t);
+  const birdsAlpha = lerp(prev[6], next[6], t);
+
+  // Main overlay — single full-screen tint
+  if (alpha > 0.001) {
+    dayNightOverlay.beginFill(color, alpha);
+    dayNightOverlay.drawRect(0, 0, width, height);
+    dayNightOverlay.endFill();
+  }
+
+  // Hide sunset sprite (replaced by smooth color interpolation)
+  getSunsetSprite().alpha = 0;
+
+  // Stars
+  if (starsAlpha > 0.01) {
+    drawStars(dayNightOverlay, width, height, starsAlpha);
+  }
+
+  // Ambient elements
+  cloudsContainer.alpha = cloudsAlpha;
+  cloudShadowsContainer.alpha = shadowsAlpha;
+  birdsContainer.alpha = birdsAlpha;
 }
 
 /**

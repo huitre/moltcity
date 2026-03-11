@@ -1,16 +1,36 @@
 // ============================================
-// MOLTCITY - Debug Panel
+// MOLTCITY - Admin Panel (Debug / Camera / Vehicles / Sprites)
 // ============================================
 
 import * as api from '../api.js';
 import * as state from '../state.js';
 import { render } from '../game.js';
+import { WORLD_MIN_X, WORLD_MAX_X } from '../config.js';
 
 let selectedBuilding = null;
 
 function getPanel() {
-  return document.getElementById('debug-panel');
+  return document.getElementById('admin-panel');
 }
+
+// ── Tab switching ──────────────────────────────
+
+function initTabs() {
+  const tabs = document.querySelectorAll('#admin-panel .admin-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Deactivate all tabs and contents
+      tabs.forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#admin-panel .admin-tab-content').forEach(c => c.classList.remove('active'));
+      // Activate clicked tab
+      tab.classList.add('active');
+      const target = document.getElementById(tab.dataset.tab);
+      if (target) target.classList.add('active');
+    });
+  });
+}
+
+// ── City tab (old debug panel) ─────────────────
 
 export function setDebugSelectedBuilding(building) {
   const ZONE_TYPES = ['residential', 'offices', 'industrial', 'suburban'];
@@ -26,10 +46,7 @@ export function setDebugSelectedBuilding(building) {
   }
 }
 
-export function openDebugPanel() {
-  const panel = getPanel();
-  if (!panel) return;
-
+function populateCityTab() {
   const city = state.cityData;
   if (city) {
     document.getElementById('debug-treasury').value = Math.floor(city.stats?.treasury ?? 0);
@@ -38,18 +55,10 @@ export function openDebugPanel() {
     document.getElementById('debug-year').value = city.time?.year ?? 1;
   }
 
-  // Read-only stats
   const pop = city?.stats?.population ?? 0;
   const officeCount = state.buildings.filter(b => b.type === 'offices' || b.type === 'office').length;
   document.getElementById('debug-population').textContent = pop.toLocaleString();
   document.getElementById('debug-offices').textContent = officeCount;
-
-  panel.style.display = 'block';
-}
-
-export function closeDebugPanel() {
-  const panel = getPanel();
-  if (panel) panel.style.display = 'none';
 }
 
 async function applyDebug() {
@@ -70,8 +79,7 @@ async function applyDebug() {
       state.setCityData(result.city);
       render();
     }
-    // Refresh the panel with new values
-    openDebugPanel();
+    populateCityTab();
   } catch (e) {
     console.error('[Debug] Apply failed:', e.message);
     alert('Debug apply failed: ' + e.message);
@@ -86,11 +94,9 @@ async function applyDensity(density) {
 
   try {
     await api.debugSetDensity(selectedBuilding.id, density);
-    // Refresh buildings and re-render
     const buildingsResponse = await api.getBuildings();
     state.setBuildings(buildingsResponse.buildings || []);
     render();
-    // Update the label with new density
     const updated = state.buildings.find(b => b.id === selectedBuilding.id);
     if (updated) setDebugSelectedBuilding(updated);
   } catch (e) {
@@ -99,13 +105,99 @@ async function applyDensity(density) {
   }
 }
 
+// ── Camera tab (tilt-shift) ────────────────────
+
+function initTiltShiftControls() {
+  const sliders = {
+    'ts-blur': (v) => { if (state.tiltShiftFilter) state.tiltShiftFilter.blur = v; },
+    'ts-gradient': (v) => { if (state.tiltShiftFilter) state.tiltShiftFilter.gradientBlur = v; },
+    'ts-start-y': (v) => {
+      if (state.tiltShiftFilter) {
+        state.tiltShiftFilter.start = new PIXI.Point(WORLD_MIN_X, v);
+        state.tiltShiftFilter.end = new PIXI.Point(WORLD_MAX_X, v);
+      }
+    },
+  };
+
+  for (const [id, apply] of Object.entries(sliders)) {
+    const input = document.getElementById(id);
+    const valSpan = document.getElementById(id + '-val');
+    if (!input) continue;
+
+    input.addEventListener('input', () => {
+      const v = parseFloat(input.value);
+      if (valSpan) valSpan.textContent = v;
+      apply(v);
+    });
+  }
+
+  const enabledCheckbox = document.getElementById('ts-enabled');
+  if (enabledCheckbox) {
+    enabledCheckbox.addEventListener('change', () => {
+      if (state.tiltShiftFilter) {
+        state.tiltShiftFilter.enabled = enabledCheckbox.checked;
+      }
+    });
+  }
+}
+
+function populateTiltShiftTab() {
+  const f = state.tiltShiftFilter;
+  if (!f) return;
+
+  const set = (id, val) => {
+    const input = document.getElementById(id);
+    const valSpan = document.getElementById(id + '-val');
+    if (input) input.value = val;
+    if (valSpan) valSpan.textContent = val;
+  };
+
+  set('ts-blur', Math.round(f.blur));
+  set('ts-gradient', Math.round(f.gradientBlur));
+  set('ts-start-y', Math.round(f.start.y));
+
+  const cb = document.getElementById('ts-enabled');
+  if (cb) cb.checked = f.enabled;
+}
+
+// ── Open / Close ───────────────────────────────
+
+export function openAdminPanel(tab) {
+  const panel = getPanel();
+  if (!panel) return;
+
+  populateCityTab();
+  populateTiltShiftTab();
+
+  panel.style.display = 'block';
+
+  // Switch to requested tab if specified
+  if (tab) {
+    const tabBtn = document.querySelector(`#admin-panel .admin-tab[data-tab="${tab}"]`);
+    if (tabBtn) tabBtn.click();
+  }
+}
+
+export function closeAdminPanel() {
+  const panel = getPanel();
+  if (panel) panel.style.display = 'none';
+}
+
+// Keep old names for backward compatibility
+export { openAdminPanel as openDebugPanel };
+export { closeAdminPanel as closeDebugPanel };
+
+// ── Init ───────────────────────────────────────
+
 export function initDebugPanel() {
+  initTabs();
+  initTiltShiftControls();
+
   const applyBtn = document.getElementById('debug-apply-btn');
   if (applyBtn) {
     applyBtn.addEventListener('click', applyDebug);
   }
 
-  // Density buttons
   document.querySelectorAll('.debug-density-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const density = parseInt(btn.dataset.density, 10);
@@ -113,15 +205,15 @@ export function initDebugPanel() {
     });
   });
 
-  // Ctrl+Shift+D toggles the panel
+  // Ctrl+Shift+D toggles the admin panel
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'D') {
       e.preventDefault();
       const panel = getPanel();
       if (panel && panel.style.display === 'block') {
-        closeDebugPanel();
+        closeAdminPanel();
       } else {
-        openDebugPanel();
+        openAdminPanel();
       }
     }
   });

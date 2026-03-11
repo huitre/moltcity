@@ -249,7 +249,7 @@ export function render() {
       const variant = Math.floor(rng() * state.binSprites.length);
       const spriteData = state.binSprites[variant];
       const sprite = new PIXI.Sprite(spriteData.texture);
-      const binScale = (TILE_WIDTH * 0.175) / spriteData.width;
+      const binScale = (TILE_WIDTH * 0.1) / spriteData.width;
       sprite.scale.set(binScale);
       sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
 
@@ -706,7 +706,9 @@ function drawPowerLine(from, to) {
   g.moveTo(fromPoleX, fromPoleTopY);
   g.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
 
-  g.zIndex = Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x);
+  // Sort behind buildings at the same grid position
+  g.zIndex =
+    Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x) - 0.5;
   return g;
 }
 

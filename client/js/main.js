@@ -27,6 +27,7 @@ import { subscribeToCityWs } from "./websocket.js";
 import { startScreenshotCapture } from "./screenshot.js";
 import { initTimelapse } from "./timelapse.js";
 import { initReplay } from "./replay.js";
+import { handleVehicleClick } from "./render/vehicles.js";
 
 let appInitialized = false;
 
@@ -398,6 +399,9 @@ async function handleTileClick(x, y, globalPos) {
     await handleBuild(x, y, selectedBuildType);
     return;
   }
+
+  // Check if a vehicle was clicked
+  if (handleVehicleClick(globalPos)) return;
 
   // Otherwise, show info about what's at this location
   const parcel = state.parcels.find((p) => p.x === x && p.y === y);

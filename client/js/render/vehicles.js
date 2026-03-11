@@ -14,6 +14,23 @@ import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
 import { getRoadAt, getValidDirections } from "./roads.js";
 
+// Correction angle: sprites use 45° steps, iso roads are at ~27° (atan(0.5))
+const ISO_CORRECTION = Math.PI / 4 - Math.atan(0.94);
+const DIR_ROTATION = {
+  north: ISO_CORRECTION,
+  east: -ISO_CORRECTION,
+  south: ISO_CORRECTION,
+  west: -ISO_CORRECTION,
+};
+
+function applyVehicleScale(sprite, config) {
+  const size = config.size || { width: 24, height: 24 };
+  sprite.scale.set(
+    size.width / sprite.texture.width,
+    size.height / sprite.texture.height,
+  );
+}
+
 /**
  * Initialize vehicles on the roads
  */
@@ -78,11 +95,11 @@ export function spawnVehicle(vehicleTypes) {
   const texture = vehicleData.directions.get(CARDINAL_TO_ISO[dir]);
   if (!texture) return;
 
-  const TARGET_W = 31;
-  const TARGET_H = 30;
   const sprite = new PIXI.Sprite(texture);
+  sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
   sprite.anchor.set(0.5, 0.8);
-  sprite.scale.set(TARGET_W / texture.width, TARGET_H / texture.height);
+  applyVehicleScale(sprite, vehicleData.config);
+  sprite.rotation = DIR_ROTATION[dir] || 0;
 
   const vehicle = {
     x: parcel.x + 0.5,
@@ -93,6 +110,7 @@ export function spawnVehicle(vehicleTypes) {
     dir: dir,
     sprite: sprite,
     vehicleData: vehicleData,
+    vehicleType: vehicleType,
   };
 
   const iso = cartToIso(vehicle.x, vehicle.y);
@@ -110,7 +128,7 @@ export function spawnVehicle(vehicleTypes) {
  * Animate all vehicles
  */
 export function animateVehicles(delta) {
-  const { animatedVehicles, vehiclesContainer, vehicleSprites } = state;
+  const { animatedVehicles, vehicleSprites } = state;
 
   // Try to maintain vehicle count
   if (
@@ -170,7 +188,9 @@ export function animateVehicles(delta) {
       );
       if (newTexture) {
         vehicle.sprite.texture = newTexture;
-        vehicle.sprite.scale.set(31 / newTexture.width, 30 / newTexture.height);
+        vehicle.sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+        applyVehicleScale(vehicle.sprite, vehicle.vehicleData.config);
+        vehicle.sprite.rotation = DIR_ROTATION[nextDir] || 0;
       }
     } else {
       // Move toward target
@@ -197,6 +217,117 @@ export function animateVehicles(delta) {
       animatedVehicles.splice(i, 1);
     }
   }
+}
+
+/**
+ * Check if a click at screen position hits a vehicle, show debug if so.
+ * Returns true if a vehicle was clicked.
+ */
+export function handleVehicleClick(globalPos) {
+  const worldContainer = state.worldContainer;
+  const localPos = worldContainer.toLocal(globalPos);
+
+  for (const vehicle of state.animatedVehicles) {
+    const bounds = vehicle.sprite.getBounds();
+    if (
+      globalPos.x >= bounds.x &&
+      globalPos.x <= bounds.x + bounds.width &&
+      globalPos.y >= bounds.y &&
+      globalPos.y <= bounds.y + bounds.height
+    ) {
+      showVehicleDebug(vehicle);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Show vehicle debug in admin panel's Vehicles tab
+ */
+function showVehicleDebug(vehicle) {
+  const panel = document.getElementById("admin-panel");
+  if (!panel) return;
+
+  const config = vehicle.vehicleData.config;
+  const size = config.size || { width: 24, height: 24 };
+
+  // Show vehicle content, hide placeholder
+  const noSel = document.getElementById("vd-no-selection");
+  const content = document.getElementById("vd-content");
+  if (noSel) noSel.style.display = "none";
+  if (content) content.style.display = "block";
+
+  document.getElementById("vd-type").textContent = vehicle.vehicleType;
+  document.getElementById("vd-direction").textContent =
+    vehicle.dir + " → " + CARDINAL_TO_ISO[vehicle.dir];
+  document.getElementById("vd-texture-size").textContent =
+    vehicle.sprite.texture.width + "x" + vehicle.sprite.texture.height;
+
+  const widthInput = document.getElementById("vd-width");
+  const heightInput = document.getElementById("vd-height");
+  const rotationInput = document.getElementById("vd-rotation");
+  const widthVal = document.getElementById("vd-width-val");
+  const heightVal = document.getElementById("vd-height-val");
+  const rotationVal = document.getElementById("vd-rotation-val");
+
+  widthInput.value = size.width;
+  heightInput.value = size.height;
+  widthVal.textContent = size.width;
+  heightVal.textContent = size.height;
+
+  const rotDeg = Math.round((vehicle.sprite.rotation * 180) / Math.PI);
+  rotationInput.value = rotDeg;
+  rotationVal.textContent = rotDeg + "\u00B0";
+
+  // Remove old listeners by cloning
+  const newWidth = widthInput.cloneNode(true);
+  const newHeight = heightInput.cloneNode(true);
+  const newRotation = rotationInput.cloneNode(true);
+  widthInput.replaceWith(newWidth);
+  heightInput.replaceWith(newHeight);
+  rotationInput.replaceWith(newRotation);
+
+  newWidth.addEventListener("input", () => {
+    const v = parseInt(newWidth.value);
+    widthVal.textContent = v;
+    config.size.width = v;
+    for (const av of state.animatedVehicles) {
+      if (av.vehicleType === vehicle.vehicleType) {
+        applyVehicleScale(av.sprite, config);
+      }
+    }
+  });
+
+  newHeight.addEventListener("input", () => {
+    const v = parseInt(newHeight.value);
+    heightVal.textContent = v;
+    config.size.height = v;
+    for (const av of state.animatedVehicles) {
+      if (av.vehicleType === vehicle.vehicleType) {
+        applyVehicleScale(av.sprite, config);
+      }
+    }
+  });
+
+  newRotation.addEventListener("input", () => {
+    const deg = parseInt(newRotation.value);
+    rotationVal.textContent = deg + "\u00B0";
+    const rad = (deg * Math.PI) / 180;
+    DIR_ROTATION[vehicle.dir] = rad;
+    for (const av of state.animatedVehicles) {
+      if (av.dir === vehicle.dir) {
+        av.sprite.rotation = rad;
+      }
+    }
+  });
+
+  // Open admin panel on Vehicles tab
+  panel.style.display = "block";
+  const vehiclesTab = document.querySelector(
+    '#admin-panel .admin-tab[data-tab="admin-tab-vehicles"]',
+  );
+  if (vehiclesTab) vehiclesTab.click();
 }
 
 /**
