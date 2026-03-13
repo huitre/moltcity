@@ -2,7 +2,7 @@
 // MOLTCITY - Game Configuration & Rules
 // ============================================
 
-import type { BuildingType } from '../models/types.js';
+import type { BuildingType } from "../models/types.js";
 
 // ============================================
 // Grid
@@ -13,8 +13,8 @@ export const GRID_SIZE = 50;
 // Currency
 // ============================================
 export const CURRENCY = {
-  NAME: '$CITY',
-  SYMBOL: '$',
+  NAME: "$CITY",
+  SYMBOL: "$",
   STARTING_BALANCE: 1000,
 };
 
@@ -34,47 +34,49 @@ export const PARCEL_LIMITS = {
 // Buildings that only mayor/admin can create (infrastructure)
 // Mayor handles infrastructure & urban planning only
 export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
-  'road',
-  'power_plant',
-  'wind_turbine',
-  'coal_plant',
-  'nuclear_plant',
-  'water_tower',
-  'garbage_depot',
-  'park',
-  'plaza',
-  'city_hall',
+  "road",
+  "power_plant",
+  "wind_turbine",
+  "coal_plant",
+  "nuclear_plant",
+  "water_tower",
+  "garbage_depot",
+  "park",
+  "plaza",
+  "city_hall",
 ];
 
 // Infrastructure that mayor can build
-export const INFRASTRUCTURE_TYPES = ['power_line', 'water_pipe'] as const;
+export const INFRASTRUCTURE_TYPES = ["power_line", "water_pipe"] as const;
 
 // Buildings that regular users/agents can create
 export const USER_BUILDING_TYPES: BuildingType[] = [
-  'residential',
-  'offices',
-  'suburban',
-  'industrial',
-  'factory',
-  'fire_station',
-  'police_station',
-  'school',
-  'high_school',
-  'university',
-  'hospital',
-  'jail',
-  'stadium',
-  'theater',
-  'library',
-  'monument',
-  'amusement_park',
-  'courthouse',
+  "residential",
+  "offices",
+  "suburban",
+  "industrial",
+  "factory",
+  "fire_station",
+  "police_station",
+  "school",
+  "high_school",
+  "university",
+  "hospital",
+  "jail",
+  "stadium",
+  "theater",
+  "library",
+  "monument",
+  "amusement_park",
+  "courthouse",
 ];
 
 // ============================================
 // Building Footprints (multi-tile buildings)
 // ============================================
-export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: number }>> = {
+export const BUILDING_FOOTPRINTS: Partial<
+  Record<BuildingType, { w: number; h: number }>
+> = {
   hospital: { w: 2, h: 2 },
   police_station: { w: 1, h: 1 },
   fire_station: { w: 2, h: 2 },
@@ -82,7 +84,7 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
   wind_turbine: { w: 1, h: 1 },
   coal_plant: { w: 2, h: 2 },
   nuclear_plant: { w: 3, h: 3 },
-  water_tower: { w: 2, h: 2 },
+  water_tower: { w: 1, h: 1 },
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
@@ -94,17 +96,20 @@ export const BUILDING_FOOTPRINTS: Partial<Record<BuildingType, { w: number; h: n
 // Zoning Restrictions
 // ============================================
 // Defines which building types and max floors are allowed per zone
-export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[]; maxFloors: number }> = {
+export const ZONING_RESTRICTIONS: Record<
+  string,
+  { allowedTypes: BuildingType[]; maxFloors: number }
+> = {
   residential: {
-    allowedTypes: ['house', 'apartment', 'residential'],
+    allowedTypes: ["house", "apartment", "residential"],
     maxFloors: 10,
   },
   office: {
-    allowedTypes: ['shop', 'office', 'offices'],
+    allowedTypes: ["shop", "office", "offices"],
     maxFloors: 10,
   },
   industrial: {
-    allowedTypes: ['factory', 'industrial'],
+    allowedTypes: ["factory", "industrial"],
     maxFloors: 2,
   },
   municipal: {
@@ -112,11 +117,11 @@ export const ZONING_RESTRICTIONS: Record<string, { allowedTypes: BuildingType[];
     maxFloors: 3,
   },
   park: {
-    allowedTypes: ['park', 'plaza'],
+    allowedTypes: ["park", "plaza"],
     maxFloors: 1,
   },
   suburban: {
-    allowedTypes: ['house', 'suburban'],
+    allowedTypes: ["house", "suburban"],
     maxFloors: 1,
   },
 };
@@ -325,10 +330,21 @@ export const ECONOMY = {
   DAILY_RENT: RENTAL.SUGGESTED_RENT,
 };
 
-export const BUILDING_JOBS: Partial<Record<BuildingType, { count: number; salary: number }>> = {
-  shop: { count: 3, salary: (SHOP_INCOME.MIN_DAILY + SHOP_INCOME.MAX_DAILY) / 2 },
-  office: { count: OFFICE.JOBS_PER_OFFICE, salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2 },
-  offices: { count: OFFICE.JOBS_PER_OFFICE, salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2 },
+export const BUILDING_JOBS: Partial<
+  Record<BuildingType, { count: number; salary: number }>
+> = {
+  shop: {
+    count: 3,
+    salary: (SHOP_INCOME.MIN_DAILY + SHOP_INCOME.MAX_DAILY) / 2,
+  },
+  office: {
+    count: OFFICE.JOBS_PER_OFFICE,
+    salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2,
+  },
+  offices: {
+    count: OFFICE.JOBS_PER_OFFICE,
+    salary: (OFFICE.SALARY.MIN + OFFICE.SALARY.MAX) / 2,
+  },
   factory: { count: 20, salary: 40 },
   industrial: { count: 15, salary: 35 },
 };
@@ -339,26 +355,42 @@ export const ADMIN_ONLY_BUILDING_TYPES = MAYOR_ONLY_BUILDING_TYPES;
 // Helper Functions
 // ============================================
 
-export type UserRole = 'user' | 'admin';
+export type UserRole = "user" | "admin";
 
 export function isAdminOnlyBuilding(type: BuildingType): boolean {
   return MAYOR_ONLY_BUILDING_TYPES.includes(type);
 }
 
-export function canUserBuild(type: BuildingType, role: UserRole, isMayor: boolean): boolean {
-  if (role === 'admin' || isMayor) return true;
+export function canUserBuild(
+  type: BuildingType,
+  role: UserRole,
+  isMayor: boolean,
+): boolean {
+  if (role === "admin" || isMayor) return true;
   return USER_BUILDING_TYPES.includes(type);
 }
 
-export function hasElevatedPrivileges(role: UserRole, isMayor: boolean = false): boolean {
-  return role === 'admin' || isMayor;
+export function hasElevatedPrivileges(
+  role: UserRole,
+  isMayor: boolean = false,
+): boolean {
+  return role === "admin" || isMayor;
 }
 
-export function getMaxParcels(role: UserRole, isMayor: boolean = false): number {
-  return hasElevatedPrivileges(role, isMayor) ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN : PARCEL_LIMITS.MAX_PARCELS_PER_USER;
+export function getMaxParcels(
+  role: UserRole,
+  isMayor: boolean = false,
+): number {
+  return hasElevatedPrivileges(role, isMayor)
+    ? PARCEL_LIMITS.MAX_PARCELS_PER_ADMIN
+    : PARCEL_LIMITS.MAX_PARCELS_PER_USER;
 }
 
-export function getBuildingLimit(type: BuildingType, role: UserRole, isMayor: boolean = false): number {
+export function getBuildingLimit(
+  type: BuildingType,
+  role: UserRole,
+  isMayor: boolean = false,
+): number {
   if (hasElevatedPrivileges(role, isMayor)) return 1000;
   return BUILDING_LIMITS[type] ?? 10;
 }
@@ -374,21 +406,32 @@ export function getHousingCost(floors: number): number {
  * Get random shop daily income
  */
 export function getShopDailyIncome(): number {
-  return Math.floor(Math.random() * (SHOP_INCOME.MAX_DAILY - SHOP_INCOME.MIN_DAILY + 1)) + SHOP_INCOME.MIN_DAILY;
+  return (
+    Math.floor(
+      Math.random() * (SHOP_INCOME.MAX_DAILY - SHOP_INCOME.MIN_DAILY + 1),
+    ) + SHOP_INCOME.MIN_DAILY
+  );
 }
 
 /**
  * Get random salary for a new employee (fixed per person)
  */
 export function getRandomSalary(): number {
-  return Math.floor(Math.random() * (OFFICE.SALARY.MAX - OFFICE.SALARY.MIN + 1)) + OFFICE.SALARY.MIN;
+  return (
+    Math.floor(Math.random() * (OFFICE.SALARY.MAX - OFFICE.SALARY.MIN + 1)) +
+    OFFICE.SALARY.MIN
+  );
 }
 
 /**
  * Calculate rent attractiveness (0-100)
  * Higher rent with low population = less attractive
  */
-export function calculateRentAttractiveness(rent: number, averageRent: number, populationDemand: number): number {
+export function calculateRentAttractiveness(
+  rent: number,
+  averageRent: number,
+  populationDemand: number,
+): number {
   if (rent <= averageRent) return 100;
 
   const percentOver = ((rent - averageRent) / averageRent) * 100;
@@ -412,13 +455,16 @@ export function getParcelCost(parcelsOwned: number): number {
 /**
  * Get building cost by type (uses FLOOR_COSTS for housing)
  */
-export function getBuildingCost(type: BuildingType, floors: number = 1): number {
+export function getBuildingCost(
+  type: BuildingType,
+  floors: number = 1,
+): number {
   // Housing uses floor-based pricing
-  if (type === 'house' || type === 'apartment' || type === 'residential') {
+  if (type === "house" || type === "apartment" || type === "residential") {
     return getHousingCost(floors);
   }
   // Suburban and industrial use flat cost
-  if (type === 'suburban' || type === 'industrial') {
+  if (type === "suburban" || type === "industrial") {
     return BUILDING_COSTS[type] ?? 500;
   }
   // Other buildings use flat cost from config
@@ -431,12 +477,12 @@ export function getBuildingCost(type: BuildingType, floors: number = 1): number 
 export const CRIME = {
   // Base crime rate per tick (affected by factors below)
   BASE_RATE_PER_TICK: 0.0001, // ~0.01% chance per tick per parcel
-  
+
   // Multipliers
   UNEMPLOYMENT_MULTIPLIER: 2.0, // High unemployment = 2x crime
-  NO_POLICE_MULTIPLIER: 3.0,   // No police coverage = 3x crime
-  NIGHT_MULTIPLIER: 1.5,       // Night time = 1.5x crime
-  
+  NO_POLICE_MULTIPLIER: 3.0, // No police coverage = 3x crime
+  NIGHT_MULTIPLIER: 1.5, // Night time = 1.5x crime
+
   // Damage amounts by crime type
   DAMAGE: {
     theft: { min: 10, max: 50 },
@@ -444,12 +490,12 @@ export const CRIME = {
     vandalism: { min: 25, max: 100 },
     arson: { min: 0, max: 0 }, // Arson damage is fire damage
   },
-  
+
   // Police response
   RESPONSE_SPEED: 1.5, // parcels per tick
   ARREST_CHANCE: 0.7, // 70% chance to catch criminal on arrival
   PATROL_RADIUS: 5, // parcels from station
-  
+
   // Crime spread (nearby tiles get higher crime)
   SPREAD_RADIUS: 3,
   SPREAD_INCREASE: 0.2, // +20% crime rate in adjacent tiles
@@ -461,18 +507,18 @@ export const CRIME = {
 export const FIRE = {
   // Starting intensity
   STARTING_INTENSITY: 1,
-  
+
   // Intensity growth per tick (1-5 scale)
   INTENSITY_GROWTH_RATE: 0.01, // Grows ~1 level per 100 ticks
-  
+
   // Spread chance per intensity level (0-100)
   BASE_SPREAD_CHANCE: 5,
   SPREAD_CHANCE_PER_INTENSITY: 10,
-  
+
   // Firefighter response
   RESPONSE_SPEED: 2.0, // faster than police
   SUPPRESS_RATE: 0.5, // -0.5 intensity per tick when fighting
-  
+
   // Building damage
   DAMAGE_PER_INTENSITY: 100, // $100 damage per intensity level per tick
   TOTAL_DESTRUCTION_INTENSITY: 5, // At intensity 5, building is destroyed
@@ -492,14 +538,14 @@ export const CITY_SERVICES = {
     hospital: 20,
     garbage_depot: 15,
   },
-  
+
   // Staff per building
   STAFF: {
     police_station: 5, // officers
     fire_station: 4, // firefighters (incl. truck crews)
     garbage_depot: 2, // trucks
   },
-  
+
   // School configuration
   SCHOOL_CAPACITY: {
     school: 30,
@@ -511,7 +557,7 @@ export const CITY_SERVICES = {
     high_school: 30,
     university: 50,
   },
-  
+
   // Garbage accumulation
   GARBAGE_PER_DAY: {
     residential: 2,
@@ -535,14 +581,14 @@ export const HAPPINESS = {
   // Weights for happiness factors (must sum to 1.0)
   WEIGHTS: {
     employment: 0.25,
-    housing: 0.20,
+    housing: 0.2,
     safety: 0.15,
     services: 0.15,
-    education: 0.10,
-    entertainment: 0.10,
+    education: 0.1,
+    entertainment: 0.1,
     commute: 0.05,
   },
-  
+
   // Bonuses from nearby buildings
   ADJACENCY_BONUS: {
     park: { happiness: 10, landValue: 5 },
@@ -558,12 +604,12 @@ export const HAPPINESS = {
   CITY_WIDE_BONUS: {
     university: { happiness: 10 },
   },
-  
+
   // Penalties
   CRIME_PENALTY: 2, // -2 safety per active crime nearby
   POLLUTION_RADIUS: 8, // factory pollution radius
   POLLUTION_PENALTY: 10, // -10 happiness if within factory pollution
-  
+
   // Garbage depot pollution (smells bad, attracts pests)
   GARBAGE_POLLUTION_RADIUS: 4, // smaller than factory
   GARBAGE_POLLUTION_PENALTY: 8, // -8 happiness near garbage depot
@@ -575,7 +621,7 @@ export const HAPPINESS = {
 // ============================================
 export const LANDMARKS = {
   // One-per-city buildings
-  UNIQUE: ['stadium', 'monument'] as const,
+  UNIQUE: ["stadium", "monument"] as const,
 
   // City-wide effects
   EFFECTS: {
@@ -605,7 +651,7 @@ export const ZONE_EVOLUTION = {
 // Demand Balance Configuration (R/O/I ratio)
 // ============================================
 export const DEMAND_BALANCE = {
-  IDEAL_RATIO: { residential: 0.45, office: 0.35, industrial: 0.20 },
+  IDEAL_RATIO: { residential: 0.45, office: 0.35, industrial: 0.2 },
   IMBALANCE_MULTIPLIER: 2.0,
 };
 
@@ -625,33 +671,100 @@ export const SC2K_ECONOMY = {
   },
 
   ORDINANCES: {
-    sales_tax: { name: '1% Sales Tax', revenuePerCapita: 0.5, costPerCapita: 0, demandEffect: { commercial: -0.05 }, crimeMultiplier: 1.0 },
-    income_tax: { name: '1% Income Tax', revenuePerCapita: 0.4, costPerCapita: 0, demandEffect: { residential: -0.05 }, crimeMultiplier: 1.0 },
-    legalized_gambling: { name: 'Legalized Gambling', revenuePerCapita: 0.3, costPerCapita: 0, demandEffect: {}, crimeMultiplier: 1.2 },
-    parking_fines: { name: 'Parking Fines', revenuePerCapita: 0.1, costPerCapita: 0, demandEffect: { commercial: -0.02 }, crimeMultiplier: 1.0 },
-    tourist_advertising: { name: 'Tourist Advertising', revenuePerCapita: 0, costPerCapita: 0.2, demandEffect: { commercial: 0.05 }, crimeMultiplier: 1.0 },
-    business_advertising: { name: 'Business Advertising', revenuePerCapita: 0, costPerCapita: 0.15, demandEffect: { industrial: 0.05 }, crimeMultiplier: 1.0 },
-  } as Record<string, { name: string; revenuePerCapita: number; costPerCapita: number; demandEffect: Partial<Record<'residential' | 'commercial' | 'industrial', number>>; crimeMultiplier: number }>,
+    sales_tax: {
+      name: "1% Sales Tax",
+      revenuePerCapita: 0.5,
+      costPerCapita: 0,
+      demandEffect: { commercial: -0.05 },
+      crimeMultiplier: 1.0,
+    },
+    income_tax: {
+      name: "1% Income Tax",
+      revenuePerCapita: 0.4,
+      costPerCapita: 0,
+      demandEffect: { residential: -0.05 },
+      crimeMultiplier: 1.0,
+    },
+    legalized_gambling: {
+      name: "Legalized Gambling",
+      revenuePerCapita: 0.3,
+      costPerCapita: 0,
+      demandEffect: {},
+      crimeMultiplier: 1.2,
+    },
+    parking_fines: {
+      name: "Parking Fines",
+      revenuePerCapita: 0.1,
+      costPerCapita: 0,
+      demandEffect: { commercial: -0.02 },
+      crimeMultiplier: 1.0,
+    },
+    tourist_advertising: {
+      name: "Tourist Advertising",
+      revenuePerCapita: 0,
+      costPerCapita: 0.2,
+      demandEffect: { commercial: 0.05 },
+      crimeMultiplier: 1.0,
+    },
+    business_advertising: {
+      name: "Business Advertising",
+      revenuePerCapita: 0,
+      costPerCapita: 0.15,
+      demandEffect: { industrial: 0.05 },
+      crimeMultiplier: 1.0,
+    },
+  } as Record<
+    string,
+    {
+      name: string;
+      revenuePerCapita: number;
+      costPerCapita: number;
+      demandEffect: Partial<
+        Record<"residential" | "commercial" | "industrial", number>
+      >;
+      crimeMultiplier: number;
+    }
+  >,
 
   BONDS: {
     CHUNK_SIZE: 10000, // $10k per bond
     MAX_BONDS: 50,
     BASE_INTEREST_RATE: 5, // %
-    RATING_PREMIUM: { AAA: 1, AA: 2, A: 3, BBB: 4, BB: 5, B: 6, F: 7 } as Record<string, number>,
+    RATING_PREMIUM: {
+      AAA: 1,
+      AA: 2,
+      A: 3,
+      BBB: 4,
+      BB: 5,
+      B: 6,
+      F: 7,
+    } as Record<string, number>,
   },
 
   DEPARTMENTS: {
-    police: { costPerBuilding: 100, buildingType: 'police_station' as BuildingType },
-    fire: { costPerBuilding: 100, buildingType: 'fire_station' as BuildingType },
-    health: { costPerBuilding: 75, buildingType: 'hospital' as BuildingType },
-    education_school: { costPerBuilding: 25, buildingType: 'school' as BuildingType },
-    education_university: { costPerBuilding: 100, buildingType: 'university' as BuildingType },
+    police: {
+      costPerBuilding: 100,
+      buildingType: "police_station" as BuildingType,
+    },
+    fire: {
+      costPerBuilding: 100,
+      buildingType: "fire_station" as BuildingType,
+    },
+    health: { costPerBuilding: 75, buildingType: "hospital" as BuildingType },
+    education_school: {
+      costPerBuilding: 25,
+      buildingType: "school" as BuildingType,
+    },
+    education_university: {
+      costPerBuilding: 100,
+      buildingType: "university" as BuildingType,
+    },
   },
 
   TRANSIT_MAINTENANCE: {
-    road: 0.10, // per tile per year
-    power_line: 0.20,
-    water_pipe: 0.40,
+    road: 0.1, // per tile per year
+    power_line: 0.2,
+    water_pipe: 0.4,
   } as Record<string, number>,
 
   DEFAULT_DEPARTMENT_FUNDING: {
@@ -664,19 +777,19 @@ export const SC2K_ECONOMY = {
 };
 
 export const TAX_PENALTIES = {
-  PENALTY_THRESHOLD: 11,              // Penalties start above 11%
-  INDUSTRIAL_DESTROY_THRESHOLD: 15,   // Factory destruction above 15%
+  PENALTY_THRESHOLD: 11, // Penalties start above 11%
+  INDUSTRIAL_DESTROY_THRESHOLD: 15, // Factory destruction above 15%
 
   // Residential: population exodus
-  EXODUS_RATE: 0.5,                   // residents leaving per day per excess % above threshold
+  EXODUS_RATE: 0.5, // residents leaving per day per excess % above threshold
 
   // Office: salary cuts
-  SALARY_CUT_PER_PERCENT: 0.05,      // 5% salary reduction per excess %
-  MIN_SALARY: 5,                      // Floor salary (never below $5)
+  SALARY_CUT_PER_PERCENT: 0.05, // 5% salary reduction per excess %
+  MIN_SALARY: 5, // Floor salary (never below $5)
 
   // Industrial: building destruction
-  DESTROY_CHANCE_PER_PERCENT: 0.03,   // 3% chance per excess % above destroy threshold per day
+  DESTROY_CHANCE_PER_PERCENT: 0.03, // 3% chance per excess % above destroy threshold per day
 
   // Happiness: client-side penalty
-  HAPPINESS_PENALTY_PER_PERCENT: 3,   // -3 happiness per % above neutral (7%)
+  HAPPINESS_PENALTY_PER_PERCENT: 3, // -3 happiness per % above neutral (7%)
 };

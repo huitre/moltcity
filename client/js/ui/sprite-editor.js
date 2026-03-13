@@ -11,28 +11,32 @@ let originalValues = null;
 let currentResolved = null;
 let rafPending = false;
 
+// ── Sprite type → state array / source key mapping ──
+// Matches the serviceSpriteMap in drawBuilding() (game.js)
+const BUILDING_SPRITE_MAP = {
+  park:           { sprites: () => state.parkSprites,               source: 'park' },
+  police_station: { sprites: () => state.serviceSprites.police,     source: 'police' },
+  fire_station:   { sprites: () => state.serviceSprites.firestation, source: 'firestation' },
+  hospital:       { sprites: () => state.serviceSprites.hospital,   source: 'hospital' },
+  power_plant:    { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  wind_turbine:   { sprites: () => state.windTurbineSprites,        source: 'wind_turbine' },
+  coal_plant:     { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  nuclear_plant:  { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  water_tower:    { sprites: () => state.waterTankSprites,          source: 'water_tank' },
+  university:     { sprites: () => state.universitySprites,         source: 'university' },
+  stadium:        { sprites: () => state.stadiumSprites,            source: 'stadium' },
+  city_hall:      { sprites: () => state.cityHallSprites,           source: 'city_hall' },
+  garbage_depot:  { sprites: () => state.wasteSprites,              source: 'waste' },
+};
+
 /**
  * Resolve which sprite data object a building uses.
  * Replicates the selection logic from drawBuilding() in game.js.
  */
 function resolveSpriteData(building, x, y) {
   const type = building.type;
-  const floors = building.floors || 1;
 
-  // Residential / Offices zone sprites
-  if (type === 'residential' || type === 'offices') {
-    const spriteMap = type === 'residential' ? state.residentialSprites : state.officeSprites;
-    const density = floors <= 1 ? 'low' : floors <= 3 ? 'medium' : 'high';
-    const sprites = spriteMap[density];
-    if (sprites && sprites.length > 0) {
-      const rng = seededRandom(x * 1000 + y);
-      const idx = Math.floor(rng() * sprites.length);
-      const sd = sprites[idx];
-      return { spriteData: sd, source: type, category: density, index: sd._jsonIndex ?? idx };
-    }
-  }
-
-  // Suburban / Industrial zone sprites (flat arrays)
+  // Suburban / Industrial zone sprites (flat arrays) — checked first like drawBuilding
   if (type === 'suburban' && state.suburbanSprites.length > 0) {
     const sprites = state.suburbanSprites;
     const rng = seededRandom(x * 1000 + y);
@@ -48,19 +52,30 @@ function resolveSpriteData(building, x, y) {
     return { spriteData: sd, source: 'industrial', category: null, index: sd._jsonIndex ?? idx };
   }
 
-  // Service / Park sprites
-  const serviceSpriteMap = {
-    park: { sprites: state.parkSprites, source: 'park' },
-    police_station: { sprites: state.serviceSprites.police, source: 'police' },
-    fire_station: { sprites: state.serviceSprites.firestation, source: 'firestation' },
-    hospital: { sprites: state.serviceSprites.hospital, source: 'hospital' },
-  };
-  if (serviceSpriteMap[type] && serviceSpriteMap[type].sprites.length > 0) {
-    const { sprites, source } = serviceSpriteMap[type];
-    const rng = seededRandom(x * 1000 + y);
-    const idx = Math.floor(rng() * sprites.length);
-    const sd = sprites[idx];
-    return { spriteData: sd, source, category: null, index: sd._jsonIndex ?? idx };
+  // Residential / Offices zone sprites — use building.density like drawBuilding
+  if (type === 'residential' || type === 'offices') {
+    const spriteMap = type === 'residential' ? state.residentialSprites : state.officeSprites;
+    const d = building.density || 1;
+    const density = d <= 1 ? 'low' : d === 2 ? 'medium' : d === 3 ? 'high' : 'veryhigh';
+    const sprites = spriteMap[density];
+    if (sprites && sprites.length > 0) {
+      const rng = seededRandom(x * 1000 + y);
+      const idx = Math.floor(rng() * sprites.length);
+      const sd = sprites[idx];
+      return { spriteData: sd, source: type, category: density, index: sd._jsonIndex ?? idx };
+    }
+  }
+
+  // Service / infrastructure / park sprites
+  if (BUILDING_SPRITE_MAP[type]) {
+    const { sprites: getSprites, source } = BUILDING_SPRITE_MAP[type];
+    const sprites = getSprites();
+    if (sprites && sprites.length > 0) {
+      const rng = seededRandom(x * 1000 + y);
+      const idx = Math.floor(rng() * sprites.length);
+      const sd = sprites[idx];
+      return { spriteData: sd, source, category: null, index: sd._jsonIndex ?? idx };
+    }
   }
 
   // Default sprites (buildings map)
@@ -83,19 +98,18 @@ function scheduleRender() {
 }
 
 /**
- * Show the sprite editor for a building.
+ * Populate the sprite editor panel with given resolved data.
  */
-export function showSpriteEditor(building, parcelX, parcelY) {
+function populateEditor(resolved) {
   const panel = document.getElementById('admin-panel');
   const content = document.getElementById('se-content');
   const noSprite = document.getElementById('se-no-sprite');
   if (!panel) return;
 
-  const resolved = resolveSpriteData(building, parcelX, parcelY);
-
   if (!resolved) {
     content.style.display = 'none';
     noSprite.style.display = 'block';
+    noSprite.textContent = 'No sprite data for this element';
     panel.style.display = 'block';
     const spritesTab = document.querySelector('#admin-panel .admin-tab[data-tab="admin-tab-sprites"]');
     if (spritesTab) spritesTab.click();
@@ -113,13 +127,13 @@ export function showSpriteEditor(building, parcelX, parcelY) {
   originalValues = {
     width: spriteData.width,
     height: spriteData.height,
-    anchorX: spriteData.anchor.x,
-    anchorY: spriteData.anchor.y,
+    anchorX: spriteData.anchor ? spriteData.anchor.x : 0.5,
+    anchorY: spriteData.anchor ? spriteData.anchor.y : 1,
   };
 
   // Populate read-only fields
   document.getElementById('se-id').textContent = spriteData.id || category || '-';
-  document.getElementById('se-file').textContent = spriteData.file || '-';
+  document.getElementById('se-file').textContent = spriteData.file || spriteData.basePath || '-';
   document.getElementById('se-source').textContent =
     `${source}${category ? '.' + category : ''}${index !== null ? '[' + index + ']' : ''}`;
   document.getElementById('se-tiles').textContent = spriteData.tiles || 1;
@@ -134,10 +148,12 @@ export function showSpriteEditor(building, parcelX, parcelY) {
 
   widthInput.value = spriteData.width;
   heightInput.value = spriteData.height;
-  axRange.value = spriteData.anchor.x;
-  axNum.value = spriteData.anchor.x;
-  ayRange.value = spriteData.anchor.y;
-  ayNum.value = spriteData.anchor.y;
+  const ax = spriteData.anchor ? spriteData.anchor.x : 0.5;
+  const ay = spriteData.anchor ? spriteData.anchor.y : 1;
+  axRange.value = ax;
+  axNum.value = ax;
+  ayRange.value = ay;
+  ayNum.value = ay;
 
   // Clear status
   document.getElementById('se-status').textContent = '';
@@ -161,6 +177,9 @@ export function showSpriteEditor(building, parcelX, parcelY) {
   const ayN = document.getElementById('se-anchor-y');
   const saveBtn = document.getElementById('se-save');
   const resetBtn = document.getElementById('se-reset');
+
+  // Ensure anchor object exists
+  if (!spriteData.anchor) spriteData.anchor = { x: 0.5, y: 1 };
 
   // Width/height handlers
   w.addEventListener('input', () => {
@@ -222,7 +241,6 @@ export function showSpriteEditor(building, parcelX, parcelY) {
       });
       statusEl.textContent = 'Saved!';
       statusEl.style.color = '#2ecc71';
-      // Update originalValues to reflect saved state
       originalValues = {
         width: spriteData.width,
         height: spriteData.height,
@@ -259,6 +277,71 @@ export function showSpriteEditor(building, parcelX, parcelY) {
   panel.style.display = 'block';
   const spritesTab = document.querySelector('#admin-panel .admin-tab[data-tab="admin-tab-sprites"]');
   if (spritesTab) spritesTab.click();
+}
+
+/**
+ * Show the sprite editor for a building.
+ */
+export function showSpriteEditor(building, parcelX, parcelY) {
+  const resolved = resolveSpriteData(building, parcelX, parcelY);
+  populateEditor(resolved);
+}
+
+/**
+ * Show the sprite editor for a road tile.
+ */
+export function showRoadSpriteEditor(x, y) {
+  // Inline road type resolution (avoid async import issues)
+  if (state.roadSprites.size === 0) { populateEditor(null); return; }
+
+  // Determine connections by checking roadPositionSet
+  const hasRoad = (rx, ry) => state.roadPositionSet.has(`${rx},${ry}`);
+  const conn = {
+    nw: hasRoad(x - 1, y),
+    ne: hasRoad(x, y - 1),
+    se: hasRoad(x + 1, y),
+    sw: hasRoad(x, y + 1),
+  };
+  const connCount = [conn.nw, conn.ne, conn.se, conn.sw].filter(Boolean).length;
+  let roadType = null;
+
+  if (connCount === 4) roadType = 'road_089';
+  else if (connCount === 3) {
+    if (!conn.sw) roadType = 'road_103';
+    else if (!conn.nw) roadType = 'road_095';
+    else if (!conn.ne) roadType = 'road_096';
+    else if (!conn.se) roadType = 'road_088';
+  } else if (connCount === 2) {
+    if (conn.ne && conn.sw) roadType = 'road_081';
+    else if (conn.nw && conn.se) roadType = 'road_073';
+    else if (conn.nw && conn.ne) roadType = 'road_126';
+    else if (conn.ne && conn.se) roadType = 'road_124';
+    else if (conn.se && conn.sw) roadType = 'road_122';
+    else if (conn.sw && conn.nw) roadType = 'road_125';
+  } else if (connCount === 1) {
+    if (conn.sw) roadType = 'road_110';
+    else if (conn.ne) roadType = 'road_116';
+    else if (conn.nw) roadType = 'road_111';
+    else if (conn.se) roadType = 'road_104';
+  } else roadType = 'road_080';
+
+  if (!roadType || !state.roadSprites.has(roadType)) { populateEditor(null); return; }
+
+  const { config } = state.roadSprites.get(roadType);
+  populateEditor({ spriteData: config, source: 'roads', category: roadType, index: null });
+}
+
+/**
+ * Show the sprite editor for a vehicle.
+ */
+export function showVehicleSpriteEditor(vehicle) {
+  const config = vehicle.vehicleData.config;
+  populateEditor({
+    spriteData: config,
+    source: 'vehicles',
+    category: vehicle.vehicleType,
+    index: null,
+  });
 }
 
 /**

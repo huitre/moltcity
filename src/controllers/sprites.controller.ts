@@ -112,9 +112,9 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
     // config.buildings[category]      → e.g. buildings.power_plant (no index, it's an object)
     let entry: Record<string, any> | null = null;
 
-    if (source === 'buildings' && category) {
-      // buildings map: config.buildings[category] is a single object
-      entry = config.buildings?.[category] ?? null;
+    if ((source === 'buildings' || source === 'roads' || source === 'vehicles') && category && index === null) {
+      // Keyed map: config[source][category] is a single object
+      entry = config[source]?.[category] ?? null;
     } else if (category !== null && index !== null) {
       // Array within a category: config[source][category][index]
       entry = config[source]?.[category]?.[index] ?? null;

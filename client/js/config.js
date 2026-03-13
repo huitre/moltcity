@@ -60,6 +60,19 @@ export const BUILDING_FOOTPRINTS = {
 // Vehicle/pedestrian config
 export const VEHICLE_SPEED = 0.1;
 export const PEDESTRIAN_SPEED = 0.2;
+
+// Lane & traffic config
+export const FOLLOW_DISTANCE = 0.6;
+export const LANE_WIDTH = 0.3;
+export const TRAFFIC_LIGHT_INTERVAL = 300; // frames between phase toggle (~5s at 60fps)
+
+export const LANE_OFFSETS = {
+  north: { dx: +0.2, dy: 0 },
+  south: { dx: -0.2, dy: 0 },
+  east:  { dx: 0, dy: +0.2 },
+  west:  { dx: 0, dy: -0.2 },
+};
+
 export const PEDESTRIAN_COLORS = [
   0x4a90d9, 0xe74c3c, 0x2ecc71, 0x9b59b6, 0xf1c40f, 0xe67e22, 0x1abc9c,
   0xecf0f1,

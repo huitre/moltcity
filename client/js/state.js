@@ -71,6 +71,12 @@ export let currentHour = 8;
 export let MAX_ANIMATED_VEHICLES = 50;
 export let MAX_PEDESTRIANS = 30;
 
+// Traffic lights & road cache
+export let trafficLightPhase = 0; // 0 = N/S green, 1 = E/W green
+export let trafficLightTimer = 0;
+export let roadPositionSet = new Set(); // Set of "x,y" strings for O(1) lookups
+export const trafficLightGraphics = []; // refs to traffic light visual sprites
+
 // Sprites
 export let spritesConfig = null;
 export const defaultSprites = new Map();
@@ -175,3 +181,6 @@ export function setDragDrawStart(p) { dragDrawStart = p; }
 export function setDragDrawTiles(t) { dragDrawTiles = t; }
 export function setDragDrawPreview(c) { dragDrawPreview = c; }
 export function setEconomyData(data) { economyData = data; }
+export function setTrafficLightPhase(phase) { trafficLightPhase = phase; }
+export function setTrafficLightTimer(timer) { trafficLightTimer = timer; }
+export function setRoadPositionSet(set) { roadPositionSet = set; }

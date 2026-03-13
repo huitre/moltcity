@@ -250,8 +250,11 @@
 
 ### PixiJS Isometric Engine
 - Layer system: Tiles (z=100) → Water Pipes (z=200) → Scene (z=700) → Birds (z=800) → Clouds (z=900)
+- Flat scene layer: roads, bins, buildings, vehicles, power lines, traffic lights all share a single sorted container (no nested wrappers)
+- Isometric depth sorting via `(x + y) * GRID_SIZE + x` for correct overlap of multi-tile sprites
 - Zone-colored tiles (residential green, office blue, industrial yellow, etc.)
 - Deterministic sprite selection via `seededRandom(x*1000+y)`
+- Zoom range: 0.05x–8x (mouse wheel and pinch-to-zoom)
 
 ### Ambient Effects
 - Day/night cycle with dynamic overlay
@@ -259,8 +262,17 @@
 - Building fade when placing infrastructure
 
 ### Traffic & Pedestrians
+- **Lane system**: vehicles drive on the right side of roads using per-direction lane offsets, with smooth interpolation on turns
+- **Vehicle queuing**: vehicles detect the closest vehicle ahead (dot product + perpendicular distance) and slow down or stop to maintain a follow distance
+- **Traffic lights**: intersections (3+ connections) display green/red dots per axis, toggling phase every ~5s. Vehicles stop before red intersections and proceed on green
+- **Road cache**: O(1) `Set<"x,y">` lookups for road positions, rebuilt on render
+- **Spawn check**: new vehicles won't spawn on top of existing ones
 - Vehicles: up to 50 animated, rush hour multipliers
 - Pedestrians: base 30, commercial 1.5x, night 0.3x
+
+### Power Lines
+- Split into per-tile graphics: each pole renders at its own tile's depth
+- Wire drawn with the deeper endpoint's pole for correct z-sorting behind buildings
 
 ### Sprites
 - Configurable per building type with multiple variants

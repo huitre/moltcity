@@ -253,7 +253,7 @@ export function setupInteractions(
   app.view.addEventListener("wheel", (e) => {
     e.preventDefault();
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = clamp(worldContainer.scale.x * scaleFactor, 0.1, 4);
+    const newScale = clamp(worldContainer.scale.x * scaleFactor, 0.05, 8);
 
     // Zoom toward mouse position
     const mousePos = { x: e.clientX, y: e.clientY };
@@ -335,7 +335,7 @@ export function setupInteractions(
 
         // Calculate new scale based on pinch
         const scaleRatio = currentDistance / touchState.initialDistance;
-        const newScale = clamp(touchState.initialScale * scaleRatio, 0.3, 2);
+        const newScale = clamp(touchState.initialScale * scaleRatio, 0.05, 8);
 
         // Apply zoom centered on pinch center
         const worldPos = worldContainer.toLocal(touchState.initialCenter);

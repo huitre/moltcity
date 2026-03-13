@@ -166,7 +166,7 @@ export function drawHighlight(
   graphics.closePath();
   graphics.endFill();
 
-  graphics.zIndex = y * GRID_SIZE + x + 5000; // Always on top
+  graphics.zIndex = (x + y) * GRID_SIZE + x + 5000; // Always on top
   return graphics;
 }
 

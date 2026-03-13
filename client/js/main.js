@@ -20,14 +20,14 @@ import {
 import { loadActivities, addActivity } from "./ui/activity.js";
 import { loadElectionStatus, setupElectionUI } from "./ui/election.js";
 import { setupLeaderboard } from "./ui/leaderboard.js";
-import { showSpriteEditor } from "./ui/sprite-editor.js";
+import { showSpriteEditor, showRoadSpriteEditor, showVehicleSpriteEditor } from "./ui/sprite-editor.js";
 import { initDebugPanel, setDebugSelectedBuilding } from "./ui/debug.js";
 import { initAdvisor } from "./ui/advisor.js";
 import { subscribeToCityWs } from "./websocket.js";
 import { startScreenshotCapture } from "./screenshot.js";
 import { initTimelapse } from "./timelapse.js";
 import { initReplay } from "./replay.js";
-import { handleVehicleClick } from "./render/vehicles.js";
+import { handleVehicleClick, findClickedVehicle } from "./render/vehicles.js";
 
 let appInitialized = false;
 
@@ -400,8 +400,13 @@ async function handleTileClick(x, y, globalPos) {
     return;
   }
 
-  // Check if a vehicle was clicked
-  if (handleVehicleClick(globalPos)) return;
+  // Check if a vehicle was clicked — also open sprite editor
+  const clickedVehicle = findClickedVehicle(globalPos);
+  if (clickedVehicle) {
+    handleVehicleClick(globalPos);
+    showVehicleSpriteEditor(clickedVehicle);
+    return;
+  }
 
   // Otherwise, show info about what's at this location
   const parcel = state.parcels.find((p) => p.x === x && p.y === y);
@@ -410,11 +415,19 @@ async function handleTileClick(x, y, globalPos) {
     return p && p.x === x && p.y === y;
   });
 
+  // Check if a road was clicked
+  const road = state.roads.find((r) => {
+    const p = state.parcels.find((p) => p.id === r.parcelId);
+    return p && p.x === x && p.y === y;
+  });
+
   if (building) {
     showBuildingInfo(building);
     setDebugSelectedBuilding(building);
     const bParcel = state.parcels.find((p) => p.id === building.parcelId);
     if (bParcel) showSpriteEditor(building, bParcel.x, bParcel.y);
+  } else if (road) {
+    showRoadSpriteEditor(x, y);
   } else if (parcel) {
     showParcelInfo(parcel);
   }
@@ -1781,7 +1794,7 @@ function drawHeatmapTile(container, x, y, color, level) {
   graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
   graphics.closePath();
   graphics.endFill();
-  graphics.zIndex = y * GRID_SIZE + x;
+  graphics.zIndex = (x + y) * GRID_SIZE + x;
   container.addChild(graphics);
 }
 

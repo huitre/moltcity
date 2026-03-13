@@ -12,8 +12,8 @@ import {
   drawZoneTile,
   drawWaterTile,
 } from "./render/tiles.js";
-import { drawRoad, hasRoadAt } from "./render/roads.js";
-import { animateVehicles, initVehicles } from "./render/vehicles.js";
+import { drawRoad, hasRoadAt, buildRoadCache, getConnectionCount, getValidDirectionsFast } from "./render/roads.js";
+import { animateVehicles, initVehicles, drawTrafficLightDots } from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
 import {
   initClouds,
@@ -169,25 +169,49 @@ export function render() {
     waterPipesLayer.addChild(pipeGraphic);
   }
 
-  // Draw power lines
-  for (const line of powerLines) {
-    const lineGraphic = drawPowerLine(line.from, line.to);
-    sceneLayer.addChild(lineGraphic);
-  }
+  // Power lines are drawn per-tile below, after buildings
 
-  // Draw roads (stored in map so bins can be added later)
-  const roadContainers = new Map();
+  // Build road position cache for O(1) lookups
+  buildRoadCache();
+
+  // Draw roads directly into sceneLayer (no container wrappers)
+  const roadPositions = new Set();
   for (const road of roads) {
     const parcel = parcels.find((p) => p.id === road.parcelId);
     if (parcel) {
       const roadGraphic = drawRoad(parcel.x, parcel.y);
-      const container = new PIXI.Container();
-      container.zIndex = roadGraphic.zIndex;
-      roadGraphic.zIndex = 0;
-      container.addChild(roadGraphic);
-      sceneLayer.addChild(container);
-      roadContainers.set(`${parcel.x},${parcel.y}`, container);
+      sceneLayer.addChild(roadGraphic);
+      roadPositions.add(`${parcel.x},${parcel.y}`);
     }
+  }
+
+  // Draw traffic light indicators at intersections (3+ connections)
+  state.trafficLightGraphics.length = 0;
+  for (const road of roads) {
+    const parcel = parcels.find((p) => p.id === road.parcelId);
+    if (!parcel) continue;
+    const connCount = getConnectionCount(parcel.x, parcel.y);
+    if (connCount < 3) continue;
+
+    const dirs = getValidDirectionsFast(parcel.x, parcel.y);
+    const connections = {
+      north: dirs.includes("north"),
+      south: dirs.includes("south"),
+      east: dirs.includes("east"),
+      west: dirs.includes("west"),
+    };
+
+    const g = new PIXI.Graphics();
+    drawTrafficLightDots(g, parcel.x, parcel.y, connections);
+    g.zIndex = (parcel.x + parcel.y) * GRID_SIZE + parcel.x;
+    sceneLayer.addChild(g);
+
+    state.trafficLightGraphics.push({
+      graphics: g,
+      x: parcel.x,
+      y: parcel.y,
+      connections,
+    });
   }
 
   // Initialize vehicles after roads are loaded
@@ -226,15 +250,15 @@ export function render() {
     // Find adjacent road tiles with direction (which edge faces the building)
     const adjRoads = [];
     for (let dx = 0; dx < fw; dx++) {
-      if (roadContainers.has(`${bx + dx},${by - 1}`))
+      if (roadPositions.has(`${bx + dx},${by - 1}`))
         adjRoads.push({ rx: bx + dx, ry: by - 1, dir: "S" });
-      if (roadContainers.has(`${bx + dx},${by + fh}`))
+      if (roadPositions.has(`${bx + dx},${by + fh}`))
         adjRoads.push({ rx: bx + dx, ry: by + fh, dir: "N" });
     }
     for (let dy = 0; dy < fh; dy++) {
-      if (roadContainers.has(`${bx - 1},${by + dy}`))
+      if (roadPositions.has(`${bx - 1},${by + dy}`))
         adjRoads.push({ rx: bx - 1, ry: by + dy, dir: "E" });
-      if (roadContainers.has(`${bx + fw},${by + dy}`))
+      if (roadPositions.has(`${bx + fw},${by + dy}`))
         adjRoads.push({ rx: bx + fw, ry: by + dy, dir: "W" });
     }
     if (adjRoads.length === 0) continue;
@@ -242,9 +266,6 @@ export function render() {
     const rng = seededRandom(bx * 1000 + by);
     for (let i = 0; i < binCount; i++) {
       const road = adjRoads[i % adjRoads.length];
-      const container = roadContainers.get(`${road.rx},${road.ry}`);
-      if (!container) continue;
-
       if (state.binSprites.length === 0) continue;
       const variant = Math.floor(rng() * state.binSprites.length);
       const spriteData = state.binSprites[variant];
@@ -259,23 +280,29 @@ export function render() {
       if (road.dir === "S") {
         offX = 0.5 + jitter;
         offY = 0.85;
-      } // building south → bin on bottom edge
-      else if (road.dir === "N") {
+      } else if (road.dir === "N") {
         offX = 0.5 + jitter;
         offY = 0.15;
-      } // building north → bin on top edge
-      else if (road.dir === "E") {
+      } else if (road.dir === "E") {
         offX = 0.85;
         offY = 0.5 + jitter;
-      } // building east → bin on right edge
-      else {
+      } else {
         offX = 0.15;
         offY = 0.5 + jitter;
-      } // building west → bin on left edge
+      }
       const iso = cartToIso(road.rx + offX, road.ry + offY);
       sprite.x = iso.x;
       sprite.y = iso.y;
-      container.addChild(sprite);
+      sprite.zIndex = (road.rx + road.ry) * GRID_SIZE + road.rx;
+      sceneLayer.addChild(sprite);
+    }
+  }
+
+  // Draw power lines (split into per-tile pole + wire for correct z-sorting)
+  for (const line of powerLines) {
+    const parts = drawPowerLine(line.from, line.to);
+    for (const part of parts) {
+      sceneLayer.addChild(part);
     }
   }
 
@@ -307,7 +334,7 @@ function drawBuilding(x, y, building) {
   // Center X of footprint, bottom Y of footprint
   const spriteIsoX = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2).x;
   const spriteIsoY = cartToIso(x + fw - 1, y + fh - 1).y + TILE_HEIGHT;
-  const zIdx = (y + fh - 1) * GRID_SIZE + (x + fw - 1);
+  const zIdx = (x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1);
 
   const powered = building.powered;
   const type = building.type;
@@ -479,7 +506,7 @@ function drawStatusIcons(x, y, building) {
   const fw = building.width || 1;
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
-  const zIdx = (y + fh - 1) * GRID_SIZE + (x + fw - 1) + 0.1;
+  const zIdx = (x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1);
 
   const container = new PIXI.Container();
   container.x = iso.x;
@@ -686,30 +713,35 @@ function drawGenericBuilding(g, cx, baseY, powered, height) {
 function drawPowerLine(from, to) {
   const isoFrom = cartToIso(from.x, from.y);
   const isoTo = cartToIso(to.x, to.y);
-  const g = new PIXI.Graphics();
+  const parts = [];
 
-  // Poles
-  g.lineStyle(3, 0x8b4513);
-  g.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
-  g.lineTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2 - 20);
-  g.moveTo(isoTo.x - TILE_WIDTH / 2, isoTo.y + TILE_HEIGHT / 2);
-  g.lineTo(isoTo.x - TILE_WIDTH / 2, isoTo.y + TILE_HEIGHT / 2 - 20);
-
-  // Wire (from pole top to pole top)
-  g.lineStyle(1, 0x333333);
   const fromPoleX = isoFrom.x - TILE_WIDTH / 2;
   const fromPoleTopY = isoFrom.y + TILE_HEIGHT / 2 - 20;
   const toPoleX = isoTo.x - TILE_WIDTH / 2;
   const toPoleTopY = isoTo.y + TILE_HEIGHT / 2 - 20;
   const midX = (fromPoleX + toPoleX) / 2;
   const midY = (fromPoleTopY + toPoleTopY) / 2 + 10;
-  g.moveTo(fromPoleX, fromPoleTopY);
-  g.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
 
-  // Sort behind buildings at the same grid position
-  g.zIndex =
-    Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x) - 0.5;
-  return g;
+  // Pole at "from" tile
+  const poleFrom = new PIXI.Graphics();
+  poleFrom.lineStyle(3, 0x8b4513);
+  poleFrom.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
+  poleFrom.lineTo(fromPoleX, fromPoleTopY);
+  poleFrom.zIndex = (from.x + from.y) * GRID_SIZE + from.x;
+  parts.push(poleFrom);
+
+  // Pole + wire at "to" tile (wire sorts with deeper endpoint)
+  const poleTo = new PIXI.Graphics();
+  poleTo.lineStyle(3, 0x8b4513);
+  poleTo.moveTo(isoTo.x - TILE_WIDTH / 2, isoTo.y + TILE_HEIGHT / 2);
+  poleTo.lineTo(toPoleX, toPoleTopY);
+  poleTo.lineStyle(1, 0x333333);
+  poleTo.moveTo(fromPoleX, fromPoleTopY);
+  poleTo.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
+  poleTo.zIndex = (to.x + to.y) * GRID_SIZE + to.x;
+  parts.push(poleTo);
+
+  return parts;
 }
 
 /**
@@ -730,7 +762,7 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max(from.y * GRID_SIZE + from.x, to.y * GRID_SIZE + to.x);
+  g.zIndex = Math.max((from.x + from.y) * GRID_SIZE + from.x, (to.x + to.y) * GRID_SIZE + to.x);
   return g;
 }
 
@@ -751,7 +783,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = y * GRID_SIZE + x;
+  g.zIndex = (x + y) * GRID_SIZE + x;
   return g;
 }
 

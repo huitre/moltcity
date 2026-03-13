@@ -208,18 +208,18 @@
       "width": 103,
       "height": 95,
       "size": {
-        "width": 24,
-        "height": 18
+        "width": 20,
+        "height": 28
       }
     },
     "bus": {
       "type": "directional",
-      "basePath": "vehicles/black_bus/black_bus_",
+      "basePath": "vehicles/white_bus/white_bus_",
       "width": 142,
       "height": 127,
       "size": {
-        "width": 35,
-        "height": 20
+        "width": 28,
+        "height": 24
       }
     },
     "van": {
@@ -1281,8 +1281,8 @@
       "height": 914,
       "tiles": 1,
       "anchor": {
-        "x": 0.5,
-        "y": 0.96
+        "x": 0.48,
+        "y": 0.95
       }
     }
   ],
@@ -1358,7 +1358,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.96
+        "y": 0.93
       }
     }
   ],
@@ -1385,9 +1385,5 @@
         "y": 0.95
       }
     }
-  ],
-  "meta": {
-    "attribution": "Sprites by Kenney.nl (CC0 Public Domain)",
-    "source": "https://opengameart.org/content/isometric-buildings-1"
-  }
+  ]
 }

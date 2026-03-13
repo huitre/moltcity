@@ -13,9 +13,55 @@ import { cartToIso, drawDashedLine } from "../utils.js";
 import * as state from "../state.js";
 
 /**
+ * Build a Set of "x,y" strings for O(1) road lookups.
+ * Call this after roads are loaded/changed.
+ */
+export function buildRoadCache() {
+  const set = new Set();
+  for (const road of state.roads) {
+    const parcel = state.parcels.find((p) => p.id === road.parcelId);
+    if (parcel) set.add(`${parcel.x},${parcel.y}`);
+  }
+  state.setRoadPositionSet(set);
+}
+
+/**
+ * O(1) road check using cached set
+ */
+export function hasRoadAtFast(x, y) {
+  return state.roadPositionSet.has(`${x},${y}`);
+}
+
+/**
+ * Get valid movement directions using fast lookup
+ */
+export function getValidDirectionsFast(x, y) {
+  const directions = [];
+  if (hasRoadAtFast(x, y - 1)) directions.push("north");
+  if (hasRoadAtFast(x, y + 1)) directions.push("south");
+  if (hasRoadAtFast(x + 1, y)) directions.push("east");
+  if (hasRoadAtFast(x - 1, y)) directions.push("west");
+  return directions;
+}
+
+/**
+ * Count how many road connections a tile has (for intersection detection)
+ */
+export function getConnectionCount(x, y) {
+  let count = 0;
+  if (hasRoadAtFast(x, y - 1)) count++;
+  if (hasRoadAtFast(x, y + 1)) count++;
+  if (hasRoadAtFast(x + 1, y)) count++;
+  if (hasRoadAtFast(x - 1, y)) count++;
+  return count;
+}
+
+/**
  * Check if there's a road at the given grid position
  */
 export function hasRoadAt(x, y) {
+  // Use fast path if cache is available
+  if (state.roadPositionSet.size > 0) return hasRoadAtFast(x, y);
   return state.roads.some((r) => {
     const parcel = state.parcels.find((p) => p.id === r.parcelId);
     return parcel && parcel.x === x && parcel.y === y;
@@ -119,7 +165,7 @@ export function drawRoad(x, y) {
       sprite.anchor.set(config.anchor.x, config.anchor.y);
       sprite.x = iso.x;
       sprite.y = iso.y + TILE_HEIGHT + 8;
-      sprite.zIndex = y * GRID_SIZE + x;
+      sprite.zIndex = (x + y) * GRID_SIZE + x;
       return sprite;
     }
   }
@@ -211,6 +257,6 @@ function drawProceduralRoad(x, y, iso, conn) {
   graphics.lineTo(left.x, left.y);
   graphics.closePath();
 
-  graphics.zIndex = y * GRID_SIZE + x;
+  graphics.zIndex = (x + y) * GRID_SIZE + x;
   return graphics;
 }
