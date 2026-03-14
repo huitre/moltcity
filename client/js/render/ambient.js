@@ -2,6 +2,8 @@
 // MOLTCITY - Ambient Effects (Clouds, Birds, Day/Night)
 // ============================================
 
+import { updateLighting } from "./lighting.js";
+
 import {
   CLOUD_COUNT,
   BIRD_COUNT,
@@ -303,6 +305,9 @@ export function updateDayNightOverlay() {
   cloudsContainer.alpha = cloudsAlpha;
   cloudShadowsContainer.alpha = shadowsAlpha;
   birdsContainer.alpha = birdsAlpha;
+
+  // Update lighting (streetlights and building lights)
+  updateLighting(alpha);
 }
 
 /**

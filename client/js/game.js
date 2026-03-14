@@ -21,6 +21,7 @@ import {
   animateAmbient,
   updateDayNightOverlay,
 } from "./render/ambient.js";
+import { initLighting, rebuildLights } from "./render/lighting.js";
 
 let renderContainer = null;
 let statusIcons = [];
@@ -39,6 +40,7 @@ PIXI.Assets.load("/sprites/ui/waste_icon.png")
  * Initialize the game world
  */
 export function initGame() {
+  initLighting();
   initClouds();
   initBirds();
 
@@ -217,6 +219,7 @@ export function render() {
   // Initialize vehicles after roads are loaded
   if (state.animatedVehicles.length === 0 && roads.length > 0) {
     initVehicles();
+    rebuildLights(); // Create streetlights and building lights
   }
 
   // Draw buildings
