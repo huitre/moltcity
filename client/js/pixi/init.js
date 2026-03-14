@@ -15,6 +15,39 @@ import * as state from "../state.js";
 import { cartToIso, isoToCart, clamp } from "../utils.js";
 
 /**
+ * Calculate tilt-shift parameters based on screen size
+ */
+function getTiltShiftParams(screenHeight) {
+  // Reference: 1080p = full effect, scale down for smaller screens
+  const refHeight = 1080;
+  const scale = Math.min(1, screenHeight / refHeight);
+  
+  return {
+    blur: 6 + scale * 4,              // 6-10 blur (less on mobile)
+    gradientBlur: 600 + scale * 700,  // 600-1300 gradient (tighter on mobile)
+  };
+}
+
+/**
+ * Update tilt-shift filter for current screen size
+ */
+export function updateTiltShift() {
+  const { tiltShiftFilter, app, worldContainer } = state;
+  if (!tiltShiftFilter || !app) return;
+  
+  const params = getTiltShiftParams(app.screen.height);
+  tiltShiftFilter.blur = params.blur;
+  tiltShiftFilter.gradientBlur = params.gradientBlur;
+  
+  // Focus band centered vertically in world space
+  const centerIso = cartToIso(GRID_SIZE / 2, GRID_SIZE / 2);
+  const focusY = centerIso.y * 0.6;  // Slightly above center for better miniature look
+  
+  tiltShiftFilter.start = new PIXI.Point(WORLD_MIN_X, focusY - 100);
+  tiltShiftFilter.end = new PIXI.Point(WORLD_MAX_X, focusY + 100);
+}
+
+/**
  * Initialize the Pixi.js application
  */
 export async function initPixi() {
@@ -85,21 +118,18 @@ export async function initPixi() {
   app.stage.addChild(dayNightOverlay);
   state.setDayNightOverlay(dayNightOverlay);
 
-  // Tilt-shift filter on world container for miniature/diorama effect
-  // Coordinates are in worldContainer local (isometric) space
+  // Tilt-shift filter for miniature/diorama effect (screen-size adaptive)
   const tiltShift = new PIXI.filters.TiltShiftFilter();
-  tiltShift.blur = 8;
-  tiltShift.gradientBlur = 1150;
-  tiltShift.start = new PIXI.Point(WORLD_MIN_X, 550);
-  tiltShift.end = new PIXI.Point(WORLD_MAX_X, centerIso.y);
   worldContainer.filters = [tiltShift];
   state.setTiltShiftFilter(tiltShift);
+  updateTiltShift();  // Apply initial params based on screen size
 
   // Handle window resize
   window.addEventListener("resize", () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     skybox.width = app.screen.width;
     skybox.height = app.screen.height;
+    updateTiltShift();  // Recalculate tilt-shift for new screen size
   });
 
   return app;
