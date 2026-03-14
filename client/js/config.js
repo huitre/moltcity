@@ -37,6 +37,15 @@ export const COLORS = {
 export const CLOUD_COUNT = 8;
 export const BIRD_COUNT = 12;
 
+// Z-index layer system: each tile's z-range is multiplied by NUM_LAYERS
+// so each asset type gets a guaranteed sub-layer within a tile's depth slot
+export const NUM_LAYERS = 5;
+export const LAYER_ROAD     = 0;
+export const LAYER_BUILDING = 1;
+export const LAYER_VEHICLE  = 2;  // vehicles, pedestrians, bins
+export const LAYER_POLE     = 3;  // power poles, traffic light dots
+export const LAYER_STATUS   = 4;  // status icons (power/water/waste)
+
 // Building limits
 export const MAX_FLOORS = { house: 3, office: 5 };
 

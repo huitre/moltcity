@@ -2,7 +2,7 @@
 // MOLTCITY - Main Game Loop
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS } from "./config.js";
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS, NUM_LAYERS, LAYER_BUILDING, LAYER_VEHICLE, LAYER_POLE, LAYER_STATUS } from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
 import { seededRandom } from "./sprites.js";
@@ -203,7 +203,7 @@ export function render() {
 
     const g = new PIXI.Graphics();
     drawTrafficLightDots(g, parcel.x, parcel.y, connections);
-    g.zIndex = (parcel.x + parcel.y) * GRID_SIZE + parcel.x;
+    g.zIndex = ((parcel.x + parcel.y) * GRID_SIZE + parcel.x) * NUM_LAYERS + LAYER_POLE;
     sceneLayer.addChild(g);
 
     state.trafficLightGraphics.push({
@@ -224,9 +224,12 @@ export function render() {
   for (const building of buildings) {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (parcel) {
-      const buildingGraphic = drawBuilding(parcel.x, parcel.y, building);
-      buildingGraphic._buildingType = building.type;
-      sceneLayer.addChild(buildingGraphic);
+      const result = drawBuilding(parcel.x, parcel.y, building);
+      const parts = Array.isArray(result) ? result : [result];
+      for (const part of parts) {
+        part._buildingType = building.type;
+        sceneLayer.addChild(part);
+      }
       const icons = drawStatusIcons(parcel.x, parcel.y, building);
       if (icons) {
         sceneLayer.addChild(icons);
@@ -293,7 +296,7 @@ export function render() {
       const iso = cartToIso(road.rx + offX, road.ry + offY);
       sprite.x = iso.x;
       sprite.y = iso.y;
-      sprite.zIndex = (road.rx + road.ry) * GRID_SIZE + road.rx;
+      sprite.zIndex = ((road.rx + road.ry) * GRID_SIZE + road.rx) * NUM_LAYERS + LAYER_VEHICLE;
       sceneLayer.addChild(sprite);
     }
   }
@@ -323,84 +326,97 @@ export function render() {
 }
 
 /**
- * Draw a building at the given position
+ * Create building sprite(s) with proper z-index layering.
+ * For single-tile buildings, returns one PIXI.Sprite.
+ * For multi-tile buildings, returns an array of [mask, strip, mask, strip, ...]
+ * where each strip is a masked copy of the sprite at a different depth row.
  */
-function drawBuilding(x, y, building) {
-  const g = new PIXI.Graphics();
+function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
+  const tileSpan = spriteData.tiles || 1;
+  const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+  const spriteIsoX = cartToIso(bx + (fw - 1) / 2, by + (fh - 1) / 2).x;
+  const spriteIsoY = cartToIso(bx + fw - 1, by + fh - 1).y + TILE_HEIGHT;
 
-  // Compute footprint-aware positions
-  const fw = building.width || 1;
-  const fh = building.height || 1;
-  // Center X of footprint, bottom Y of footprint
-  const spriteIsoX = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2).x;
-  const spriteIsoY = cartToIso(x + fw - 1, y + fh - 1).y + TILE_HEIGHT;
-  const zIdx = (x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1);
-
-  const powered = building.powered;
-  const type = building.type;
-  const floors = building.floors || 1;
-
-  // Suburban zone sprites (flat array, no density)
-  if (type === "suburban" && state.suburbanSprites.length > 0) {
-    const sprites = state.suburbanSprites;
-    const rng = seededRandom(x * 1000 + y);
-    const idx = Math.floor(rng() * sprites.length);
-    const spriteData = sprites[idx];
-    const sprite = new PIXI.Sprite(spriteData.texture);
-    const tileSpan = spriteData.tiles || 1;
-    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+  if (fw <= 1 && fh <= 1) {
+    const sprite = new PIXI.Sprite(texture);
     sprite.scale.set(scale);
     sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
     sprite.x = spriteIsoX;
     sprite.y = spriteIsoY;
-    sprite.zIndex = zIdx;
+    sprite.zIndex = ((bx + by) * GRID_SIZE + bx) * NUM_LAYERS + LAYER_BUILDING;
     if (!powered) sprite.tint = 0x888888;
     return sprite;
   }
 
-  // Industrial zone sprites (flat array, no density)
-  if (type === "industrial" && state.industrialSprites.length > 0) {
-    const sprites = state.industrialSprites;
+  // Multi-tile: slice into horizontal strips, one per depth row
+  const D_front = bx + by + fw + fh - 2;
+  const numStrips = fw + fh - 1;
+  const HALF_H = TILE_HEIGHT / 2;
+  const parts = [];
+
+  for (let i = 0; i < numStrips; i++) {
+    const D = D_front - i;
+    const bandTop = D * HALF_H;
+
+    const mask = new PIXI.Graphics();
+    mask.beginFill(0xffffff);
+    if (i === 0)                  mask.drawRect(-5000, bandTop, 10000, 5000);
+    else if (i === numStrips - 1) mask.drawRect(-5000, bandTop - 5000, 10000, 5000 + HALF_H);
+    else                          mask.drawRect(-5000, bandTop, 10000, HALF_H);
+    mask.endFill();
+
+    const strip = new PIXI.Sprite(texture);
+    strip.scale.set(scale);
+    strip.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+    strip.x = spriteIsoX;
+    strip.y = spriteIsoY;
+    strip.zIndex = (D * GRID_SIZE + (bx + fw - 1)) * NUM_LAYERS + LAYER_BUILDING;
+    if (!powered) strip.tint = 0x888888;
+    strip.mask = mask;
+
+    parts.push(mask, strip);
+  }
+  return parts;
+}
+
+/**
+ * Draw a building at the given position
+ */
+function drawBuilding(x, y, building) {
+  const fw = building.width || 1;
+  const fh = building.height || 1;
+  const powered = building.powered;
+  const type = building.type;
+  const floors = building.floors || 1;
+
+  // Helper to pick a sprite from an array and delegate to createBuildingSprites
+  function fromSpriteArray(sprites) {
     const rng = seededRandom(x * 1000 + y);
     const idx = Math.floor(rng() * sprites.length);
     const spriteData = sprites[idx];
-    const sprite = new PIXI.Sprite(spriteData.texture);
-    const tileSpan = spriteData.tiles || 1;
-    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
-    sprite.scale.set(scale);
-    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-    sprite.x = spriteIsoX;
-    sprite.y = spriteIsoY;
-    sprite.zIndex = zIdx;
-    if (!powered) sprite.tint = 0x888888;
-    return sprite;
+    return createBuildingSprites(spriteData.texture, spriteData, x, y, fw, fh, powered);
+  }
+
+  // Suburban zone sprites (flat array, no density)
+  if (type === "suburban" && state.suburbanSprites.length > 0) {
+    return fromSpriteArray(state.suburbanSprites);
+  }
+
+  // Industrial zone sprites (flat array, no density)
+  if (type === "industrial" && state.industrialSprites.length > 0) {
+    return fromSpriteArray(state.industrialSprites);
   }
 
   // Try zone sprites for residential/offices
   if (type === "residential" || type === "offices") {
     const spriteMap =
       type === "residential" ? state.residentialSprites : state.officeSprites;
-    // Density mapping from building's density field: 1=low, 2=medium, 3=high (1x1), 4=veryhigh (2x2)
     const d = building.density || 1;
     const density =
       d <= 1 ? "low" : d === 2 ? "medium" : d === 3 ? "high" : "veryhigh";
     const sprites = spriteMap[density];
     if (sprites && sprites.length > 0) {
-      const rng = seededRandom(x * 1000 + y);
-      const idx = Math.floor(rng() * sprites.length);
-      const spriteData = sprites[idx];
-      const sprite = new PIXI.Sprite(spriteData.texture);
-      const tileSpan = spriteData.tiles || 1;
-      const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
-      sprite.scale.set(scale);
-      sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-      sprite.x = spriteIsoX;
-      sprite.y = spriteIsoY;
-      sprite.zIndex = zIdx;
-      if (!powered) {
-        sprite.tint = 0x888888;
-      }
-      return sprite;
+      return fromSpriteArray(sprites);
     }
   }
 
@@ -421,51 +437,23 @@ function drawBuilding(x, y, building) {
     garbage_depot: state.wasteSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
-    const sprites = serviceSpriteMap[type];
-    const rng = seededRandom(x * 1000 + y);
-    const idx = Math.floor(rng() * sprites.length);
-    const spriteData = sprites[idx];
-    const sprite = new PIXI.Sprite(spriteData.texture);
-    const tileSpan = spriteData.tiles || 1;
-    const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
-    sprite.scale.set(scale);
-    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-    sprite.x = spriteIsoX;
-    sprite.y = spriteIsoY;
-    sprite.zIndex = zIdx;
-    if (!powered) {
-      sprite.tint = 0x888888;
-    }
-    return sprite;
+    return fromSpriteArray(serviceSpriteMap[type]);
   }
 
-  // Try to use sprite first
+  // Try default sprites
   if (state.defaultSprites.has(type)) {
     const { texture, config } = state.defaultSprites.get(type);
-    const sprite = new PIXI.Sprite(texture);
-    const tileSpan = config.tiles || 1;
-    const scale = (TILE_WIDTH * tileSpan) / config.width;
-    sprite.scale.set(scale);
-    sprite.anchor.set(config.anchor.x, config.anchor.y);
-    sprite.x = spriteIsoX;
-    sprite.y = spriteIsoY;
-    sprite.zIndex = zIdx;
-
-    // Tint if not powered
-    if (!powered) {
-      sprite.tint = 0x888888;
-    }
-
-    return sprite;
+    return createBuildingSprites(texture, config, x, y, fw, fh, powered);
   }
 
-  // Fallback to procedural drawing
+  // Fallback to procedural drawing (always 1x1, no slicing needed)
+  const g = new PIXI.Graphics();
   const iso = cartToIso(x, y);
   const wallHeight = 20 + floors * 15;
   const cx = iso.x;
   const baseY = iso.y + TILE_HEIGHT;
+  const zIdx = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_BUILDING;
 
-  // Draw based on type
   switch (type) {
     case "house":
       drawHouseProcedural(g, cx, baseY, powered, floors);
@@ -483,7 +471,6 @@ function drawBuilding(x, y, building) {
       drawFactoryProcedural(g, cx, baseY, powered);
       break;
     default:
-      // Generic building
       drawGenericBuilding(g, cx, baseY, powered, wallHeight);
   }
 
@@ -506,7 +493,7 @@ function drawStatusIcons(x, y, building) {
   const fw = building.width || 1;
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
-  const zIdx = (x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1);
+  const zIdx = ((x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1)) * NUM_LAYERS + LAYER_STATUS;
 
   const container = new PIXI.Container();
   container.x = iso.x;
@@ -727,7 +714,7 @@ function drawPowerLine(from, to) {
   poleFrom.lineStyle(3, 0x8b4513);
   poleFrom.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
   poleFrom.lineTo(fromPoleX, fromPoleTopY);
-  poleFrom.zIndex = (from.x + from.y) * GRID_SIZE + from.x;
+  poleFrom.zIndex = ((from.x + from.y) * GRID_SIZE + from.x) * NUM_LAYERS + LAYER_POLE;
   parts.push(poleFrom);
 
   // Pole + wire at "to" tile (wire sorts with deeper endpoint)
@@ -738,7 +725,7 @@ function drawPowerLine(from, to) {
   poleTo.lineStyle(1, 0x333333);
   poleTo.moveTo(fromPoleX, fromPoleTopY);
   poleTo.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
-  poleTo.zIndex = (to.x + to.y) * GRID_SIZE + to.x;
+  poleTo.zIndex = ((to.x + to.y) * GRID_SIZE + to.x) * NUM_LAYERS + LAYER_POLE;
   parts.push(poleTo);
 
   return parts;
@@ -783,7 +770,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = (x + y) * GRID_SIZE + x;
+  g.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_VEHICLE;
   return g;
 }
 
