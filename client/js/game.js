@@ -2,7 +2,17 @@
 // MOLTCITY - Main Game Loop
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS, NUM_LAYERS, LAYER_BUILDING, LAYER_VEHICLE, LAYER_POLE, LAYER_STATUS } from "./config.js";
+import {
+  GRID_SIZE,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  COLORS,
+  NUM_LAYERS,
+  LAYER_BUILDING,
+  LAYER_VEHICLE,
+  LAYER_POLE,
+  LAYER_STATUS,
+} from "./config.js";
 import * as state from "./state.js";
 import { cartToIso } from "./utils.js";
 import { seededRandom } from "./sprites.js";
@@ -12,8 +22,18 @@ import {
   drawZoneTile,
   drawWaterTile,
 } from "./render/tiles.js";
-import { drawRoad, hasRoadAt, buildRoadCache, getConnectionCount, getValidDirectionsFast } from "./render/roads.js";
-import { animateVehicles, initVehicles, drawTrafficLightDots } from "./render/vehicles.js";
+import {
+  drawRoad,
+  hasRoadAt,
+  buildRoadCache,
+  getConnectionCount,
+  getValidDirectionsFast,
+} from "./render/roads.js";
+import {
+  animateVehicles,
+  initVehicles,
+  drawTrafficLightDots,
+} from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
 import {
   initClouds,
@@ -206,7 +226,8 @@ export function render() {
 
     const g = new PIXI.Graphics();
     drawTrafficLightDots(g, parcel.x, parcel.y, connections);
-    g.zIndex = ((parcel.x + parcel.y) * GRID_SIZE + parcel.x) * NUM_LAYERS + LAYER_POLE;
+    g.zIndex =
+      ((parcel.x + parcel.y) * GRID_SIZE + parcel.x) * NUM_LAYERS + LAYER_POLE;
     sceneLayer.addChild(g);
 
     state.trafficLightGraphics.push({
@@ -221,12 +242,12 @@ export function render() {
   if (state.animatedVehicles.length === 0 && roads.length > 0) {
     initVehicles();
   }
-  
+
   // Build lights once roads and buildings are available
   if (!lightsBuilt && roads.length > 0 && buildings.length > 0) {
     rebuildLights();
     lightsBuilt = true;
-    console.log('[Lighting] Built streetlights and building lights');
+    console.log("[Lighting] Built streetlights and building lights");
   }
 
   // Draw buildings
@@ -306,7 +327,9 @@ export function render() {
       const iso = cartToIso(road.rx + offX, road.ry + offY);
       sprite.x = iso.x;
       sprite.y = iso.y;
-      sprite.zIndex = ((road.rx + road.ry) * GRID_SIZE + road.rx) * NUM_LAYERS + LAYER_VEHICLE;
+      sprite.zIndex =
+        ((road.rx + road.ry) * GRID_SIZE + road.rx) * NUM_LAYERS +
+        LAYER_VEHICLE;
       sceneLayer.addChild(sprite);
     }
   }
@@ -347,6 +370,7 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   const spriteIsoX = cartToIso(bx + (fw - 1) / 2, by + (fh - 1) / 2).x;
   const spriteIsoY = cartToIso(bx + fw - 1, by + fh - 1).y + TILE_HEIGHT;
 
+  // remove mask FTM
   if (fw <= 1 && fh <= 1) {
     const sprite = new PIXI.Sprite(texture);
     sprite.scale.set(scale);
@@ -370,9 +394,10 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
 
     const mask = new PIXI.Graphics();
     mask.beginFill(0xffffff);
-    if (i === 0)                  mask.drawRect(-5000, bandTop, 10000, 5000);
-    else if (i === numStrips - 1) mask.drawRect(-5000, bandTop - 5000, 10000, 5000 + HALF_H);
-    else                          mask.drawRect(-5000, bandTop, 10000, HALF_H);
+    if (i === 0) mask.drawRect(-5000, bandTop, 10000, 5000);
+    else if (i === numStrips - 1)
+      mask.drawRect(-5000, bandTop - 5000, 10000, 5000 + HALF_H);
+    else mask.drawRect(-5000, bandTop, 10000, HALF_H);
     mask.endFill();
 
     const strip = new PIXI.Sprite(texture);
@@ -380,7 +405,8 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
     strip.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
     strip.x = spriteIsoX;
     strip.y = spriteIsoY;
-    strip.zIndex = (D * GRID_SIZE + (bx + fw - 1)) * NUM_LAYERS + LAYER_BUILDING;
+    const stripX = Math.min(bx + fw - 1, D - by);
+    strip.zIndex = (D * GRID_SIZE + stripX) * NUM_LAYERS + LAYER_BUILDING;
     if (!powered) strip.tint = 0x888888;
     strip.mask = mask;
 
@@ -404,7 +430,15 @@ function drawBuilding(x, y, building) {
     const rng = seededRandom(x * 1000 + y);
     const idx = Math.floor(rng() * sprites.length);
     const spriteData = sprites[idx];
-    return createBuildingSprites(spriteData.texture, spriteData, x, y, fw, fh, powered);
+    return createBuildingSprites(
+      spriteData.texture,
+      spriteData,
+      x,
+      y,
+      fw,
+      fh,
+      powered,
+    );
   }
 
   // Suburban zone sprites (flat array, no density)
@@ -503,7 +537,9 @@ function drawStatusIcons(x, y, building) {
   const fw = building.width || 1;
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
-  const zIdx = ((x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1)) * NUM_LAYERS + LAYER_STATUS;
+  const zIdx =
+    ((x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1)) * NUM_LAYERS +
+    LAYER_STATUS;
 
   const container = new PIXI.Container();
   container.x = iso.x;
@@ -724,7 +760,8 @@ function drawPowerLine(from, to) {
   poleFrom.lineStyle(3, 0x8b4513);
   poleFrom.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
   poleFrom.lineTo(fromPoleX, fromPoleTopY);
-  poleFrom.zIndex = ((from.x + from.y) * GRID_SIZE + from.x) * NUM_LAYERS + LAYER_POLE;
+  poleFrom.zIndex =
+    ((from.x + from.y) * GRID_SIZE + from.x) * NUM_LAYERS + LAYER_POLE;
   parts.push(poleFrom);
 
   // Pole + wire at "to" tile (wire sorts with deeper endpoint)
@@ -759,7 +796,10 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max((from.x + from.y) * GRID_SIZE + from.x, (to.x + to.y) * GRID_SIZE + to.x);
+  g.zIndex = Math.max(
+    (from.x + from.y) * GRID_SIZE + from.x,
+    (to.x + to.y) * GRID_SIZE + to.x,
+  );
   return g;
 }
 
