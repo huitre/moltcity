@@ -240,15 +240,22 @@ export function createBuildingLights() {
       const color = cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
       
       const window = new PIXI.Graphics();
-      
-      // Window glow
+
+      // Window glow (circular, fine as-is)
       window.beginFill(color, 0.15);
       window.drawCircle(windowX, windowY, 5);
       window.endFill();
 
-      // Window rectangle
+      // Isometric window parallelogram (skewed to match building face)
+      const ww = 5;  // half-width
+      const wh = 3;  // half-height
+      const skew = 2; // isometric skew offset
       window.beginFill(color, 0.4);
-      window.drawRect(windowX - 3, windowY - 2, 6, 4);
+      window.moveTo(windowX - ww + skew, windowY - wh);
+      window.lineTo(windowX + ww + skew, windowY - wh);
+      window.lineTo(windowX + ww - skew, windowY + wh);
+      window.lineTo(windowX - ww - skew, windowY + wh);
+      window.closePath();
       window.endFill();
       
       container.addChild(window);
