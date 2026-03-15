@@ -11,13 +11,13 @@ import { hasRoadAtFast } from "./roads.js";
 export const LIGHTING_CONFIG = {
   // Streetlight settings
   streetlight: {
-    haloRadius: 50,
+    haloRadius: 20,
     haloColor: 0xffdd88,
-    haloAlpha: 0.7,       // Increased from 0.35 to cut through night overlay
+    haloAlpha: 0.12,
     poleHeight: 30,
     poleColor: 0x444444,
     bulbColor: 0xffffcc,
-    bulbRadius: 4,
+    bulbRadius: 3,
     spacing: 3,  // Place streetlight every N road tiles
   },
   // Building light windows - relative positions (0-1) within building sprite
@@ -142,11 +142,11 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   halo.drawCircle(0, -cfg.poleHeight, cfg.haloRadius);
   halo.endFill();
   
-  // Soft gradient effect using multiple circles (boosted for visibility)
+  // Soft gradient effect using multiple circles
   for (let i = 1; i <= 3; i++) {
-    const r = cfg.haloRadius * (1 - i * 0.2);
-    const a = cfg.haloAlpha * (1 + i * 0.4);
-    halo.beginFill(cfg.haloColor, Math.min(a, 0.95));
+    const r = cfg.haloRadius * (1 - i * 0.25);
+    const a = cfg.haloAlpha * (1 + i * 0.3);
+    halo.beginFill(cfg.haloColor, Math.min(a, 0.3));
     halo.drawCircle(0, -cfg.poleHeight, r);
     halo.endFill();
   }
@@ -241,14 +241,14 @@ export function createBuildingLights() {
       
       const window = new PIXI.Graphics();
       
-      // Window glow (boosted to show through night overlay)
-      window.beginFill(color, 0.6);
-      window.drawCircle(windowX, windowY, 10);
+      // Window glow
+      window.beginFill(color, 0.15);
+      window.drawCircle(windowX, windowY, 5);
       window.endFill();
-      
+
       // Window rectangle
-      window.beginFill(color, 1.0);
-      window.drawRect(windowX - 4, windowY - 3, 8, 6);
+      window.beginFill(color, 0.4);
+      window.drawRect(windowX - 3, windowY - 2, 6, 4);
       window.endFill();
       
       container.addChild(window);
