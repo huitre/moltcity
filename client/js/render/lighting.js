@@ -54,6 +54,7 @@ const STREETLAMP_SCALE = 14 / 142; // target height 14px
 
 // Container for all lighting elements
 let lightingContainer = null;
+let lampContainer = null; // normal-blend container for lamp sprites (above overlay)
 let streetlightSprites = [];
 let buildingLightSprites = [];
 
@@ -65,11 +66,19 @@ export function initLighting() {
   if (lightingContainer) {
     lightingContainer.parent?.removeChild(lightingContainer);
   }
+  if (lampContainer) {
+    lampContainer.parent?.removeChild(lampContainer);
+  }
 
   lightingContainer = new PIXI.Container();
   lightingContainer.alpha = 0; // Start hidden (daytime)
   lightingContainer.blendMode = PIXI.BLEND_MODES.ADD;
   state.app.stage.addChild(lightingContainer);
+
+  // Separate container for lamp sprites (normal blend, always visible, above overlay)
+  lampContainer = new PIXI.Container();
+  lampContainer.sortableChildren = true;
+  state.app.stage.addChild(lampContainer);
 
   streetlightSprites = [];
   buildingLightSprites = [];
@@ -135,14 +144,14 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   const lampHeight = 142 * STREETLAMP_SCALE; // 14px
   const lampZIndex = ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_POLE;
 
-  // Lamp sprite (in sceneLayer, same layer as road)
+  // Lamp sprite (in lampContainer on app.stage, above overlay, always visible)
   const lamp = new PIXI.Sprite(streetLampTexture);
   lamp.anchor.set(0.5, 1.0);
   lamp.scale.set(STREETLAMP_SCALE);
   lamp.x = baseX;
   lamp.y = baseY;
   lamp.zIndex = lampZIndex;
-  state.sceneLayer.addChild(lamp);
+  lampContainer.addChild(lamp);
 
   // Halo glow (in lightingContainer, additive blending, night only)
   const container = new PIXI.Container();
@@ -275,6 +284,12 @@ export function updateLighting(nightAlpha) {
   lightingContainer.x = wc.x;
   lightingContainer.y = wc.y;
   lightingContainer.scale.set(wc.scale.x, wc.scale.y);
+
+  if (lampContainer) {
+    lampContainer.x = wc.x;
+    lampContainer.y = wc.y;
+    lampContainer.scale.set(wc.scale.x, wc.scale.y);
+  }
 
   // Lights visible when it's dark (nightAlpha > 0.1)
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
