@@ -48,6 +48,10 @@ export const LIGHTING_CONFIG = {
   windowColors: [0xffdd77, 0xffeebb, 0xffffcc, 0xffcc66, 0xffffff],
 };
 
+// Street lamp texture (lazy-loaded)
+let streetLampTexture = null;
+const STREETLAMP_SCALE = 0.3;
+
 // Container for all lighting elements
 let lightingContainer = null;
 let streetlightSprites = [];
@@ -80,6 +84,9 @@ export function createStreetlights() {
   // Clear existing streetlights
   for (const sl of streetlightSprites) {
     lightingContainer.removeChild(sl.container);
+    if (sl.lamp && sl.lamp.parent) {
+      sl.lamp.parent.removeChild(sl.lamp);
+    }
   }
   streetlightSprites = [];
   
@@ -129,52 +136,54 @@ export function createStreetlights() {
 }
 
 /**
- * Create a single streetlight sprite with halo
+ * Create a single streetlight with sprite lamp + halo glow
+ * Lamp sprite goes to sceneLayer (visible day & night),
+ * halo glow goes to lightingContainer (additive, night only).
  */
 function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   const cfg = LIGHTING_CONFIG.streetlight;
+
+  // Lazy-load the street lamp texture
+  if (!streetLampTexture) {
+    streetLampTexture = PIXI.Texture.from("/sprites/roads/street_lamp_01.png");
+  }
+
+  const baseX = screenX;
+  const baseY = screenY + TILE_HEIGHT / 2 + 8;
+  const lampHeight = 142 * STREETLAMP_SCALE; // sprite height in screen px
+
+  // Lamp sprite (in sceneLayer, normal blending, visible day & night)
+  const lamp = new PIXI.Sprite(streetLampTexture);
+  lamp.anchor.set(0.5, 1.0);
+  lamp.scale.set(STREETLAMP_SCALE);
+  lamp.x = baseX;
+  lamp.y = baseY;
+  lamp.zIndex = (tileX + tileY) * GRID_SIZE + tileX + 1;
+  state.sceneLayer.addChild(lamp);
+
+  // Halo glow (in lightingContainer, additive blending, night only)
   const container = new PIXI.Container();
   container.zIndex = (tileX + tileY) * GRID_SIZE + tileX + 1;
-  
-  // Light halo (glow effect)
+
   const halo = new PIXI.Graphics();
+  const bulbY = -lampHeight + 8; // near top of lamp sprite
   halo.beginFill(cfg.haloColor, cfg.haloAlpha);
-  halo.drawCircle(0, -cfg.poleHeight, cfg.haloRadius);
+  halo.drawCircle(0, bulbY, cfg.haloRadius);
   halo.endFill();
-  
-  // Soft gradient effect using multiple circles
+
   for (let i = 1; i <= 3; i++) {
     const r = cfg.haloRadius * (1 - i * 0.25);
     const a = cfg.haloAlpha * (1 + i * 0.3);
     halo.beginFill(cfg.haloColor, Math.min(a, 0.3));
-    halo.drawCircle(0, -cfg.poleHeight, r);
+    halo.drawCircle(0, bulbY, r);
     halo.endFill();
   }
-  
-  // Pole
-  const pole = new PIXI.Graphics();
-  pole.beginFill(cfg.poleColor);
-  pole.drawRect(-2, -cfg.poleHeight, 4, cfg.poleHeight);
-  pole.endFill();
-  
-  // Arm extending out
-  pole.beginFill(cfg.poleColor);
-  pole.drawRect(-8, -cfg.poleHeight - 2, 12, 3);
-  pole.endFill();
-  
-  // Bulb
-  const bulb = new PIXI.Graphics();
-  bulb.beginFill(cfg.bulbColor);
-  bulb.drawCircle(0, -cfg.poleHeight, cfg.bulbRadius);
-  bulb.endFill();
-  
+
   container.addChild(halo);
-  container.addChild(pole);
-  container.addChild(bulb);
-  container.x = screenX;
-  container.y = screenY + TILE_HEIGHT / 2 + 8;
-  
-  return { container, halo, bulb, tileX, tileY };
+  container.x = baseX;
+  container.y = baseY;
+
+  return { container, halo, bulb: halo, lamp, tileX, tileY };
 }
 
 /**

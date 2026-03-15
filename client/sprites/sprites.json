@@ -1362,6 +1362,18 @@
       }
     }
   ],
+  "streetlamp": [
+    {
+      "id": "street_lamp_01",
+      "file": "roads/street_lamp_01.png",
+      "width": 47,
+      "height": 142,
+      "anchor": {
+        "x": 0.5,
+        "y": 1.0
+      }
+    }
+  ],
   "bins": [
     {
       "id": "bin_01",
