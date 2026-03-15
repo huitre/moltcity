@@ -54,18 +54,19 @@ let streetlightSprites = [];
 let buildingLightSprites = [];
 
 /**
- * Initialize the lighting container
+ * Initialize the lighting container.
+ * Placed on app.stage AFTER dayNightOverlay so it renders on top of the dark overlay.
  */
 export function initLighting() {
   if (lightingContainer) {
-    state.sceneLayer.removeChild(lightingContainer);
+    lightingContainer.parent?.removeChild(lightingContainer);
   }
-  
+
   lightingContainer = new PIXI.Container();
-  lightingContainer.zIndex = 15000; // Above buildings, below UI
   lightingContainer.alpha = 0; // Start hidden (daytime)
-  state.sceneLayer.addChild(lightingContainer);
-  
+  lightingContainer.blendMode = PIXI.BLEND_MODES.ADD;
+  state.app.stage.addChild(lightingContainer);
+
   streetlightSprites = [];
   buildingLightSprites = [];
 }
@@ -269,11 +270,17 @@ export function createBuildingLights() {
  */
 export function updateLighting(nightAlpha) {
   if (!lightingContainer) return;
-  
+
+  // Sync transform with worldContainer so lights follow camera pan/zoom
+  const wc = state.worldContainer;
+  lightingContainer.x = wc.x;
+  lightingContainer.y = wc.y;
+  lightingContainer.scale.set(wc.scale.x, wc.scale.y);
+
   // Lights visible when it's dark (nightAlpha > 0.1)
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
   lightingContainer.alpha = Math.min(1, lightIntensity);
-  
+
   // Flicker effect for some streetlights
   const time = Date.now() * 0.001;
   for (let i = 0; i < streetlightSprites.length; i++) {
