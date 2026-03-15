@@ -2,10 +2,10 @@
 // MOLTCITY - Night Lighting System
 // ============================================
 
-import { TILE_WIDTH, TILE_HEIGHT, GRID_SIZE } from "../config.js";
+import { TILE_WIDTH, TILE_HEIGHT, GRID_SIZE, NUM_LAYERS, LAYER_ROAD } from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
-import { hasRoadAtFast } from "./roads.js";
+
 
 // Lighting configuration - adjustable
 export const LIGHTING_CONFIG = {
@@ -50,7 +50,7 @@ export const LIGHTING_CONFIG = {
 
 // Street lamp texture (lazy-loaded)
 let streetLampTexture = null;
-const STREETLAMP_SCALE = 0.3;
+const STREETLAMP_SCALE = 14 / 142; // target height 14px
 
 // Container for all lighting elements
 let lightingContainer = null;
@@ -109,29 +109,11 @@ export function createStreetlights() {
     const x = parcel.x;
     const y = parcel.y;
     
-    // Check if this is an edge road (next to non-road)
-    const hasN = hasRoadAtFast(x, y - 1);
-    const hasS = hasRoadAtFast(x, y + 1);
-    const hasE = hasRoadAtFast(x + 1, y);
-    const hasW = hasRoadAtFast(x - 1, y);
-    
-    // Place on corners/edges of the road
-    const iso = cartToIso(x + 0.5, y + 0.5);
-    
-    // Offset for sidewalk position (NE corner)
-    const offsets = [];
-    if (!hasN || !hasE) offsets.push({ dx: 0.35, dy: -0.35 }); // NE sidewalk
-    if (!hasS || !hasW) offsets.push({ dx: -0.35, dy: 0.35 }); // SW sidewalk
-    
-    // Default: just one light if no clear edge
-    if (offsets.length === 0) offsets.push({ dx: 0.35, dy: -0.35 });
-    
-    for (const off of offsets) {
-      const lightIso = cartToIso(x + 0.5 + off.dx, y + 0.5 + off.dy);
-      const streetlight = createStreetlightSprite(lightIso.x, lightIso.y, x, y);
-      streetlightSprites.push(streetlight);
-      lightingContainer.addChild(streetlight.container);
-    }
+    // Place lamp on the road tile
+    const lightIso = cartToIso(x + 0.5, y + 0.5);
+    const streetlight = createStreetlightSprite(lightIso.x, lightIso.y, x, y);
+    streetlightSprites.push(streetlight);
+    lightingContainer.addChild(streetlight.container);
   }
 }
 
@@ -149,24 +131,25 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   }
 
   const baseX = screenX;
-  const baseY = screenY + TILE_HEIGHT / 2 + 8;
-  const lampHeight = 142 * STREETLAMP_SCALE; // sprite height in screen px
+  const baseY = screenY + TILE_HEIGHT / 2;
+  const lampHeight = 142 * STREETLAMP_SCALE; // 14px
+  const roadZIndex = ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_ROAD;
 
-  // Lamp sprite (in sceneLayer, normal blending, visible day & night)
+  // Lamp sprite (in sceneLayer, same layer as road)
   const lamp = new PIXI.Sprite(streetLampTexture);
   lamp.anchor.set(0.5, 1.0);
   lamp.scale.set(STREETLAMP_SCALE);
   lamp.x = baseX;
   lamp.y = baseY;
-  lamp.zIndex = (tileX + tileY) * GRID_SIZE + tileX + 1;
+  lamp.zIndex = roadZIndex;
   state.sceneLayer.addChild(lamp);
 
   // Halo glow (in lightingContainer, additive blending, night only)
   const container = new PIXI.Container();
-  container.zIndex = (tileX + tileY) * GRID_SIZE + tileX + 1;
+  container.zIndex = roadZIndex;
 
   const halo = new PIXI.Graphics();
-  const bulbY = -lampHeight + 8; // near top of lamp sprite
+  const bulbY = -lampHeight + 2; // near top of lamp sprite
   halo.beginFill(cfg.haloColor, cfg.haloAlpha);
   halo.drawCircle(0, bulbY, cfg.haloRadius);
   halo.endFill();
