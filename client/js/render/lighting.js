@@ -2,7 +2,7 @@
 // MOLTCITY - Night Lighting System
 // ============================================
 
-import { TILE_WIDTH, TILE_HEIGHT, GRID_SIZE, NUM_LAYERS, LAYER_ROAD } from "../config.js";
+import { TILE_WIDTH, TILE_HEIGHT, GRID_SIZE, NUM_LAYERS, LAYER_POLE } from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
 
@@ -133,7 +133,7 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   const baseX = screenX;
   const baseY = screenY + TILE_HEIGHT / 2;
   const lampHeight = 142 * STREETLAMP_SCALE; // 14px
-  const roadZIndex = ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_ROAD;
+  const lampZIndex = ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_POLE;
 
   // Lamp sprite (in sceneLayer, same layer as road)
   const lamp = new PIXI.Sprite(streetLampTexture);
@@ -141,12 +141,12 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   lamp.scale.set(STREETLAMP_SCALE);
   lamp.x = baseX;
   lamp.y = baseY;
-  lamp.zIndex = roadZIndex;
+  lamp.zIndex = lampZIndex;
   state.sceneLayer.addChild(lamp);
 
   // Halo glow (in lightingContainer, additive blending, night only)
   const container = new PIXI.Container();
-  container.zIndex = roadZIndex;
+  container.zIndex = lampZIndex;
 
   const halo = new PIXI.Graphics();
   const bulbY = -lampHeight + 2; // near top of lamp sprite
