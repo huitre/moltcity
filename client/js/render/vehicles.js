@@ -352,7 +352,7 @@ export function animateVehicles(delta) {
     // Update sprite position using lane offsets
     const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
     vehicle.sprite.x = iso.x;
-    vehicle.sprite.y = iso.y - TILE_HEIGHT / 2 + 12;
+    vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
     vehicle.sprite.zIndex =
       ((Math.floor(vehicle.x) + Math.floor(vehicle.y)) * GRID_SIZE + Math.floor(vehicle.x)) * NUM_LAYERS + LAYER_VEHICLE;
 
