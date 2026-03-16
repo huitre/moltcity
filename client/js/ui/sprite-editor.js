@@ -6,9 +6,11 @@ import * as state from '../state.js';
 import { seededRandom } from '../sprites.js';
 import { render } from '../game.js';
 import { updateSpriteConfig } from '../api.js';
+import { cartToIso } from '../utils.js';
 
 let originalValues = null;
 let currentResolved = null;
+let currentSprites = []; // PIXI display objects for the clicked item
 let rafPending = false;
 
 // ── Sprite type → state array / source key mapping ──
@@ -98,6 +100,21 @@ function scheduleRender() {
 }
 
 /**
+ * Find rendered PIXI sprites in sceneLayer near a given iso position.
+ */
+function findSpritesAtTile(tileX, tileY) {
+  const iso = cartToIso(tileX + 0.5, tileY + 0.5);
+  const threshold = 4;
+  const results = [];
+  for (const child of state.sceneLayer.children) {
+    if (Math.abs(child.x - iso.x) < threshold && Math.abs(child.y - (iso.y + 16)) < 40) {
+      results.push(child);
+    }
+  }
+  return results;
+}
+
+/**
  * Populate the sprite editor panel with given resolved data.
  */
 function populateEditor(resolved) {
@@ -123,12 +140,16 @@ function populateEditor(resolved) {
 
   const { spriteData, source, category, index } = resolved;
 
+  // Store sprite references for z-index editing
+  currentSprites = resolved._sprites || [];
+
   // Save original values for reset
   originalValues = {
     width: spriteData.width,
     height: spriteData.height,
     anchorX: spriteData.anchor ? spriteData.anchor.x : 0.5,
     anchorY: spriteData.anchor ? spriteData.anchor.y : 1,
+    zIndex: currentSprites.length > 0 ? currentSprites[0].zIndex : 0,
   };
 
   // Populate read-only fields
@@ -146,6 +167,10 @@ function populateEditor(resolved) {
   const ayRange = document.getElementById('se-anchor-y-range');
   const ayNum = document.getElementById('se-anchor-y');
 
+  // Populate z-index
+  const zIndexInput = document.getElementById('se-zindex');
+  zIndexInput.value = currentSprites.length > 0 ? currentSprites[0].zIndex : 0;
+
   widthInput.value = spriteData.width;
   heightInput.value = spriteData.height;
   const ax = spriteData.anchor ? spriteData.anchor.x : 0.5;
@@ -159,6 +184,7 @@ function populateEditor(resolved) {
   document.getElementById('se-status').textContent = '';
 
   // Remove old listeners by cloning
+  replaceWithClone('se-zindex');
   replaceWithClone('se-width');
   replaceWithClone('se-height');
   replaceWithClone('se-anchor-x-range');
@@ -169,6 +195,7 @@ function populateEditor(resolved) {
   replaceWithClone('se-reset');
 
   // Re-grab references after cloning
+  const zi = document.getElementById('se-zindex');
   const w = document.getElementById('se-width');
   const h = document.getElementById('se-height');
   const axR = document.getElementById('se-anchor-x-range');
@@ -180,6 +207,14 @@ function populateEditor(resolved) {
 
   // Ensure anchor object exists
   if (!spriteData.anchor) spriteData.anchor = { x: 0.5, y: 1 };
+
+  // Z-Index handler — update all sprites for this item in real-time
+  zi.addEventListener('input', () => {
+    const v = parseInt(zi.value, 10);
+    if (!isNaN(v)) {
+      for (const s of currentSprites) s.zIndex = v;
+    }
+  });
 
   // Width/height handlers
   w.addEventListener('input', () => {
@@ -267,6 +302,8 @@ function populateEditor(resolved) {
     axN.value = originalValues.anchorX;
     ayR.value = originalValues.anchorY;
     ayN.value = originalValues.anchorY;
+    zi.value = originalValues.zIndex;
+    for (const s of currentSprites) s.zIndex = originalValues.zIndex;
 
     document.getElementById('se-status').textContent = 'Reset to original values';
     document.getElementById('se-status').style.color = '#888';
@@ -284,6 +321,9 @@ function populateEditor(resolved) {
  */
 export function showSpriteEditor(building, parcelX, parcelY) {
   const resolved = resolveSpriteData(building, parcelX, parcelY);
+  if (resolved) {
+    resolved._sprites = findSpritesAtTile(parcelX, parcelY);
+  }
   populateEditor(resolved);
 }
 
@@ -328,7 +368,7 @@ export function showRoadSpriteEditor(x, y) {
   if (!roadType || !state.roadSprites.has(roadType)) { populateEditor(null); return; }
 
   const { config } = state.roadSprites.get(roadType);
-  populateEditor({ spriteData: config, source: 'roads', category: roadType, index: null });
+  populateEditor({ spriteData: config, source: 'roads', category: roadType, index: null, _sprites: findSpritesAtTile(x, y) });
 }
 
 /**
@@ -341,6 +381,7 @@ export function showVehicleSpriteEditor(vehicle) {
     source: 'vehicles',
     category: vehicle.vehicleType,
     index: null,
+    _sprites: vehicle.sprite ? [vehicle.sprite] : [],
   });
 }
 

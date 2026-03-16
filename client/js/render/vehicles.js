@@ -483,6 +483,7 @@ function showVehicleDebug(vehicle) {
   document.getElementById("vd-texture-size").textContent =
     vehicle.sprite.texture.width + "x" + vehicle.sprite.texture.height;
 
+  const zIndexInput = document.getElementById("vd-zindex");
   const widthInput = document.getElementById("vd-width");
   const heightInput = document.getElementById("vd-height");
   const rotationInput = document.getElementById("vd-rotation");
@@ -490,6 +491,7 @@ function showVehicleDebug(vehicle) {
   const heightVal = document.getElementById("vd-height-val");
   const rotationVal = document.getElementById("vd-rotation-val");
 
+  zIndexInput.value = vehicle.sprite.zIndex;
   widthInput.value = size.width;
   heightInput.value = size.height;
   widthVal.textContent = size.width;
@@ -500,12 +502,19 @@ function showVehicleDebug(vehicle) {
   rotationVal.textContent = rotDeg + "\u00B0";
 
   // Remove old listeners by cloning
+  const newZIndex = zIndexInput.cloneNode(true);
   const newWidth = widthInput.cloneNode(true);
   const newHeight = heightInput.cloneNode(true);
   const newRotation = rotationInput.cloneNode(true);
+  zIndexInput.replaceWith(newZIndex);
   widthInput.replaceWith(newWidth);
   heightInput.replaceWith(newHeight);
   rotationInput.replaceWith(newRotation);
+
+  newZIndex.addEventListener("input", () => {
+    const v = parseInt(newZIndex.value);
+    if (!isNaN(v)) vehicle.sprite.zIndex = v;
+  });
 
   newWidth.addEventListener("input", () => {
     const v = parseInt(newWidth.value);
