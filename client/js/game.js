@@ -370,49 +370,18 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   const spriteIsoX = cartToIso(bx + (fw - 1) / 2, by + (fh - 1) / 2).x;
   const spriteIsoY = cartToIso(bx + fw - 1, by + fh - 1).y + TILE_HEIGHT;
 
-  // remove mask FTM
-  if (fw <= 1 && fh <= 1) {
-    const sprite = new PIXI.Sprite(texture);
-    sprite.scale.set(scale);
-    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-    sprite.x = spriteIsoX;
-    sprite.y = spriteIsoY;
-    sprite.zIndex = ((bx + by) * GRID_SIZE + bx) * NUM_LAYERS + LAYER_BUILDING;
-    if (!powered) sprite.tint = 0x888888;
-    return sprite;
-  }
+  // Z-index at the middle depth row: above back half, below front half
+  const D_mid = bx + by + Math.floor((fw + fh - 2) / 2);
+  const midX = Math.min(bx + fw - 1, D_mid - by);
 
-  // Multi-tile: slice into horizontal strips, one per depth row
-  const D_front = bx + by + fw + fh - 2;
-  const numStrips = fw + fh - 1;
-  const HALF_H = TILE_HEIGHT / 2;
-  const parts = [];
-
-  for (let i = 0; i < numStrips; i++) {
-    const D = D_front - i;
-    const bandTop = D * HALF_H;
-
-    const mask = new PIXI.Graphics();
-    mask.beginFill(0xffffff);
-    if (i === 0) mask.drawRect(-5000, bandTop, 10000, 5000);
-    else if (i === numStrips - 1)
-      mask.drawRect(-5000, bandTop - 5000, 10000, 5000 + HALF_H);
-    else mask.drawRect(-5000, bandTop, 10000, HALF_H);
-    mask.endFill();
-
-    const strip = new PIXI.Sprite(texture);
-    strip.scale.set(scale);
-    strip.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-    strip.x = spriteIsoX;
-    strip.y = spriteIsoY;
-    const stripX = Math.min(bx + fw - 1, D - by);
-    strip.zIndex = (D * GRID_SIZE + stripX) * NUM_LAYERS + LAYER_BUILDING;
-    if (!powered) strip.tint = 0x888888;
-    strip.mask = mask;
-
-    parts.push(mask, strip);
-  }
-  return parts;
+  const sprite = new PIXI.Sprite(texture);
+  sprite.scale.set(scale);
+  sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+  sprite.x = spriteIsoX;
+  sprite.y = spriteIsoY;
+  sprite.zIndex = (D_mid * GRID_SIZE + midX) * NUM_LAYERS + LAYER_BUILDING;
+  if (!powered) sprite.tint = 0x888888;
+  return sprite;
 }
 
 /**
