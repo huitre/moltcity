@@ -448,6 +448,7 @@ function drawBuilding(x, y, building) {
     stadium: state.stadiumSprites,
     city_hall: state.cityHallSprites,
     garbage_depot: state.wasteSprites,
+    street_lamp: state.streetlampSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     return fromSpriteArray(serviceSpriteMap[type]);

@@ -437,6 +437,30 @@ export async function loadSprites() {
       }
     }
 
+    // Load streetlamp sprites
+    if (spritesConfig.streetlamp) {
+      for (let i = 0; i < spritesConfig.streetlamp.length; i++) {
+        const spriteConfig = spritesConfig.streetlamp[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.streetlampSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded streetlamp: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load streetlamp ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load vehicle sprites
     if (spritesConfig.vehicles) {
       const numberedDirs = { NE: "002", SE: "006", SW: "010", NW: "014" };
@@ -550,4 +574,80 @@ export function generateStackedOffice(x, y, seed, specifiedFloors = null) {
   const roofIndex = Math.floor(rng() * state.officeRoofs.length);
 
   return { floors, bottomIndex, floorIndex, roofIndex };
+}
+
+// ── Sprite type → state array / source key mapping ──
+const BUILDING_SPRITE_MAP = {
+  park:           { sprites: () => state.parkSprites,               source: 'park' },
+  police_station: { sprites: () => state.serviceSprites.police,     source: 'police' },
+  fire_station:   { sprites: () => state.serviceSprites.firestation, source: 'firestation' },
+  hospital:       { sprites: () => state.serviceSprites.hospital,   source: 'hospital' },
+  power_plant:    { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  wind_turbine:   { sprites: () => state.windTurbineSprites,        source: 'wind_turbine' },
+  coal_plant:     { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  nuclear_plant:  { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
+  water_tower:    { sprites: () => state.waterTankSprites,          source: 'water_tank' },
+  university:     { sprites: () => state.universitySprites,         source: 'university' },
+  stadium:        { sprites: () => state.stadiumSprites,            source: 'stadium' },
+  city_hall:      { sprites: () => state.cityHallSprites,           source: 'city_hall' },
+  garbage_depot:  { sprites: () => state.wasteSprites,              source: 'waste' },
+  street_lamp:    { sprites: () => state.streetlampSprites,         source: 'streetlamp' },
+};
+
+/**
+ * Resolve which sprite data object a building uses.
+ * Replicates the selection logic from drawBuilding() in game.js.
+ */
+export function resolveSpriteData(building, x, y) {
+  const type = building.type;
+
+  // Suburban / Industrial zone sprites (flat arrays)
+  if (type === 'suburban' && state.suburbanSprites.length > 0) {
+    const sprites = state.suburbanSprites;
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * sprites.length);
+    const sd = sprites[idx];
+    return { spriteData: sd, source: 'suburban', category: null, index: sd._jsonIndex ?? idx };
+  }
+  if (type === 'industrial' && state.industrialSprites.length > 0) {
+    const sprites = state.industrialSprites;
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * sprites.length);
+    const sd = sprites[idx];
+    return { spriteData: sd, source: 'industrial', category: null, index: sd._jsonIndex ?? idx };
+  }
+
+  // Residential / Offices zone sprites — use building.density like drawBuilding
+  if (type === 'residential' || type === 'offices') {
+    const spriteMap = type === 'residential' ? state.residentialSprites : state.officeSprites;
+    const d = building.density || 1;
+    const density = d <= 1 ? 'low' : d === 2 ? 'medium' : d === 3 ? 'high' : 'veryhigh';
+    const sprites = spriteMap[density];
+    if (sprites && sprites.length > 0) {
+      const rng = seededRandom(x * 1000 + y);
+      const idx = Math.floor(rng() * sprites.length);
+      const sd = sprites[idx];
+      return { spriteData: sd, source: type, category: density, index: sd._jsonIndex ?? idx };
+    }
+  }
+
+  // Service / infrastructure / park sprites
+  if (BUILDING_SPRITE_MAP[type]) {
+    const { sprites: getSprites, source } = BUILDING_SPRITE_MAP[type];
+    const sprites = getSprites();
+    if (sprites && sprites.length > 0) {
+      const rng = seededRandom(x * 1000 + y);
+      const idx = Math.floor(rng() * sprites.length);
+      const sd = sprites[idx];
+      return { spriteData: sd, source, category: null, index: sd._jsonIndex ?? idx };
+    }
+  }
+
+  // Default sprites (buildings map)
+  if (state.defaultSprites.has(type)) {
+    const entry = state.defaultSprites.get(type);
+    return { spriteData: entry.config, source: 'buildings', category: type, index: null };
+  }
+
+  return null;
 }

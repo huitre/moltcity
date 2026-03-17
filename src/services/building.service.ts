@@ -228,9 +228,9 @@ export class BuildingService {
           throw new ConflictError(`Tile (${tileX}, ${tileY}) already has a building`);
         }
 
-        // Check for existing road
+        // Check for existing road (street lamps can be placed on roads)
         const existingRoad = await this.roadRepo.getRoad(tileParcel.id);
-        if (existingRoad) {
+        if (existingRoad && params.type !== 'street_lamp') {
           throw new ConflictError(`Cannot build on road at (${tileX}, ${tileY})`);
         }
 

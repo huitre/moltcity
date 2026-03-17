@@ -185,8 +185,8 @@ export function spawnVehicle(vehicleTypes) {
   const vehicle = {
     x: parcel.x + 0.5,
     y: parcel.y + 0.5,
-    targetX: parcel.x + 0.5 + DIR_VECTORS[dir].dx,
-    targetY: parcel.y + 0.5 + DIR_VECTORS[dir].dy,
+    targetX: parcel.x + DIR_VECTORS[dir].dx,
+    targetY: parcel.y + DIR_VECTORS[dir].dy,
     speed: VEHICLE_SPEED + Math.random() * 0.2,
     dir: dir,
     sprite: sprite,

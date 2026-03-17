@@ -44,6 +44,7 @@ export const MAYOR_ONLY_BUILDING_TYPES: BuildingType[] = [
   "park",
   "plaza",
   "city_hall",
+  "street_lamp",
 ];
 
 // Infrastructure that mayor can build
@@ -85,6 +86,7 @@ export const BUILDING_FOOTPRINTS: Partial<
   coal_plant: { w: 2, h: 2 },
   nuclear_plant: { w: 3, h: 3 },
   water_tower: { w: 1, h: 1 },
+  street_lamp: { w: 1, h: 1 },
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
@@ -175,6 +177,7 @@ export const BUILDING_COSTS: Record<string, number> = {
   coal_plant: 500,
   nuclear_plant: 5000,
   water_tower: 300,
+  street_lamp: 5,
   jail: 1000,
   // Special buildings
   park: 200,

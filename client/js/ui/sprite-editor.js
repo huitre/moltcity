@@ -3,7 +3,7 @@
 // ============================================
 
 import * as state from '../state.js';
-import { seededRandom } from '../sprites.js';
+import { resolveSpriteData } from '../sprites.js';
 import { render } from '../game.js';
 import { updateSpriteConfig } from '../api.js';
 import { cartToIso } from '../utils.js';
@@ -12,83 +12,6 @@ let originalValues = null;
 let currentResolved = null;
 let currentSprites = []; // PIXI display objects for the clicked item
 let rafPending = false;
-
-// ── Sprite type → state array / source key mapping ──
-// Matches the serviceSpriteMap in drawBuilding() (game.js)
-const BUILDING_SPRITE_MAP = {
-  park:           { sprites: () => state.parkSprites,               source: 'park' },
-  police_station: { sprites: () => state.serviceSprites.police,     source: 'police' },
-  fire_station:   { sprites: () => state.serviceSprites.firestation, source: 'firestation' },
-  hospital:       { sprites: () => state.serviceSprites.hospital,   source: 'hospital' },
-  power_plant:    { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
-  wind_turbine:   { sprites: () => state.windTurbineSprites,        source: 'wind_turbine' },
-  coal_plant:     { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
-  nuclear_plant:  { sprites: () => state.powerPlantSprites,         source: 'power_plant' },
-  water_tower:    { sprites: () => state.waterTankSprites,          source: 'water_tank' },
-  university:     { sprites: () => state.universitySprites,         source: 'university' },
-  stadium:        { sprites: () => state.stadiumSprites,            source: 'stadium' },
-  city_hall:      { sprites: () => state.cityHallSprites,           source: 'city_hall' },
-  garbage_depot:  { sprites: () => state.wasteSprites,              source: 'waste' },
-};
-
-/**
- * Resolve which sprite data object a building uses.
- * Replicates the selection logic from drawBuilding() in game.js.
- */
-function resolveSpriteData(building, x, y) {
-  const type = building.type;
-
-  // Suburban / Industrial zone sprites (flat arrays) — checked first like drawBuilding
-  if (type === 'suburban' && state.suburbanSprites.length > 0) {
-    const sprites = state.suburbanSprites;
-    const rng = seededRandom(x * 1000 + y);
-    const idx = Math.floor(rng() * sprites.length);
-    const sd = sprites[idx];
-    return { spriteData: sd, source: 'suburban', category: null, index: sd._jsonIndex ?? idx };
-  }
-  if (type === 'industrial' && state.industrialSprites.length > 0) {
-    const sprites = state.industrialSprites;
-    const rng = seededRandom(x * 1000 + y);
-    const idx = Math.floor(rng() * sprites.length);
-    const sd = sprites[idx];
-    return { spriteData: sd, source: 'industrial', category: null, index: sd._jsonIndex ?? idx };
-  }
-
-  // Residential / Offices zone sprites — use building.density like drawBuilding
-  if (type === 'residential' || type === 'offices') {
-    const spriteMap = type === 'residential' ? state.residentialSprites : state.officeSprites;
-    const d = building.density || 1;
-    const density = d <= 1 ? 'low' : d === 2 ? 'medium' : d === 3 ? 'high' : 'veryhigh';
-    const sprites = spriteMap[density];
-    if (sprites && sprites.length > 0) {
-      const rng = seededRandom(x * 1000 + y);
-      const idx = Math.floor(rng() * sprites.length);
-      const sd = sprites[idx];
-      return { spriteData: sd, source: type, category: density, index: sd._jsonIndex ?? idx };
-    }
-  }
-
-  // Service / infrastructure / park sprites
-  if (BUILDING_SPRITE_MAP[type]) {
-    const { sprites: getSprites, source } = BUILDING_SPRITE_MAP[type];
-    const sprites = getSprites();
-    if (sprites && sprites.length > 0) {
-      const rng = seededRandom(x * 1000 + y);
-      const idx = Math.floor(rng() * sprites.length);
-      const sd = sprites[idx];
-      return { spriteData: sd, source, category: null, index: sd._jsonIndex ?? idx };
-    }
-  }
-
-  // Default sprites (buildings map)
-  if (state.defaultSprites.has(type)) {
-    const entry = state.defaultSprites.get(type);
-    return { spriteData: entry.config, source: 'buildings', category: type, index: null };
-  }
-
-  // Procedural fallback — no sprite data
-  return null;
-}
 
 function scheduleRender() {
   if (rafPending) return;

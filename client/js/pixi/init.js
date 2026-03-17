@@ -21,10 +21,10 @@ function getTiltShiftParams(screenHeight) {
   // Reference: 1080p = full effect, scale down for smaller screens
   const refHeight = 1080;
   const scale = Math.min(1, screenHeight / refHeight);
-  
+
   return {
-    blur: 6 + scale * 4,              // 6-10 blur (less on mobile)
-    gradientBlur: 600 + scale * 700,  // 600-1300 gradient (tighter on mobile)
+    blur: 6 + scale * 4, // 6-10 blur (less on mobile)
+    gradientBlur: 600 + scale * 700, // 600-1300 gradient (tighter on mobile)
   };
 }
 
@@ -35,17 +35,17 @@ function getTiltShiftParams(screenHeight) {
 export function updateTiltShift() {
   const { tiltShiftFilter, app } = state;
   if (!tiltShiftFilter || !app) return;
-  
+
   const screenWidth = app.screen.width;
   const screenHeight = app.screen.height;
-  
+
   const params = getTiltShiftParams(screenHeight);
   tiltShiftFilter.blur = params.blur;
   tiltShiftFilter.gradientBlur = params.gradientBlur;
-  
+
   // Focus band in SCREEN space — centered vertically with slight upward bias for miniature look
   const focusY = screenHeight * 0.45;  // 45% from top of screen
-  
+
   // Horizontal line across screen (screen coordinates, not world)
   tiltShiftFilter.start = new PIXI.Point(0, focusY);
   tiltShiftFilter.end = new PIXI.Point(screenWidth, focusY);
@@ -126,14 +126,14 @@ export async function initPixi() {
   const tiltShift = new PIXI.filters.TiltShiftFilter();
   worldContainer.filters = [tiltShift];
   state.setTiltShiftFilter(tiltShift);
-  updateTiltShift();  // Apply initial params based on screen size
+  updateTiltShift(); // Apply initial params based on screen size
 
   // Handle window resize
   window.addEventListener("resize", () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     skybox.width = app.screen.width;
     skybox.height = app.screen.height;
-    updateTiltShift();  // Recalculate tilt-shift for new screen size
+    updateTiltShift(); // Recalculate tilt-shift for new screen size
   });
 
   return app;

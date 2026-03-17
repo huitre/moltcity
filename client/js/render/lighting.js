@@ -2,10 +2,16 @@
 // MOLTCITY - Night Lighting System
 // ============================================
 
-import { TILE_WIDTH, TILE_HEIGHT, GRID_SIZE, NUM_LAYERS, LAYER_POLE } from "../config.js";
+import {
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  GRID_SIZE,
+  NUM_LAYERS,
+  LAYER_POLE,
+} from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
-
+import { resolveSpriteData } from "../sprites.js";
 
 // Lighting configuration - adjustable
 export const LIGHTING_CONFIG = {
@@ -18,43 +24,16 @@ export const LIGHTING_CONFIG = {
     poleColor: 0x444444,
     bulbColor: 0xffffcc,
     bulbRadius: 3,
-    spacing: 3,  // Place streetlight every N road tiles
-  },
-  // Building light windows - relative positions (0-1) within building sprite
-  // You can adjust these manually per building type
-  buildingLights: {
-    residential: [
-      { x: 0.3, y: 0.4 }, { x: 0.7, y: 0.4 },
-      { x: 0.3, y: 0.6 }, { x: 0.7, y: 0.6 },
-    ],
-    suburban: [
-      { x: 0.25, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 0.75, y: 0.5 },
-    ],
-    office: [
-      // Grid of windows for offices
-      { x: 0.2, y: 0.3 }, { x: 0.4, y: 0.3 }, { x: 0.6, y: 0.3 }, { x: 0.8, y: 0.3 },
-      { x: 0.2, y: 0.5 }, { x: 0.4, y: 0.5 }, { x: 0.6, y: 0.5 }, { x: 0.8, y: 0.5 },
-      { x: 0.2, y: 0.7 }, { x: 0.4, y: 0.7 }, { x: 0.6, y: 0.7 }, { x: 0.8, y: 0.7 },
-    ],
-    industrial: [
-      { x: 0.3, y: 0.4 }, { x: 0.7, y: 0.4 },
-      { x: 0.5, y: 0.7 },
-    ],
-    commercial: [
-      { x: 0.2, y: 0.6 }, { x: 0.5, y: 0.6 }, { x: 0.8, y: 0.6 },
-    ],
   },
   // Light colors for variety
   windowColors: [0xffdd77, 0xffeebb, 0xffffcc, 0xffcc66, 0xffffff],
 };
 
-// Street lamp texture (lazy-loaded)
-let streetLampTexture = null;
+// Street lamp texture scale
 const STREETLAMP_SCALE = 14 / 142; // target height 14px
 
 // Container for all lighting elements
 let lightingContainer = null;
-let lampContainer = null; // normal-blend container for lamp sprites (above overlay)
 let streetlightSprites = [];
 let buildingLightSprites = [];
 
@@ -66,92 +45,61 @@ export function initLighting() {
   if (lightingContainer) {
     lightingContainer.parent?.removeChild(lightingContainer);
   }
-  if (lampContainer) {
-    lampContainer.parent?.removeChild(lampContainer);
-  }
 
   lightingContainer = new PIXI.Container();
   lightingContainer.alpha = 0; // Start hidden (daytime)
   lightingContainer.blendMode = PIXI.BLEND_MODES.ADD;
   state.app.stage.addChild(lightingContainer);
 
-  // Separate container for lamp sprites (normal blend, always visible, above overlay)
-  lampContainer = new PIXI.Container();
-  lampContainer.sortableChildren = true;
-  state.app.stage.addChild(lampContainer);
-
   streetlightSprites = [];
   buildingLightSprites = [];
 }
 
 /**
- * Create streetlights along roads
+ * Create streetlight halos for street_lamp buildings.
+ * The lamp sprite itself is rendered by the normal building pipeline (drawBuilding).
  */
 export function createStreetlights() {
   if (!lightingContainer) initLighting();
-  
-  // Clear existing streetlights
+
+  // Clear existing streetlight halos
   for (const sl of streetlightSprites) {
     lightingContainer.removeChild(sl.container);
-    if (sl.lamp && sl.lamp.parent) {
-      sl.lamp.parent.removeChild(sl.lamp);
-    }
   }
   streetlightSprites = [];
-  
-  const { roads, parcels } = state;
+
+  const { buildings, parcels } = state;
   const cfg = LIGHTING_CONFIG.streetlight;
-  
-  // Place streetlights on roads at regular intervals
-  let roadIndex = 0;
-  for (const road of roads) {
-    const parcel = parcels.find(p => p.id === road.parcelId);
+
+  for (const building of buildings) {
+    if (building.type !== "street_lamp") continue;
+    const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
-    
-    // Only place every N roads for spacing
-    if (roadIndex % cfg.spacing !== 0) {
-      roadIndex++;
-      continue;
-    }
-    roadIndex++;
-    
-    const x = parcel.x;
-    const y = parcel.y;
-    
-    // Place lamp on the road tile
-    const lightIso = cartToIso(x + 0.5, y + 0.5);
-    const streetlight = createStreetlightSprite(lightIso.x, lightIso.y, x, y);
+
+    const lightIso = cartToIso(parcel.x + 0.5, parcel.y + 0.5);
+    const streetlight = createStreetlightHalo(
+      lightIso.x,
+      lightIso.y,
+      parcel.x,
+      parcel.y,
+    );
     streetlightSprites.push(streetlight);
     lightingContainer.addChild(streetlight.container);
   }
 }
 
 /**
- * Create a single streetlight with sprite lamp + halo glow
- * Lamp sprite goes to sceneLayer (visible day & night),
- * halo glow goes to lightingContainer (additive, night only).
+ * Create a halo glow for a streetlight building.
+ * Only the glow — the physical lamp sprite is drawn by drawBuilding().
  */
-function createStreetlightSprite(screenX, screenY, tileX, tileY) {
+function createStreetlightHalo(screenX, screenY, tileX, tileY) {
   const cfg = LIGHTING_CONFIG.streetlight;
-
-  // Lazy-load the street lamp texture
-  if (!streetLampTexture) {
-    streetLampTexture = PIXI.Texture.from("/sprites/roads/street_lamp_01.png");
-  }
 
   const baseX = screenX;
   const baseY = screenY + TILE_HEIGHT / 2;
   const lampHeight = 142 * STREETLAMP_SCALE; // 14px
-  const lampZIndex = ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_POLE;
-
-  // Lamp sprite (in lampContainer on app.stage, above overlay, always visible)
-  const lamp = new PIXI.Sprite(streetLampTexture);
-  lamp.anchor.set(0.5, 1.0);
-  lamp.scale.set(STREETLAMP_SCALE);
-  lamp.x = baseX;
-  lamp.y = baseY;
-  lamp.zIndex = lampZIndex;
-  lampContainer.addChild(lamp);
+  const lampZIndex =
+    ((tileX + tileY) * GRID_SIZE + tileX) * NUM_LAYERS + LAYER_POLE;
 
   // Halo glow (in lightingContainer, additive blending, night only)
   const container = new PIXI.Container();
@@ -175,96 +123,84 @@ function createStreetlightSprite(screenX, screenY, tileX, tileY) {
   container.x = baseX;
   container.y = baseY;
 
-  return { container, halo, bulb: halo, lamp, tileX, tileY };
+  return { container, halo, bulb: halo, tileX, tileY };
 }
 
 /**
- * Create building window lights
+ * Create building window lights based on per-sprite "windows" data from sprites.json.
+ * Buildings without a "windows" field in their sprite data get no window lights.
  */
 export function createBuildingLights() {
   if (!lightingContainer) initLighting();
-  
+
   // Clear existing building lights
   for (const bl of buildingLightSprites) {
     lightingContainer.removeChild(bl.container);
   }
   buildingLightSprites = [];
-  
+
   const { buildings, parcels } = state;
   const cfg = LIGHTING_CONFIG;
-  
+
   for (const building of buildings) {
-    const parcel = parcels.find(p => p.id === building.parcelId);
+    const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
-    
-    // Determine building category for light positions
-    let category = 'residential';
-    const type = building.type || '';
-    
-    if (type.includes('office') || type.includes('commercial')) {
-      category = 'office';
-    } else if (type.includes('industrial') || type.includes('factory') || type.includes('warehouse')) {
-      category = 'industrial';
-    } else if (type.includes('suburban') || type.includes('house')) {
-      category = 'suburban';
-    } else if (type.includes('shop') || type.includes('store') || type.includes('retail')) {
-      category = 'commercial';
-    }
-    
-    const lightPositions = cfg.buildingLights[category] || cfg.buildingLights.residential;
-    
-    // Get building dimensions
-    const w = building.width || 1;
-    const h = building.height || 1;
-    
-    // Calculate building screen position
-    const cx = parcel.x + w / 2;
-    const cy = parcel.y + h / 2;
+
+    // Resolve which sprite this building uses
+    const resolved = resolveSpriteData(building, parcel.x, parcel.y);
+    if (!resolved?.spriteData?.windows) continue;
+
+    const windows = resolved.spriteData.windows;
+    const fw = building.width || 1;
+    const fh = building.height || 1;
+
+    const cx = parcel.x + fw / 2;
+    const cy = parcel.y + fh / 2;
     const iso = cartToIso(cx, cy);
-    
-    // Building sprite approximate bounds
-    const buildingWidth = w * TILE_WIDTH * 0.8;
-    const buildingHeight = 60 + (building.floors || 1) * 15; // Approximate height
-    
+
+    // Use actual sprite dimensions for positioning
+    const sd = resolved.spriteData;
+    const tileSpan = sd.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / sd.width;
+    const scaledW = sd.width * scale;
+    const scaledH = sd.height * scale;
+
     const container = new PIXI.Container();
     container.zIndex = (parcel.x + parcel.y) * GRID_SIZE + parcel.x + 2;
-    
-    // Create window lights at configured positions
-    for (const pos of lightPositions) {
-      // Random chance to have light on (60%)
+
+    for (const pos of windows) {
+      // 60% chance lit
       if (Math.random() > 0.6) continue;
-      
-      const windowX = (pos.x - 0.5) * buildingWidth;
-      const windowY = -buildingHeight * pos.y;
-      
-      // Pick random warm color
-      const color = cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
-      
-      const window = new PIXI.Graphics();
 
-      // Window glow (circular, fine as-is)
-      window.beginFill(color, 0.15);
-      window.drawCircle(windowX, windowY, 5);
-      window.endFill();
+      const windowX = (pos.x - 0.5) * scaledW;
+      const windowY = -scaledH * pos.y;
 
-      // Isometric window parallelogram (skewed to match building face)
-      const ww = 5;  // half-width
-      const wh = 3;  // half-height
-      const skew = 2; // isometric skew offset
-      window.beginFill(color, 0.4);
-      window.moveTo(windowX - ww + skew, windowY - wh);
-      window.lineTo(windowX + ww + skew, windowY - wh);
-      window.lineTo(windowX + ww - skew, windowY + wh);
-      window.lineTo(windowX - ww - skew, windowY + wh);
-      window.closePath();
-      window.endFill();
-      
-      container.addChild(window);
+      const color =
+        cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
+
+      const win = new PIXI.Graphics();
+      // Glow
+      win.beginFill(color, 0.15);
+      win.drawCircle(windowX, windowY, 5);
+      win.endFill();
+      // Isometric parallelogram
+      const ww = 4,
+        wh = 2,
+        skew = -2;
+      win.beginFill(color, 0.4);
+      win.moveTo(windowX - ww + skew, windowY - wh);
+      win.lineTo(windowX + ww + skew, windowY - wh);
+      win.lineTo(windowX + ww - skew, windowY + wh);
+      win.lineTo(windowX - ww - skew, windowY + wh);
+      win.closePath();
+      win.endFill();
+
+      container.addChild(win);
     }
-    
+
     container.x = iso.x;
     container.y = iso.y + TILE_HEIGHT / 2;
-    
+
     if (container.children.length > 0) {
       buildingLightSprites.push({ container, building, parcel });
       lightingContainer.addChild(container);
@@ -284,12 +220,6 @@ export function updateLighting(nightAlpha) {
   lightingContainer.x = wc.x;
   lightingContainer.y = wc.y;
   lightingContainer.scale.set(wc.scale.x, wc.scale.y);
-
-  if (lampContainer) {
-    lampContainer.x = wc.x;
-    lampContainer.y = wc.y;
-    lampContainer.scale.set(wc.scale.x, wc.scale.y);
-  }
 
   // Lights visible when it's dark (nightAlpha > 0.1)
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);

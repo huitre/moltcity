@@ -436,13 +436,15 @@ async function handleTileClick(x, y, globalPos) {
 /**
  * Check if a tile is occupied by a building or road (accounting for multi-tile footprints)
  */
-function isTileOccupied(x, y) {
-  // Check roads
-  const hasRoad = state.roads.some((r) => {
-    const p = state.parcels.find((p) => p.id === r.parcelId);
-    return p && p.x === x && p.y === y;
-  });
-  if (hasRoad) return true;
+function isTileOccupied(x, y, buildType) {
+  // Check roads (street lamps can be placed on roads)
+  if (buildType !== 'street_lamp') {
+    const hasRoad = state.roads.some((r) => {
+      const p = state.parcels.find((p) => p.id === r.parcelId);
+      return p && p.x === x && p.y === y;
+    });
+    if (hasRoad) return true;
+  }
 
   // Check all buildings (including multi-tile footprints)
   for (const building of state.buildings) {
@@ -930,7 +932,7 @@ async function handleBuild(x, y, buildType) {
               showToast(`${name} doesn't fit here (out of bounds)`, true);
               return;
             }
-            if (isTileOccupied(tx, ty)) {
+            if (isTileOccupied(tx, ty, buildType)) {
               showToast(`Tile (${tx}, ${ty}) is already occupied`, true);
               return;
             }
@@ -1026,7 +1028,7 @@ function handleTileHover(x, y, globalPos) {
           const tx = x + dx;
           const ty = y + dy;
           if (tx >= GRID_SIZE || ty >= GRID_SIZE) continue;
-          const occupied = isTileOccupied(tx, ty) || isTileWater(tx, ty);
+          const occupied = isTileOccupied(tx, ty, state.selectedBuildType) || isTileWater(tx, ty);
           const color = occupied ? 0xff0000 : COLORS.selected;
           const highlight = drawHighlight(tx, ty, color, true);
           container.addChild(highlight);
