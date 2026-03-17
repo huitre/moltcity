@@ -53,6 +53,7 @@ export const buildingTypeSchema = z.enum([
   'coal_plant',
   'nuclear_plant',
   'water_tower',
+  'street_lamp',
   'road',
   'park',
   'plaza',
