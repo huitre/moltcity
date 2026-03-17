@@ -5,7 +5,6 @@
 import * as api from '../api.js';
 import * as state from '../state.js';
 import { render } from '../game.js';
-import { WORLD_MIN_X, WORLD_MAX_X } from '../config.js';
 
 let selectedBuilding = null;
 
@@ -112,9 +111,11 @@ function initTiltShiftControls() {
     'ts-blur': (v) => { if (state.tiltShiftFilter) state.tiltShiftFilter.blur = v; },
     'ts-gradient': (v) => { if (state.tiltShiftFilter) state.tiltShiftFilter.gradientBlur = v; },
     'ts-start-y': (v) => {
-      if (state.tiltShiftFilter) {
-        state.tiltShiftFilter.start = new PIXI.Point(WORLD_MIN_X, v);
-        state.tiltShiftFilter.end = new PIXI.Point(WORLD_MAX_X, v);
+      // Use SCREEN coordinates (0 to screenWidth) for tilt-shift focus band
+      if (state.tiltShiftFilter && state.app) {
+        const screenWidth = state.app.screen.width;
+        state.tiltShiftFilter.start = new PIXI.Point(0, v);
+        state.tiltShiftFilter.end = new PIXI.Point(screenWidth, v);
       }
     },
   };

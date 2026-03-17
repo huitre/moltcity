@@ -30,21 +30,25 @@ function getTiltShiftParams(screenHeight) {
 
 /**
  * Update tilt-shift filter for current screen size
+ * Uses SCREEN coordinates so the focus band stays fixed on screen regardless of camera position
  */
 export function updateTiltShift() {
-  const { tiltShiftFilter, app, worldContainer } = state;
+  const { tiltShiftFilter, app } = state;
   if (!tiltShiftFilter || !app) return;
   
-  const params = getTiltShiftParams(app.screen.height);
+  const screenWidth = app.screen.width;
+  const screenHeight = app.screen.height;
+  
+  const params = getTiltShiftParams(screenHeight);
   tiltShiftFilter.blur = params.blur;
   tiltShiftFilter.gradientBlur = params.gradientBlur;
   
-  // Focus band centered vertically in world space
-  const centerIso = cartToIso(GRID_SIZE / 2, GRID_SIZE / 2);
-  const focusY = centerIso.y * 0.6;  // Slightly above center for better miniature look
+  // Focus band in SCREEN space — centered vertically with slight upward bias for miniature look
+  const focusY = screenHeight * 0.45;  // 45% from top of screen
   
-  tiltShiftFilter.start = new PIXI.Point(WORLD_MIN_X, focusY - 100);
-  tiltShiftFilter.end = new PIXI.Point(WORLD_MAX_X, focusY + 100);
+  // Horizontal line across screen (screen coordinates, not world)
+  tiltShiftFilter.start = new PIXI.Point(0, focusY);
+  tiltShiftFilter.end = new PIXI.Point(screenWidth, focusY);
 }
 
 /**
