@@ -1729,6 +1729,80 @@
         min-height: 16px;
       }
 
+      /* Window lights editor */
+      .se-win-preview {
+        position: relative;
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid var(--wood-border);
+        margin: 6px 0;
+        cursor: crosshair;
+      }
+      .se-win-preview canvas {
+        display: block;
+        width: 100%;
+        image-rendering: pixelated;
+      }
+      .se-win-hint {
+        font-size: 6px;
+        color: #888;
+        text-align: center;
+        margin: 4px 0;
+      }
+      .se-win-list {
+        max-height: 120px;
+        overflow-y: auto;
+      }
+      .se-win-entry {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 7px;
+      }
+      .se-win-entry .se-win-idx {
+        color: var(--text-gold);
+        min-width: 14px;
+        font-family: "Press Start 2P", monospace;
+        font-size: 6px;
+      }
+      .se-win-entry label {
+        color: var(--wood-highlight);
+        font-size: 6px;
+        min-width: 10px;
+      }
+      .se-win-entry input[type="number"] {
+        width: 48px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--wood-border);
+        color: var(--text-cream);
+        padding: 2px 4px;
+        font-size: 7px;
+        font-family: "Press Start 2P", monospace;
+      }
+      .se-win-entry input[type="number"]:focus {
+        outline: none;
+        border-color: var(--text-gold);
+      }
+      .se-win-delete {
+        background: none;
+        border: 1px solid #ff6b6b;
+        color: #ff6b6b;
+        cursor: pointer;
+        font-size: 8px;
+        padding: 1px 4px;
+        line-height: 1;
+      }
+      .se-win-delete:hover {
+        background: #ff6b6b;
+        color: #fff;
+      }
+      .se-win-count {
+        font-size: 7px;
+        color: #888;
+        margin-left: auto;
+      }
+
       /* Auth Modal */
       #auth-overlay {
         position: fixed;
@@ -4990,6 +5064,16 @@
               <input type="number" id="se-anchor-y" min="0" max="1" step="0.01" />
             </div>
           </div>
+
+          <div class="se-section">
+            Windows
+            <span class="se-win-count" id="se-win-count"></span>
+          </div>
+          <div class="se-win-preview" id="se-win-preview">
+            <canvas id="se-win-canvas" width="240" height="200"></canvas>
+          </div>
+          <div class="se-win-hint">Click to add &bull; Drag to move &bull; Right-click to delete</div>
+          <div class="se-win-list" id="se-win-list"></div>
 
           <div class="se-buttons">
             <button class="se-btn-save" id="se-save">Save to sprites.json</button>
