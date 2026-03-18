@@ -46,7 +46,6 @@ import { initLighting, rebuildLights } from "./render/lighting.js";
 let renderContainer = null;
 let statusIcons = [];
 let wasteIconTexture = null;
-let lightsBuilt = false;
 
 // Pre-load waste icon texture
 PIXI.Assets.load("/sprites/ui/waste_icon.png")
@@ -243,11 +242,9 @@ export function render() {
     initVehicles();
   }
 
-  // Build lights once roads and buildings are available
-  if (!lightsBuilt && roads.length > 0 && buildings.length > 0) {
+  // Rebuild lights whenever render is called so new streetlamps get halos
+  if (roads.length > 0 && buildings.length > 0) {
     rebuildLights();
-    lightsBuilt = true;
-    console.log("[Lighting] Built streetlights and building lights");
   }
 
   // Draw buildings
