@@ -15,7 +15,7 @@ import {
   LANE_WIDTH,
   TRAFFIC_LIGHT_INTERVAL,
   NUM_LAYERS,
-  LAYER_VEHICLE,
+  LAYER_ROAD,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
@@ -205,7 +205,7 @@ export function spawnVehicle(vehicleTypes) {
   const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
   sprite.x = iso.x;
   sprite.y = iso.y + TILE_HEIGHT / 2;
-  sprite.zIndex = ((Math.round(vehicle.x) + Math.round(vehicle.y)) * GRID_SIZE + Math.round(vehicle.x)) * NUM_LAYERS + LAYER_VEHICLE;
+  sprite.zIndex = ((Math.round(vehicle.x) + Math.round(vehicle.y)) * GRID_SIZE + Math.round(vehicle.x)) * NUM_LAYERS + LAYER_ROAD + 1;
 
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
@@ -354,7 +354,7 @@ export function animateVehicles(delta) {
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
     vehicle.sprite.zIndex =
-      ((Math.round(vehicle.x) + Math.round(vehicle.y)) * GRID_SIZE + Math.round(vehicle.x)) * NUM_LAYERS + LAYER_VEHICLE;
+      ((Math.round(vehicle.x) + Math.round(vehicle.y)) * GRID_SIZE + Math.round(vehicle.x)) * NUM_LAYERS + LAYER_ROAD + 1;
 
     // Remove if out of bounds
     if (
@@ -574,6 +574,6 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_VEHICLE;
+  g.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_ROAD + 1;
   return g;
 }
