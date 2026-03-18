@@ -44,7 +44,7 @@ export function updateTiltShift() {
   tiltShiftFilter.gradientBlur = params.gradientBlur;
 
   // Focus band in SCREEN space — centered vertically with slight upward bias for miniature look
-  const focusY = screenHeight * 0.45;  // 45% from top of screen
+  const focusY = screenHeight * 0.35; // 45% from top of screen
 
   // Horizontal line across screen (screen coordinates, not world)
   tiltShiftFilter.start = new PIXI.Point(0, focusY);
@@ -116,10 +116,17 @@ export async function initPixi() {
   worldContainer.addChild(cloudsContainer);
   state.setCloudsContainer(cloudsContainer);
 
+  // Night layer — framebuffer-backed container so ERASE blend can punch
+  // holes in the dark overlay, revealing the lit scene underneath
+  const nightLayer = new PIXI.Container();
+  nightLayer.zIndex = 20000;
+  nightLayer.filters = [new PIXI.filters.AlphaFilter(1)];
+  app.stage.addChild(nightLayer);
+  state.setNightLayer(nightLayer);
+
   // Day/night overlay (screen space - stays fixed on screen, above everything)
   const dayNightOverlay = new PIXI.Graphics();
-  dayNightOverlay.zIndex = 20000;
-  app.stage.addChild(dayNightOverlay);
+  nightLayer.addChild(dayNightOverlay);
   state.setDayNightOverlay(dayNightOverlay);
 
   // Tilt-shift filter for miniature/diorama effect (screen-size adaptive)
