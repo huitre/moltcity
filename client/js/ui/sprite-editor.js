@@ -387,6 +387,8 @@ function populateEditor(resolved) {
   document.getElementById('se-source').textContent =
     `${source}${category ? '.' + category : ''}${index !== null ? '[' + index + ']' : ''}`;
   document.getElementById('se-tiles').textContent = spriteData.tiles || 1;
+  document.getElementById('se-position').textContent =
+    resolved._tileX != null ? `(${resolved._tileX}, ${resolved._tileY})` : '-';
 
   // Populate editable fields
   const widthInput = document.getElementById('se-width');
@@ -563,6 +565,8 @@ export function showSpriteEditor(building, parcelX, parcelY) {
   const resolved = resolveSpriteData(building, parcelX, parcelY);
   if (resolved) {
     resolved._sprites = findSpritesAtTile(parcelX, parcelY);
+    resolved._tileX = parcelX;
+    resolved._tileY = parcelY;
   }
   populateEditor(resolved);
 }
@@ -608,7 +612,7 @@ export function showRoadSpriteEditor(x, y) {
   if (!roadType || !state.roadSprites.has(roadType)) { populateEditor(null); return; }
 
   const { config } = state.roadSprites.get(roadType);
-  populateEditor({ spriteData: config, source: 'roads', category: roadType, index: null, _sprites: findSpritesAtTile(x, y) });
+  populateEditor({ spriteData: config, source: 'roads', category: roadType, index: null, _sprites: findSpritesAtTile(x, y), _tileX: x, _tileY: y });
 }
 
 /**
