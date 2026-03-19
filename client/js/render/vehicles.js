@@ -36,6 +36,26 @@ const DIR_ROTATION = {
   west: -ISO_CORRECTION,
 };
 
+/**
+ * Compute vehicle z-index as the max of current tile and target tile.
+ * This ensures the sprite gets the higher z-index as soon as it starts
+ * moving toward a tile that is "in front" (closer to camera), preventing
+ * the vehicle from rendering behind buildings on the next tile.
+ */
+function vehicleZIndex(vehicle) {
+  // Look 0.3 tiles ahead of center in movement direction so the z-index
+  // switches before the sprite visually overlaps the next tile
+  const dir = DIR_VECTORS[vehicle.dir] || { dx: 0, dy: 0 };
+  const margin = 0.3;
+  const cx = Math.floor(vehicle.x + margin * dir.dx);
+  const cy = Math.floor(vehicle.y + margin * dir.dy);
+  const tx = vehicle.targetX;
+  const ty = vehicle.targetY;
+  const currentZ = ((cx + cy) * GRID_SIZE + cx) * NUM_LAYERS + LAYER_ROAD + 1;
+  const targetZ = ((tx + ty) * GRID_SIZE + tx) * NUM_LAYERS + LAYER_ROAD + 1;
+  return Math.max(currentZ, targetZ);
+}
+
 function applyVehicleScale(sprite, config) {
   const size = config.size || { width: 24, height: 24 };
   sprite.scale.set(
@@ -178,7 +198,7 @@ export function spawnVehicle(vehicleTypes) {
 
   const sprite = new PIXI.Sprite(texture);
   sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-  sprite.anchor.set(0.5, 0.8);
+  sprite.anchor.set(0.5, 1);
   applyVehicleScale(sprite, vehicleData.config);
   sprite.rotation = DIR_ROTATION[dir] || 0;
 
@@ -205,7 +225,7 @@ export function spawnVehicle(vehicleTypes) {
   const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
   sprite.x = iso.x;
   sprite.y = iso.y + TILE_HEIGHT / 2;
-  sprite.zIndex = ((Math.floor(vehicle.x) + Math.floor(vehicle.y)) * GRID_SIZE + Math.floor(vehicle.x)) * NUM_LAYERS + LAYER_ROAD + 1;
+  sprite.zIndex = vehicleZIndex(vehicle);
 
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
@@ -353,8 +373,7 @@ export function animateVehicles(delta) {
     const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
-    vehicle.sprite.zIndex =
-      ((Math.floor(vehicle.x) + Math.floor(vehicle.y)) * GRID_SIZE + Math.floor(vehicle.x)) * NUM_LAYERS + LAYER_ROAD + 1;
+    vehicle.sprite.zIndex = vehicleZIndex(vehicle);
 
     // Remove if out of bounds
     if (

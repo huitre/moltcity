@@ -23,15 +23,15 @@ import { resolveSpriteData } from "../sprites.js";
 export const LIGHTING_CONFIG = {
   // Streetlight settings
   streetlight: {
-    haloRadius: 20,
+    haloRadius: 8,
     haloColor: 0xffdd88,
     haloAlpha: 0.12,
-    eraseRadius: 40,      // larger radius for scene illumination
-    eraseAlpha: 0.6,      // how much darkness to remove (0-1)
-    poleHeight: 30,
+    eraseRadius: 30, // larger radius for scene illumination
+    eraseAlpha: 0.2, // how much darkness to remove (0-1)
+    poleHeight: 40,
     poleColor: 0x444444,
     bulbColor: 0xffffcc,
-    bulbRadius: 3,
+    bulbRadius: 1.5,
   },
   // Window light erase settings
   windowEraseRadius: 8,
@@ -202,8 +202,9 @@ export function createBuildingLights() {
     for (const pos of windows) {
       if (Math.random() > 0.6) continue;
 
-      const windowX = (pos.x - 0.5) * scaledW;
-      const windowY = -scaledH * pos.y;
+      const anchor = sd.anchor || { x: 0.5, y: 1 };
+      const windowX = (pos.x - anchor.x) * scaledW;
+      const windowY = (pos.y - anchor.y) * scaledH;
       const color =
         cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
 
@@ -219,7 +220,9 @@ export function createBuildingLights() {
       glowWin.beginFill(color, 0.15);
       glowWin.drawCircle(windowX, windowY, 5);
       glowWin.endFill();
-      const ww = 2, wh = 2, skew = -0.5;
+      const ww = 2,
+        wh = 2,
+        skew = -0.5;
       glowWin.beginFill(color, 0.4);
       glowWin.moveTo(windowX - ww, windowY - wh);
       glowWin.lineTo(windowX + ww, windowY - wh - skew);
@@ -236,6 +239,10 @@ export function createBuildingLights() {
     bldgGlow.y = iso.y + TILE_HEIGHT / 2;
 
     if (bldgGlow.children.length > 0) {
+      // Glow goes into sceneLayer (depth-sorted with buildings) not the
+      // stage-level glowContainer, so lights don't bleed onto buildings in front.
+      bldgGlow.blendMode = PIXI.BLEND_MODES.ADD;
+      bldgGlow.alpha = 0;
       buildingLightSprites.push({
         eraseContainer: bldgErase,
         glowContainer: bldgGlow,
@@ -243,7 +250,7 @@ export function createBuildingLights() {
         parcel,
       });
       eraseContainer.addChild(bldgErase);
-      glowContainer.addChild(bldgGlow);
+      state.sceneLayer.addChild(bldgGlow);
     }
   }
 }
@@ -268,7 +275,12 @@ export function updateLighting(nightAlpha) {
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
   const alpha = Math.min(1, lightIntensity);
   eraseContainer.alpha = alpha;
-  glowContainer.alpha = alpha;
+  glowContainer.alpha = alpha; // streetlight glows only
+
+  // Building window glows live in sceneLayer — update alpha individually
+  for (const bl of buildingLightSprites) {
+    bl.glowContainer.alpha = alpha;
+  }
 
   // Flicker effect for streetlights
   const time = Date.now() * 0.001;

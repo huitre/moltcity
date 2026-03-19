@@ -76,6 +76,7 @@ export const buildingTypeSchema = z.enum([
   'library',
   'monument',
   'amusement_park',
+  'shopping_mall',
 ]);
 
 // Road directions

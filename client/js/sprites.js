@@ -413,6 +413,30 @@ export async function loadSprites() {
       }
     }
 
+    // Load shopping mall sprites
+    if (spritesConfig.shopping_mall) {
+      for (let i = 0; i < spritesConfig.shopping_mall.length; i++) {
+        const spriteConfig = spritesConfig.shopping_mall[i];
+        const jsonIndex = i;
+        const promise = PIXI.Assets.load(`/sprites/${spriteConfig.file}`)
+          .then((texture) => {
+            state.shoppingMallSprites.push({
+              texture,
+              ...spriteConfig,
+              _jsonIndex: jsonIndex,
+            });
+            console.log(`[Sprites] Loaded shopping_mall: ${spriteConfig.id}`);
+          })
+          .catch((err) => {
+            console.warn(
+              `[Sprites] Failed to load shopping_mall ${spriteConfig.id}:`,
+              err,
+            );
+          });
+        loadPromises.push(promise);
+      }
+    }
+
     // Load bin sprites (trash bins for garbage visual)
     if (spritesConfig.bins) {
       for (let i = 0; i < spritesConfig.bins.length; i++) {
@@ -591,6 +615,7 @@ const BUILDING_SPRITE_MAP = {
   stadium:        { sprites: () => state.stadiumSprites,            source: 'stadium' },
   city_hall:      { sprites: () => state.cityHallSprites,           source: 'city_hall' },
   garbage_depot:  { sprites: () => state.wasteSprites,              source: 'waste' },
+  shopping_mall:  { sprites: () => state.shoppingMallSprites,       source: 'shopping_mall' },
   street_lamp:    { sprites: () => state.streetlampSprites,         source: 'streetlamp' },
 };
 

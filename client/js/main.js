@@ -919,6 +919,7 @@ async function handleBuild(x, y, buildType) {
           university: "University",
           stadium: "Stadium",
           city_hall: "City Hall",
+          shopping_mall: "Shopping Mall",
         };
         const name = buildingNames[buildType] || buildType;
 

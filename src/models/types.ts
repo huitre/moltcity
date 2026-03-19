@@ -61,7 +61,9 @@ export type BuildingType =
   | 'theater'
   | 'library'
   | 'monument'
-  | 'amusement_park';
+  | 'amusement_park'
+  // Commercial
+  | 'shopping_mall';
 
 export interface Building {
   id: string;

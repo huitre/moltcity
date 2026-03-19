@@ -40,11 +40,11 @@ export const BIRD_COUNT = 12;
 // Z-index layer system: each tile's z-range is multiplied by NUM_LAYERS
 // so each asset type gets a guaranteed sub-layer within a tile's depth slot
 export const NUM_LAYERS = 5;
-export const LAYER_ROAD     = 0;
+export const LAYER_ROAD = 0;
 export const LAYER_BUILDING = 1;
-export const LAYER_VEHICLE  = 2;  // vehicles, pedestrians, bins
-export const LAYER_POLE     = 3;  // power poles, traffic light dots
-export const LAYER_STATUS   = 4;  // status icons (power/water/waste)
+export const LAYER_VEHICLE = 2; // vehicles, pedestrians, bins
+export const LAYER_POLE = 3; // power poles, traffic light dots
+export const LAYER_STATUS = 4; // status icons (power/water/waste)
 
 // Building limits
 export const MAX_FLOORS = { house: 3, office: 5 };
@@ -64,6 +64,7 @@ export const BUILDING_FOOTPRINTS = {
   city_hall: { w: 2, h: 2 },
   park: { w: 2, h: 2 },
   garbage_depot: { w: 2, h: 2 },
+  shopping_mall: { w: 4, h: 4 },
 };
 
 // Vehicle/pedestrian config
@@ -76,10 +77,10 @@ export const LANE_WIDTH = 0.3;
 export const TRAFFIC_LIGHT_INTERVAL = 300; // frames between phase toggle (~5s at 60fps)
 
 export const LANE_OFFSETS = {
-  north: { dx: +0.2, dy: 0 },
-  south: { dx: -0.2, dy: 0 },
-  east:  { dx: 0, dy: +0.2 },
-  west:  { dx: 0, dy: -0.2 },
+  north: { dx: +0, dy: 0 },
+  south: { dx: -0, dy: 0 },
+  east: { dx: 0, dy: +0 },
+  west: { dx: 0, dy: -0 },
 };
 
 export const PEDESTRIAN_COLORS = [

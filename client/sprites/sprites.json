@@ -123,7 +123,7 @@
       "height": 101,
       "anchor": {
         "x": 0.5,
-        "y": 0.85
+        "y": 0.86
       }
     },
     "road_124": {
@@ -137,11 +137,11 @@
     },
     "road_125": {
       "file": "roads/cityTiles_125.png",
-      "width": 132,
+      "width": 129,
       "height": 101,
       "anchor": {
         "x": 0.5,
-        "y": 0.85
+        "y": 0.84
       }
     },
     "road_126": {
@@ -384,27 +384,27 @@
         "height": 399,
         "anchor": {
           "x": 0.5,
-          "y": 0.95
+          "y": 0.92
         }
       },
       {
         "id": "sheet01_houses_08",
         "file": "residential/suburban/sheet01_houses_08.png",
-        "width": 482,
+        "width": 513,
         "height": 415,
         "anchor": {
           "x": 0.5,
-          "y": 0.95
+          "y": 0.93
         }
       },
       {
         "id": "sheet01_houses_09",
         "file": "residential/suburban/sheet01_houses_09.png",
-        "width": 482,
+        "width": 483,
         "height": 436,
         "anchor": {
           "x": 0.5,
-          "y": 0.93
+          "y": 0.97
         }
       },
       {
@@ -1153,7 +1153,7 @@
         "height": 440,
         "anchor": {
           "x": 0.5,
-          "y": 1
+          "y": 0.98
         }
       },
       {
@@ -1169,7 +1169,7 @@
       {
         "id": "sheet04_buildings_09",
         "file": "office/low/sheet04_buildings_09.png",
-        "width": 482,
+        "width": 977,
         "height": 474,
         "anchor": {
           "x": 0.5,
@@ -1179,7 +1179,7 @@
       {
         "id": "sheet04_buildings_10",
         "file": "office/low/sheet04_buildings_10.png",
-        "width": 482,
+        "width": 958,
         "height": 468,
         "anchor": {
           "x": 0.5,
@@ -1193,7 +1193,7 @@
         "height": 922,
         "anchor": {
           "x": 0.5,
-          "y": 0.97
+          "y": 0.99
         }
       },
       {
@@ -1254,6 +1254,26 @@
         "anchor": {
           "x": 0.5,
           "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_11",
+        "file": "office/low/sheet04_buildings_11.png",
+        "width": 906,
+        "height": 832,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet04_buildings_19",
+        "file": "office/low/sheet04_buildings_19.png",
+        "width": 972,
+        "height": 858,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
         }
       }
     ],
@@ -1463,6 +1483,36 @@
           "x": 0.5,
           "y": 0.97
         }
+      },
+      {
+        "id": "sheet02_offices_04",
+        "file": "office/medium/sheet02_offices_04.png",
+        "width": 904,
+        "height": 859,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
+      },
+      {
+        "id": "sheet02_offices_11",
+        "file": "office/medium/sheet02_offices_11.png",
+        "width": 768,
+        "height": 902,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet02_offices_12",
+        "file": "office/medium/sheet02_offices_12.png",
+        "width": 966,
+        "height": 724,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.97
+        }
       }
     ],
     "high": [
@@ -1623,6 +1673,46 @@
           "x": 0.5,
           "y": 0.95
         }
+      },
+      {
+        "id": "sheet03_offices_01_1x1",
+        "file": "office/high/sheet03_offices_01.png",
+        "width": 350,
+        "height": 448,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_02_1x1",
+        "file": "office/high/sheet03_offices_02.png",
+        "width": 350,
+        "height": 446,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_03_1x1",
+        "file": "office/high/sheet03_offices_03.png",
+        "width": 942,
+        "height": 1282,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_05_1x1",
+        "file": "office/high/sheet03_offices_05.png",
+        "width": 576,
+        "height": 1024,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
       }
     ],
     "veryhigh": [
@@ -1702,9 +1792,66 @@
           "x": 0.5,
           "y": 0.92
         }
+      },
+      {
+        "id": "sheet03_offices_01",
+        "file": "office/high/sheet03_offices_01.png",
+        "width": 350,
+        "height": 448,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_02",
+        "file": "office/high/sheet03_offices_02.png",
+        "width": 350,
+        "height": 446,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_03",
+        "file": "office/high/sheet03_offices_03.png",
+        "width": 942,
+        "height": 1282,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
+      },
+      {
+        "id": "sheet03_offices_05",
+        "file": "office/high/sheet03_offices_05.png",
+        "width": 576,
+        "height": 1024,
+        "tiles": 2,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.95
+        }
       }
     ]
   },
+  "shopping_mall": [
+    {
+      "id": "sheet03_offices_12",
+      "file": "office/high/sheet03_offices_12.png",
+      "width": 613,
+      "height": 574,
+      "tiles": 4,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.98
+      }
+    }
+  ],
   "police": [
     {
       "id": "sheet09_emergency_06",
@@ -1720,12 +1867,12 @@
     {
       "id": "police_station_01",
       "file": "police/police_station_01.png",
-      "width": 906,
+      "width": 902,
       "height": 708,
       "tiles": 1,
       "anchor": {
         "x": 0.5,
-        "y": 0.99
+        "y": 0.97
       },
       "windows": [
         {
@@ -1847,7 +1994,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.94
       }
     }
   ],
@@ -2037,7 +2184,7 @@
       "height": 310,
       "anchor": {
         "x": 0.5,
-        "y": 0.98
+        "y": 0.97
       },
       "windows": [
         {
@@ -2081,7 +2228,7 @@
       "height": 312,
       "anchor": {
         "x": 0.5,
-        "y": 0.98
+        "y": 0.96
       }
     }
   ],
@@ -2094,7 +2241,7 @@
       "tiles": 2,
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.92
       }
     }
   ],
@@ -2107,7 +2254,7 @@
       "tiles": 1,
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.94
       }
     }
   ],
@@ -2230,7 +2377,7 @@
     {
       "id": "street_lamp_01",
       "file": "roads/street_lamp_01.png",
-      "width": 47,
+      "width": 500,
       "height": 142,
       "anchor": {
         "x": 0.5,

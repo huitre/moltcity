@@ -70,6 +70,7 @@ export const USER_BUILDING_TYPES: BuildingType[] = [
   "monument",
   "amusement_park",
   "courthouse",
+  "shopping_mall",
 ];
 
 // ============================================
@@ -92,6 +93,7 @@ export const BUILDING_FOOTPRINTS: Partial<
   city_hall: { w: 2, h: 2 },
   park: { w: 2, h: 2 },
   garbage_depot: { w: 2, h: 2 },
+  shopping_mall: { w: 4, h: 4 },
 };
 
 // ============================================
@@ -198,6 +200,7 @@ export const BUILDING_COSTS: Record<string, number> = {
   library: 2000,
   monument: 50000,
   amusement_park: 15000,
+  shopping_mall: 5000,
 };
 
 export const POWER_CAPACITY: Partial<Record<BuildingType, number>> = {
@@ -350,6 +353,7 @@ export const BUILDING_JOBS: Partial<
   },
   factory: { count: 20, salary: 40 },
   industrial: { count: 15, salary: 35 },
+  shopping_mall: { count: 30, salary: 25 },
 };
 
 export const ADMIN_ONLY_BUILDING_TYPES = MAYOR_ONLY_BUILDING_TYPES;
@@ -600,6 +604,7 @@ export const HAPPINESS = {
     theater: { entertainment: 10, landValue: 10 },
     stadium: { entertainment: 20 },
     amusement_park: { entertainment: 30, happiness: 10 },
+    shopping_mall: { happiness: 10, landValue: 8 },
     university: { happiness: 15, education: 10 },
   },
 
