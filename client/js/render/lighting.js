@@ -13,6 +13,7 @@ import {
   TILE_HEIGHT,
   GRID_SIZE,
   NUM_LAYERS,
+  LAYER_BUILDING,
   LAYER_POLE,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
@@ -33,15 +34,44 @@ export const LIGHTING_CONFIG = {
     bulbColor: 0xffffcc,
     bulbRadius: 1.5,
   },
-  // Window light erase settings
-  windowEraseRadius: 8,
-  windowEraseAlpha: 0.25,
   // Light colors for variety
   windowColors: [0xffdd77, 0xffeebb, 0xffffcc, 0xffcc66, 0xffffff],
 };
 
 // Street lamp texture scale
 const STREETLAMP_SCALE = 14 / 142; // target height 14px
+
+// Cached radial-gradient glow texture (white center → transparent edge)
+let glowTexture = null;
+
+/**
+ * Create a reusable white radial-gradient texture for window halos.
+ * Center is opaque white, edge is fully transparent.
+ */
+function createGlowTexture(radius = 32) {
+  if (glowTexture) return glowTexture;
+  const size = radius * 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createRadialGradient(
+    radius,
+    radius,
+    0,
+    radius,
+    radius,
+    radius,
+  );
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.3, "rgba(255,255,255,0.6)");
+  grad.addColorStop(0.6, "rgba(255,255,255,0.2)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  glowTexture = PIXI.Texture.from(canvas);
+  return glowTexture;
+}
 
 // ERASE layer — lives inside nightLayer, punches holes in the dark overlay
 let eraseContainer = null;
@@ -50,6 +80,9 @@ let glowContainer = null;
 
 let streetlightSprites = [];
 let buildingLightSprites = [];
+
+// Map from building.id → glow Container (consumed by game.js to group with building sprite)
+export const buildingGlowMap = new Map();
 
 /**
  * Initialize both lighting containers.
@@ -100,7 +133,17 @@ export function createStreetlights() {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
 
-    const lightIso = cartToIso(parcel.x + 0.5, parcel.y + 0.5);
+    // Offset toward adjacent road (match drawBuilding sidewalk logic)
+    let offX = 0,
+      offY = 0;
+    const shift = 0.35;
+    const hasRd = (rx, ry) => state.roadPositionSet.has(`${rx},${ry}`);
+    if (hasRd(parcel.x - 1, parcel.y)) offX -= shift;
+    if (hasRd(parcel.x + 1, parcel.y)) offX += shift;
+    if (hasRd(parcel.x, parcel.y - 1)) offY -= shift;
+    if (hasRd(parcel.x, parcel.y + 1)) offY += shift;
+
+    const lightIso = cartToIso(parcel.x + 0.5 + offX, parcel.y + 0.5 + offY);
     const streetlight = createStreetlightHalo(
       lightIso.x,
       lightIso.y,
@@ -123,35 +166,26 @@ function createStreetlightHalo(screenX, screenY, tileX, tileY) {
   const baseY = screenY + TILE_HEIGHT / 2;
   const lampHeight = 142 * STREETLAMP_SCALE;
   const bulbY = -lampHeight + 2;
+  const tex = createGlowTexture(32);
 
-  // --- ERASE disc: white circles that remove darkness ---
-  const eraseDisc = new PIXI.Graphics();
-  // Soft gradient: multiple concentric circles, stronger in center
-  for (let i = 4; i >= 0; i--) {
-    const t = i / 4;
-    const r = cfg.eraseRadius * (0.3 + t * 0.7);
-    const a = cfg.eraseAlpha * (1 - t * 0.8);
-    eraseDisc.beginFill(0xffffff, a);
-    eraseDisc.drawCircle(0, bulbY, r);
-    eraseDisc.endFill();
-  }
+  // --- ERASE disc: gradient sprite that punches a hole in the darkness ---
+  const eraseDisc = new PIXI.Sprite(tex);
+  eraseDisc.anchor.set(0.5);
   eraseDisc.x = baseX;
-  eraseDisc.y = baseY;
+  eraseDisc.y = baseY + bulbY;
+  eraseDisc.width = cfg.eraseRadius * 2;
+  eraseDisc.height = cfg.eraseRadius * 2;
+  eraseDisc.alpha = cfg.eraseAlpha;
 
-  // --- GLOW disc: warm-colored circles (additive) ---
-  const glowDisc = new PIXI.Graphics();
-  glowDisc.beginFill(cfg.haloColor, cfg.haloAlpha);
-  glowDisc.drawCircle(0, bulbY, cfg.haloRadius);
-  glowDisc.endFill();
-  for (let i = 1; i <= 3; i++) {
-    const r = cfg.haloRadius * (1 - i * 0.25);
-    const a = cfg.haloAlpha * (1 + i * 0.3);
-    glowDisc.beginFill(cfg.haloColor, Math.min(a, 0.3));
-    glowDisc.drawCircle(0, bulbY, r);
-    glowDisc.endFill();
-  }
+  // --- GLOW disc: warm-colored gradient sprite (additive) ---
+  const glowDisc = new PIXI.Sprite(tex);
+  glowDisc.anchor.set(0.5);
   glowDisc.x = baseX;
-  glowDisc.y = baseY;
+  glowDisc.y = baseY + bulbY;
+  glowDisc.width = cfg.haloRadius * 2;
+  glowDisc.height = cfg.haloRadius * 2;
+  glowDisc.tint = cfg.haloColor;
+  glowDisc.alpha = cfg.haloAlpha;
 
   return { eraseDisc, glowDisc, tileX, tileY };
 }
@@ -163,12 +197,13 @@ function createStreetlightHalo(screenX, screenY, tileX, tileY) {
 export function createBuildingLights() {
   if (!eraseContainer) initLighting();
 
-  // Clear existing building lights from both containers
+  // Clear existing building lights
   for (const bl of buildingLightSprites) {
-    bl.eraseContainer.parent?.removeChild(bl.eraseContainer);
     bl.glowContainer.parent?.removeChild(bl.glowContainer);
+    bl.eraseContainer?.parent?.removeChild(bl.eraseContainer);
   }
   buildingLightSprites = [];
+  buildingGlowMap.clear();
 
   const { buildings, parcels } = state;
   const cfg = LIGHTING_CONFIG;
@@ -194,10 +229,15 @@ export function createBuildingLights() {
     const scaledW = sd.width * scale;
     const scaledH = sd.height * scale;
 
-    const bldgErase = new PIXI.Container();
     const bldgGlow = new PIXI.Container();
-    bldgErase.zIndex = (parcel.x + parcel.y) * GRID_SIZE + parcel.x + 2;
-    bldgGlow.zIndex = bldgErase.zIndex;
+    const bldgErase = new PIXI.Container(); // erase layer for night overlay
+
+    // Per-sprite tint: use windowTint if set, otherwise null (randomise per window)
+    const spriteTint = sd.windowTint
+      ? parseInt(sd.windowTint.replace("#", ""), 16)
+      : null;
+
+    const tex = createGlowTexture(32);
 
     for (const pos of windows) {
       if (Math.random() > 0.6) continue;
@@ -206,51 +246,50 @@ export function createBuildingLights() {
       const windowX = (pos.x - anchor.x) * scaledW;
       const windowY = (pos.y - anchor.y) * scaledH;
       const color =
+        spriteTint ??
         cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
 
-      // Erase disc for each window (small, subtle scene reveal)
-      const eraseWin = new PIXI.Graphics();
-      eraseWin.beginFill(0xffffff, cfg.windowEraseAlpha);
-      eraseWin.drawCircle(windowX, windowY, cfg.windowEraseRadius);
-      eraseWin.endFill();
-      bldgErase.addChild(eraseWin);
+      // Radial gradient halo sprite (additive blend)
+      const halo = new PIXI.Sprite(tex);
+      halo.anchor.set(0.5);
+      halo.x = windowX;
+      halo.y = windowY;
+      halo.width = 32;
+      halo.height = 30;
+      halo.tint = color;
+      halo.alpha = 0.5;
+      halo.blendMode = PIXI.BLEND_MODES.ADD;
+      bldgGlow.addChild(halo);
 
-      // Glow for each window (warm color, additive)
-      const glowWin = new PIXI.Graphics();
-      glowWin.beginFill(color, 0.15);
-      glowWin.drawCircle(windowX, windowY, 5);
-      glowWin.endFill();
-      const ww = 2,
-        wh = 2,
-        skew = -0.5;
-      glowWin.beginFill(color, 0.4);
-      glowWin.moveTo(windowX - ww, windowY - wh);
-      glowWin.lineTo(windowX + ww, windowY - wh - skew);
-      glowWin.lineTo(windowX + ww + skew, windowY + wh);
-      glowWin.lineTo(windowX - ww + skew, windowY + wh + skew);
-      glowWin.closePath();
-      glowWin.endFill();
-      bldgGlow.addChild(glowWin);
+      // Erase sprite — punches a hole in the night overlay
+      const erase = new PIXI.Sprite(tex);
+      erase.anchor.set(0.5);
+      erase.x = windowX;
+      erase.y = windowY;
+      erase.width = 20;
+      erase.height = 18;
+      erase.alpha = 0.15;
+      bldgErase.addChild(erase);
     }
 
-    bldgErase.x = iso.x;
-    bldgErase.y = iso.y + TILE_HEIGHT / 2;
     bldgGlow.x = iso.x;
     bldgGlow.y = iso.y + TILE_HEIGHT / 2;
+    bldgErase.x = iso.x;
+    bldgErase.y = iso.y + TILE_HEIGHT / 2;
 
     if (bldgGlow.children.length > 0) {
-      // Glow goes into sceneLayer (depth-sorted with buildings) not the
-      // stage-level glowContainer, so lights don't bleed onto buildings in front.
-      bldgGlow.blendMode = PIXI.BLEND_MODES.ADD;
       bldgGlow.alpha = 0;
+      bldgErase.alpha = 0;
+      eraseContainer.addChild(bldgErase);
       buildingLightSprites.push({
-        eraseContainer: bldgErase,
         glowContainer: bldgGlow,
+        eraseContainer: bldgErase,
         building,
         parcel,
       });
-      eraseContainer.addChild(bldgErase);
-      state.sceneLayer.addChild(bldgGlow);
+      // Store glow in map — game.js will group it with the building sprite
+      // into a single container so they z-sort together.
+      buildingGlowMap.set(building.id, bldgGlow);
     }
   }
 }
@@ -280,6 +319,7 @@ export function updateLighting(nightAlpha) {
   // Building window glows live in sceneLayer — update alpha individually
   for (const bl of buildingLightSprites) {
     bl.glowContainer.alpha = alpha;
+    if (bl.eraseContainer) bl.eraseContainer.alpha = alpha;
   }
 
   // Flicker effect for streetlights

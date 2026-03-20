@@ -16,6 +16,7 @@ import {
   TRAFFIC_LIGHT_INTERVAL,
   NUM_LAYERS,
   LAYER_ROAD,
+  LAYER_VEHICLE,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
@@ -43,17 +44,22 @@ const DIR_ROTATION = {
  * the vehicle from rendering behind buildings on the next tile.
  */
 function vehicleZIndex(vehicle) {
-  // Look 0.3 tiles ahead of center in movement direction so the z-index
-  // switches before the sprite visually overlaps the next tile
   const dir = DIR_VECTORS[vehicle.dir] || { dx: 0, dy: 0 };
   const margin = 0.3;
-  const cx = Math.floor(vehicle.x + margin * dir.dx);
-  const cy = Math.floor(vehicle.y + margin * dir.dy);
+  // Look-ahead tile (0.3 tiles ahead in movement direction)
+  const lx = Math.floor(vehicle.x + margin * dir.dx);
+  const ly = Math.floor(vehicle.y + margin * dir.dy);
+  // Actual tile the vehicle is on (prevents premature z-drop
+  // when moving toward the camera / into shallower tiles)
+  const ax = Math.floor(vehicle.x);
+  const ay = Math.floor(vehicle.y);
   const tx = vehicle.targetX;
   const ty = vehicle.targetY;
-  const currentZ = ((cx + cy) * GRID_SIZE + cx) * NUM_LAYERS + LAYER_ROAD + 1;
-  const targetZ = ((tx + ty) * GRID_SIZE + tx) * NUM_LAYERS + LAYER_ROAD + 1;
-  return Math.max(currentZ, targetZ);
+  const actualZ = (ax + ay) * GRID_SIZE + ax + NUM_LAYERS + LAYER_ROAD + 1;
+  const lookZ = (lx + ly) * GRID_SIZE + lx + NUM_LAYERS + LAYER_ROAD + 1;
+  const targetZ = (tx + ty) * GRID_SIZE + tx + NUM_LAYERS + LAYER_ROAD + 1;
+  // return Math.max(actualZ, lookZ, targetZ);
+  return (ax + ay) * GRID_SIZE + ax + NUM_LAYERS + LAYER_VEHICLE;
 }
 
 function applyVehicleScale(sprite, config) {
@@ -424,8 +430,8 @@ export function drawTrafficLightDots(g, tileX, tileY, connections) {
   // West  (-x): left vertex     → dx=-TILE_WIDTH/2, dy=0
   // We place dots partway toward each edge (60% toward edge midpoint)
   const f = 0.6;
-  const hw = TILE_WIDTH / 2 * f;
-  const hh = TILE_HEIGHT / 2 * f;
+  const hw = (TILE_WIDTH / 2) * f;
+  const hh = (TILE_HEIGHT / 2) * f;
 
   if (connections.north) {
     g.beginFill(nsColor, 0.9);
@@ -595,6 +601,6 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_ROAD + 1;
+  g.zIndex = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_ROAD + 1;
   return g;
 }

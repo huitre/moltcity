@@ -41,7 +41,11 @@ import {
   animateAmbient,
   updateDayNightOverlay,
 } from "./render/ambient.js";
-import { initLighting, rebuildLights } from "./render/lighting.js";
+import {
+  initLighting,
+  rebuildLights,
+  buildingGlowMap,
+} from "./render/lighting.js";
 
 let renderContainer = null;
 let statusIcons = [];
@@ -226,7 +230,7 @@ export function render() {
     const g = new PIXI.Graphics();
     drawTrafficLightDots(g, parcel.x, parcel.y, connections);
     g.zIndex =
-      ((parcel.x + parcel.y) * GRID_SIZE + parcel.x) * NUM_LAYERS + LAYER_POLE;
+      (parcel.x + parcel.y) * GRID_SIZE + parcel.x + NUM_LAYERS + LAYER_POLE;
     sceneLayer.addChild(g);
 
     state.trafficLightGraphics.push({
@@ -247,17 +251,30 @@ export function render() {
     rebuildLights();
   }
 
-  // Draw buildings
+  // Draw buildings — group each building with its window glow into a render group
   statusIcons = [];
   for (const building of buildings) {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (parcel) {
       const result = drawBuilding(parcel.x, parcel.y, building);
       const parts = Array.isArray(result) ? result : [result];
-      for (const part of parts) {
-        part._buildingType = building.type;
-        sceneLayer.addChild(part);
+      const glow = buildingGlowMap.get(building.id);
+
+      if (glow) {
+        // Render group: building sprite(s) + glow in one container for z-sort
+        const group = new PIXI.Container();
+        for (const part of parts) group.addChild(part);
+        group.addChild(glow);
+        group.zIndex = parts[0].zIndex;
+        group._buildingType = building.type;
+        sceneLayer.addChild(group);
+      } else {
+        for (const part of parts) {
+          part._buildingType = building.type;
+          sceneLayer.addChild(part);
+        }
       }
+
       const icons = drawStatusIcons(parcel.x, parcel.y, building);
       if (icons) {
         sceneLayer.addChild(icons);
@@ -325,8 +342,7 @@ export function render() {
       sprite.x = iso.x;
       sprite.y = iso.y;
       sprite.zIndex =
-        ((road.rx + road.ry) * GRID_SIZE + road.rx) * NUM_LAYERS +
-        LAYER_VEHICLE;
+        (road.rx + road.ry) * GRID_SIZE + road.rx + NUM_LAYERS + LAYER_VEHICLE;
       sceneLayer.addChild(sprite);
     }
   }
@@ -376,7 +392,7 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
   sprite.x = spriteIsoX;
   sprite.y = spriteIsoY;
-  sprite.zIndex = (D_mid * GRID_SIZE + midX) * NUM_LAYERS + LAYER_BUILDING;
+  sprite.zIndex = D_mid * GRID_SIZE + midX + NUM_LAYERS + LAYER_BUILDING;
   if (!powered) sprite.tint = 0x888888;
   return sprite;
 }
@@ -430,6 +446,33 @@ function drawBuilding(x, y, building) {
     }
   }
 
+  // Street lamp: offset toward nearest adjacent road (sidewalk placement)
+  if (type === "street_lamp" && state.streetlampSprites.length > 0) {
+    const rng = seededRandom(x * 1000 + y);
+    const idx = Math.floor(rng() * state.streetlampSprites.length);
+    const spriteData = state.streetlampSprites[idx];
+
+    // Detect adjacent road and compute offset toward it
+    let offX = 0,
+      offY = 0;
+    const shift = 0.35;
+    const hasRd = (rx, ry) => state.roadPositionSet.has(`${rx},${ry}`);
+    if (hasRd(x - 1, y)) offX -= shift;
+    if (hasRd(x + 1, y)) offX += shift;
+    if (hasRd(x, y - 1)) offY -= shift;
+    if (hasRd(x, y + 1)) offY += shift;
+
+    return createBuildingSprites(
+      spriteData.texture,
+      spriteData,
+      x + offX,
+      y + offY,
+      fw,
+      fh,
+      powered,
+    );
+  }
+
   // Try service/park sprites
   const serviceSpriteMap = {
     park: state.parkSprites,
@@ -446,7 +489,6 @@ function drawBuilding(x, y, building) {
     city_hall: state.cityHallSprites,
     garbage_depot: state.wasteSprites,
     shopping_mall: state.shoppingMallSprites,
-    street_lamp: state.streetlampSprites,
   };
   if (serviceSpriteMap[type] && serviceSpriteMap[type].length > 0) {
     return fromSpriteArray(serviceSpriteMap[type]);
@@ -464,7 +506,7 @@ function drawBuilding(x, y, building) {
   const wallHeight = 20 + floors * 15;
   const cx = iso.x;
   const baseY = iso.y + TILE_HEIGHT;
-  const zIdx = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_BUILDING;
+  const zIdx = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_BUILDING;
 
   switch (type) {
     case "house":
@@ -506,7 +548,9 @@ function drawStatusIcons(x, y, building) {
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
   const zIdx =
-    ((x + y + fw + fh - 2) * GRID_SIZE + (x + fw - 1)) * NUM_LAYERS +
+    (x + y + fw + fh - 2) * GRID_SIZE +
+    (x + fw - 1) +
+    NUM_LAYERS +
     LAYER_STATUS;
 
   const container = new PIXI.Container();
@@ -729,7 +773,7 @@ function drawPowerLine(from, to) {
   poleFrom.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
   poleFrom.lineTo(fromPoleX, fromPoleTopY);
   poleFrom.zIndex =
-    ((from.x + from.y) * GRID_SIZE + from.x) * NUM_LAYERS + LAYER_POLE;
+    (from.x + from.y) * GRID_SIZE + from.x + NUM_LAYERS + LAYER_POLE;
   parts.push(poleFrom);
 
   // Pole + wire at "to" tile (wire sorts with deeper endpoint)
@@ -740,7 +784,7 @@ function drawPowerLine(from, to) {
   poleTo.lineStyle(1, 0x333333);
   poleTo.moveTo(fromPoleX, fromPoleTopY);
   poleTo.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
-  poleTo.zIndex = ((to.x + to.y) * GRID_SIZE + to.x) * NUM_LAYERS + LAYER_POLE;
+  poleTo.zIndex = (to.x + to.y) * GRID_SIZE + to.x + NUM_LAYERS + LAYER_POLE;
   parts.push(poleTo);
 
   return parts;
@@ -788,7 +832,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_VEHICLE;
+  g.zIndex = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_VEHICLE;
   return g;
 }
 

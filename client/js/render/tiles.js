@@ -2,7 +2,13 @@
 // MOLTCITY - Tile Rendering
 // ============================================
 
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, COLORS, NUM_LAYERS } from "../config.js";
+import {
+  GRID_SIZE,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  COLORS,
+  NUM_LAYERS,
+} from "../config.js";
 import { cartToIso, lightenColor, darkenColor } from "../utils.js";
 import * as state from "../state.js";
 
@@ -166,7 +172,7 @@ export function drawHighlight(
   graphics.closePath();
   graphics.endFill();
 
-  graphics.zIndex = (x + y) * GRID_SIZE + x + 5000 * NUM_LAYERS; // Always on top
+  graphics.zIndex = (x + y) * GRID_SIZE + x + 5000 + NUM_LAYERS; // Always on top
   return graphics;
 }
 

@@ -379,6 +379,7 @@ function populateEditor(resolved) {
     anchorY: spriteData.anchor ? spriteData.anchor.y : 1,
     zIndex: currentSprites.length > 0 ? currentSprites[0].zIndex : 0,
     windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
+    windowTint: spriteData.windowTint || null,
   };
 
   // Populate read-only fields
@@ -503,6 +504,11 @@ function populateEditor(resolved) {
       if (spriteData.windows) {
         updates.windows = spriteData.windows.map(w => ({ x: w.x, y: w.y }));
       }
+      if (spriteData.windowTint) {
+        updates.windowTint = spriteData.windowTint;
+      } else {
+        updates.windowTint = null; // remove from sprites.json
+      }
       await updateSpriteConfig({ source, category, index, updates });
       statusEl.textContent = 'Saved!';
       statusEl.style.color = '#2ecc71';
@@ -512,6 +518,7 @@ function populateEditor(resolved) {
         anchorX: spriteData.anchor.x,
         anchorY: spriteData.anchor.y,
         windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
+        windowTint: spriteData.windowTint || null,
       };
     } catch (err) {
       statusEl.textContent = `Error: ${err.message}`;
@@ -533,6 +540,27 @@ function populateEditor(resolved) {
       delete spriteData.windows;
     }
 
+    if (originalValues.windowTint) {
+      spriteData.windowTint = originalValues.windowTint;
+    } else {
+      delete spriteData.windowTint;
+    }
+
+    // Reset tint picker UI
+    const tintPickerReset = document.getElementById('se-win-tint');
+    const tintRandomReset = document.getElementById('se-win-tint-random');
+    if (tintPickerReset && tintRandomReset) {
+      if (originalValues.windowTint) {
+        tintPickerReset.value = originalValues.windowTint;
+        tintRandomReset.checked = false;
+        tintPickerReset.disabled = false;
+      } else {
+        tintPickerReset.value = '#ffdd77';
+        tintRandomReset.checked = true;
+        tintPickerReset.disabled = true;
+      }
+    }
+
     w.value = originalValues.width;
     h.value = originalValues.height;
     axR.value = originalValues.anchorX;
@@ -551,6 +579,36 @@ function populateEditor(resolved) {
 
   // Set up the window editor canvas
   setupWindowEditor(spriteData);
+
+  // Window tint color picker
+  replaceWithClone('se-win-tint');
+  replaceWithClone('se-win-tint-random');
+  const tintPicker = document.getElementById('se-win-tint');
+  const tintRandom = document.getElementById('se-win-tint-random');
+  if (tintPicker && tintRandom) {
+    if (spriteData.windowTint) {
+      tintPicker.value = spriteData.windowTint;
+      tintRandom.checked = false;
+      tintPicker.disabled = false;
+    } else {
+      tintPicker.value = '#ffdd77';
+      tintRandom.checked = true;
+      tintPicker.disabled = true;
+    }
+    tintRandom.addEventListener('change', () => {
+      tintPicker.disabled = tintRandom.checked;
+      if (tintRandom.checked) {
+        delete spriteData.windowTint;
+      } else {
+        spriteData.windowTint = tintPicker.value;
+      }
+    });
+    tintPicker.addEventListener('input', () => {
+      if (!tintRandom.checked) {
+        spriteData.windowTint = tintPicker.value;
+      }
+    });
+  }
 
   // Open admin panel on Sprites tab
   panel.style.display = 'block';

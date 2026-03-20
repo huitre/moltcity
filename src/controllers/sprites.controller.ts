@@ -95,7 +95,7 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
       source: string;
       category: string | null;
       index: number | null;
-      updates: { width?: number; height?: number; anchor?: { x: number; y: number } };
+      updates: { width?: number; height?: number; anchor?: { x: number; y: number }; windows?: { x: number; y: number }[]; windowTint?: string | null };
     };
 
     if (!source || !updates) {
@@ -134,6 +134,14 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
       if (!entry.anchor) entry.anchor = {};
       entry.anchor.x = updates.anchor.x;
       entry.anchor.y = updates.anchor.y;
+    }
+    if (updates.windows !== undefined) entry.windows = updates.windows;
+    if (updates.windowTint !== undefined) {
+      if (updates.windowTint === null) {
+        delete entry.windowTint;
+      } else {
+        entry.windowTint = updates.windowTint;
+      }
     }
 
     fs.writeFileSync(spritesJsonPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');

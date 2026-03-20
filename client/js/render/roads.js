@@ -167,7 +167,7 @@ export function drawRoad(x, y) {
       sprite.anchor.set(config.anchor.x, config.anchor.y);
       sprite.x = iso.x;
       sprite.y = iso.y + TILE_HEIGHT + 8;
-      sprite.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_ROAD;
+      sprite.zIndex = (x + y) * GRID_SIZE + NUM_LAYERS;
       return sprite;
     }
   }
@@ -259,6 +259,6 @@ function drawProceduralRoad(x, y, iso, conn) {
   graphics.lineTo(left.x, left.y);
   graphics.closePath();
 
-  graphics.zIndex = ((x + y) * GRID_SIZE + x) * NUM_LAYERS + LAYER_ROAD;
+  graphics.zIndex = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_ROAD;
   return graphics;
 }
