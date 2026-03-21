@@ -132,9 +132,7 @@ export function spawnPedestrian() {
   sprite.x = iso.x;
   sprite.y = iso.y;
   sprite.zIndex =
-    (Math.floor(pedestrian.x) + Math.floor(pedestrian.y)) * GRID_SIZE +
-    Math.floor(pedestrian.x) +
-    NUM_LAYERS +
+    (Math.floor(pedestrian.x) + Math.floor(pedestrian.y)) * NUM_LAYERS +
     LAYER_VEHICLE;
 
   // Add directly to worldContainer for proper z-sorting with buildings
@@ -216,9 +214,7 @@ export function animatePedestrians(delta) {
     ped.sprite.x = iso.x;
     ped.sprite.y = iso.y;
     ped.sprite.zIndex =
-      (Math.floor(ped.x) + Math.floor(ped.y)) * GRID_SIZE +
-      Math.floor(ped.x) +
-      NUM_LAYERS +
+      (Math.floor(ped.x) + Math.floor(ped.y)) * NUM_LAYERS +
       LAYER_VEHICLE;
 
     // Remove if out of bounds

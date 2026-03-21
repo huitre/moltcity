@@ -4,7 +4,14 @@
 
 import * as state from "./state.js";
 import * as api from "./api.js";
-import { GRID_SIZE, COLORS, BUILDING_FOOTPRINTS, TILE_WIDTH, TILE_HEIGHT } from "./config.js";
+import {
+  GRID_SIZE,
+  COLORS,
+  BUILDING_FOOTPRINTS,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  NUM_LAYERS,
+} from "./config.js";
 import { bresenhamLine, cartToIso } from "./utils.js";
 import { initPixi, setupInteractions } from "./pixi/init.js";
 import { initGame, render } from "./game.js";
@@ -20,7 +27,11 @@ import {
 import { loadActivities, addActivity } from "./ui/activity.js";
 import { loadElectionStatus, setupElectionUI } from "./ui/election.js";
 import { setupLeaderboard } from "./ui/leaderboard.js";
-import { showSpriteEditor, showRoadSpriteEditor, showVehicleSpriteEditor } from "./ui/sprite-editor.js";
+import {
+  showSpriteEditor,
+  showRoadSpriteEditor,
+  showVehicleSpriteEditor,
+} from "./ui/sprite-editor.js";
 import { initDebugPanel, setDebugSelectedBuilding } from "./ui/debug.js";
 import { initAdvisor } from "./ui/advisor.js";
 import { subscribeToCityWs } from "./websocket.js";
@@ -204,7 +215,7 @@ async function loadCityData() {
       state.setCurrentCityId(city.id);
       state.setCitiesList([city]);
       // Trigger welcome popup for new city
-      window.dispatchEvent(new CustomEvent('city-created', { detail: city }));
+      window.dispatchEvent(new CustomEvent("city-created", { detail: city }));
     }
 
     // Subscribe WebSocket to this city
@@ -372,7 +383,7 @@ function buildCitySelectorUI() {
       await switchCity(city.id);
       buildCitySelectorUI();
       // Trigger welcome popup for new city
-      window.dispatchEvent(new CustomEvent('city-created', { detail: city }));
+      window.dispatchEvent(new CustomEvent("city-created", { detail: city }));
     } catch (e) {
       alert("Failed to create city: " + e.message);
     }
@@ -438,7 +449,7 @@ async function handleTileClick(x, y, globalPos) {
  */
 function isTileOccupied(x, y, buildType) {
   // Check roads (street lamps can be placed on roads)
-  if (buildType !== 'street_lamp') {
+  if (buildType !== "street_lamp") {
     const hasRoad = state.roads.some((r) => {
       const p = state.parcels.find((p) => p.id === r.parcelId);
       return p && p.x === x && p.y === y;
@@ -572,8 +583,7 @@ function findWaterPipeAtTile(x, y) {
  */
 function findAllPowerLinesAtTile(x, y) {
   return state.powerLines.filter(
-    (l) =>
-      (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y),
+    (l) => (l.from.x === x && l.from.y === y) || (l.to.x === x && l.to.y === y),
   );
 }
 
@@ -582,8 +592,7 @@ function findAllPowerLinesAtTile(x, y) {
  */
 function findAllWaterPipesAtTile(x, y) {
   return state.waterPipes.filter(
-    (p) =>
-      (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y),
+    (p) => (p.from.x === x && p.from.y === y) || (p.to.x === x && p.to.y === y),
   );
 }
 
@@ -679,7 +688,13 @@ function collectDemolishTargets(x, y) {
  * hide buildings that don't need that utility (alpha 0) and fade the rest.
  */
 const NO_WATER_BUILDING_TYPES = ["wind_turbine", "water_tower", "road"];
-const NO_POWER_BUILDING_TYPES = ["wind_turbine", "coal_plant", "nuclear_plant", "power_plant", "road"];
+const NO_POWER_BUILDING_TYPES = [
+  "wind_turbine",
+  "coal_plant",
+  "nuclear_plant",
+  "power_plant",
+  "road",
+];
 
 function applyInfraFade(buildType) {
   const scene = state.sceneLayer;
@@ -695,7 +710,10 @@ function applyInfraFade(buildType) {
     return;
   }
 
-  const skipTypes = buildType === "water_pipe" ? NO_WATER_BUILDING_TYPES : NO_POWER_BUILDING_TYPES;
+  const skipTypes =
+    buildType === "water_pipe"
+      ? NO_WATER_BUILDING_TYPES
+      : NO_POWER_BUILDING_TYPES;
   scene.alpha = 1;
   for (const child of scene.children) {
     if (child._buildingType) {
@@ -729,8 +747,10 @@ function showDemolishPicker(targets, screenX, screenY) {
   const rect = picker.getBoundingClientRect();
   let left = screenX;
   let top = screenY;
-  if (left + rect.width > window.innerWidth - pad) left = window.innerWidth - pad - rect.width;
-  if (top + rect.height > window.innerHeight - pad) top = window.innerHeight - pad - rect.height;
+  if (left + rect.width > window.innerWidth - pad)
+    left = window.innerWidth - pad - rect.width;
+  if (top + rect.height > window.innerHeight - pad)
+    top = window.innerHeight - pad - rect.height;
   if (left < pad) left = pad;
   if (top < pad) top = pad;
   picker.style.left = `${left}px`;
@@ -757,7 +777,11 @@ function showDemolishPicker(targets, screenX, screenY) {
       closeDemolishPicker();
     }
   };
-  setTimeout(() => document.addEventListener("pointerdown", demolishPickerOutsideHandler), 0);
+  setTimeout(
+    () =>
+      document.addEventListener("pointerdown", demolishPickerOutsideHandler),
+    0,
+  );
 
   // ESC key
   demolishPickerEscHandler = (e) => {
@@ -1029,7 +1053,9 @@ function handleTileHover(x, y, globalPos) {
           const tx = x + dx;
           const ty = y + dy;
           if (tx >= GRID_SIZE || ty >= GRID_SIZE) continue;
-          const occupied = isTileOccupied(tx, ty, state.selectedBuildType) || isTileWater(tx, ty);
+          const occupied =
+            isTileOccupied(tx, ty, state.selectedBuildType) ||
+            isTileWater(tx, ty);
           const color = occupied ? 0xff0000 : COLORS.selected;
           const highlight = drawHighlight(tx, ty, color, true);
           container.addChild(highlight);
@@ -1161,7 +1187,7 @@ function updateDragTooltip(globalPos) {
 
   const totalCost = validCount * costPer;
 
-  badge.innerHTML = `${validCount} tile${validCount !== 1 ? 's' : ''} &middot; <span class="cost">$${Math.ceil(totalCost).toLocaleString()}</span>`;
+  badge.innerHTML = `${validCount} tile${validCount !== 1 ? "s" : ""} &middot; <span class="cost">$${Math.ceil(totalCost).toLocaleString()}</span>`;
   badge.style.display = "block";
   badge.style.left = `${globalPos.x + 15}px`;
   badge.style.top = `${globalPos.y - 35}px`;
@@ -1314,13 +1340,28 @@ function showBuildingInfo(building) {
   if (waterEl)
     waterEl.textContent = NO_WATER_TYPES.includes(building.type)
       ? "Not Required"
-      : building.hasWater ? "Connected" : "No Water";
+      : building.hasWater
+        ? "Connected"
+        : "No Water";
   const wasteEl = document.getElementById("building-waste");
-  const NO_WASTE_TYPES = ["wind_turbine", "water_tower", "road", "power_plant", "coal_plant", "nuclear_plant", "park", "plaza", "garbage_depot", "city_hall"];
+  const NO_WASTE_TYPES = [
+    "wind_turbine",
+    "water_tower",
+    "road",
+    "power_plant",
+    "coal_plant",
+    "nuclear_plant",
+    "park",
+    "plaza",
+    "garbage_depot",
+    "city_hall",
+  ];
   if (wasteEl)
     wasteEl.textContent = NO_WASTE_TYPES.includes(building.type)
       ? "Not Required"
-      : building.hasWaste ? "Collected" : "No Collection";
+      : building.hasWaste
+        ? "Collected"
+        : "No Collection";
   const garbageEl = document.getElementById("building-garbage");
   if (garbageEl) {
     const gl = building.garbageLevel || 0;
@@ -1332,7 +1373,8 @@ function showBuildingInfo(building) {
       garbageEl.style.color = "#4ecdc4";
     } else {
       garbageEl.textContent = `${gl}/100`;
-      garbageEl.style.color = gl > 70 ? "#ff6b6b" : gl > 40 ? "#ffa500" : "#ffd700";
+      garbageEl.style.color =
+        gl > 70 ? "#ff6b6b" : gl > 40 ? "#ffa500" : "#ffd700";
     }
   }
   if (ownerEl)
@@ -1350,70 +1392,85 @@ function showBuildingInfo(building) {
   if (upgradeEl && checklistEl && tipsEl && densityCurEl) {
     if (ZONE_TYPES.includes(building.type)) {
       upgradeEl.style.display = "block";
-      checklistEl.innerHTML = '<span style="color:#888;font-size:11px">Loading...</span>';
+      checklistEl.innerHTML =
+        '<span style="color:#888;font-size:11px">Loading...</span>';
       tipsEl.innerHTML = "";
       densityCurEl.textContent = building.density || 1;
 
-      api.getUpgradeInfo(building.id).then(data => {
-        if (data.error) {
-          checklistEl.innerHTML = "";
-          upgradeEl.style.display = "none";
-          return;
-        }
+      api
+        .getUpgradeInfo(building.id)
+        .then((data) => {
+          if (data.error) {
+            checklistEl.innerHTML = "";
+            upgradeEl.style.display = "none";
+            return;
+          }
 
-        densityCurEl.textContent = `${data.currentDensity} / ${data.maxDensity}`;
+          densityCurEl.textContent = `${data.currentDensity} / ${data.maxDensity}`;
 
-        if (data.nextDensity === null) {
-          checklistEl.innerHTML = '<div style="color:#4ecdc4;font-size:12px;padding:2px 0">✅ Maximum density reached</div>';
-          tipsEl.innerHTML = "";
-          return;
-        }
+          if (data.nextDensity === null) {
+            checklistEl.innerHTML =
+              '<div style="color:#4ecdc4;font-size:12px;padding:2px 0">✅ Maximum density reached</div>';
+            tipsEl.innerHTML = "";
+            return;
+          }
 
-        // Render checklist
-        const reqs = data.requirements;
-        const rows = [
-          { ...reqs.powered },
-          { ...reqs.road },
-          { ...reqs.demand, current: `${reqs.demand.current} / ${reqs.demand.required}` },
-          { ...reqs.landValue, current: `${reqs.landValue.current} / ${reqs.landValue.required}` },
-        ];
-        if (reqs.gridAlign && reqs.gridAlign.required !== "N/A") {
-          rows.push({ ...reqs.gridAlign });
-        }
+          // Render checklist
+          const reqs = data.requirements;
+          const rows = [
+            { ...reqs.powered },
+            { ...reqs.road },
+            {
+              ...reqs.demand,
+              current: `${reqs.demand.current} / ${reqs.demand.required}`,
+            },
+            {
+              ...reqs.landValue,
+              current: `${reqs.landValue.current} / ${reqs.landValue.required}`,
+            },
+          ];
+          if (reqs.gridAlign && reqs.gridAlign.required !== "N/A") {
+            rows.push({ ...reqs.gridAlign });
+          }
 
-        checklistEl.innerHTML = rows.map(r => {
-          const icon = r.met ? "✅" : "❌";
-          const color = r.met ? "#4ecdc4" : "#ff6b6b";
-          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:1px 0">
+          checklistEl.innerHTML = rows
+            .map((r) => {
+              const icon = r.met ? "✅" : "❌";
+              const color = r.met ? "#4ecdc4" : "#ff6b6b";
+              return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:1px 0">
             <span>${icon} ${r.label}</span>
             <span style="color:${color}">${r.current}</span>
           </div>`;
-        }).join("");
+            })
+            .join("");
 
-        // Land value breakdown if land value not met
-        if (!reqs.landValue.met && data.landValueBreakdown) {
-          const b = data.landValueBreakdown;
-          const parts = [];
-          parts.push(`Base: ${b.base}`);
-          if (b.road) parts.push(`Road: +${b.road}`);
-          if (b.parks) parts.push(`Parks: +${b.parks}`);
-          if (b.services) parts.push(`Services: +${b.services}`);
-          if (b.water) parts.push(`Water: +${b.water}`);
-          if (b.pollution) parts.push(`Pollution: ${b.pollution}`);
-          if (b.distancePenalty) parts.push(`Distance: ${b.distancePenalty}`);
-          checklistEl.innerHTML += `<div style="font-size:10px;color:#777;margin-top:2px;padding-left:20px">${parts.join(" · ")}</div>`;
-        }
+          // Land value breakdown if land value not met
+          if (!reqs.landValue.met && data.landValueBreakdown) {
+            const b = data.landValueBreakdown;
+            const parts = [];
+            parts.push(`Base: ${b.base}`);
+            if (b.road) parts.push(`Road: +${b.road}`);
+            if (b.parks) parts.push(`Parks: +${b.parks}`);
+            if (b.services) parts.push(`Services: +${b.services}`);
+            if (b.water) parts.push(`Water: +${b.water}`);
+            if (b.pollution) parts.push(`Pollution: ${b.pollution}`);
+            if (b.distancePenalty) parts.push(`Distance: ${b.distancePenalty}`);
+            checklistEl.innerHTML += `<div style="font-size:10px;color:#777;margin-top:2px;padding-left:20px">${parts.join(" · ")}</div>`;
+          }
 
-        // Tips
-        if (data.tips && data.tips.length > 0) {
-          tipsEl.innerHTML = data.tips.map(t => `<div>💡 ${t}</div>`).join("");
-        } else {
-          tipsEl.innerHTML = "";
-        }
-      }).catch(() => {
-        checklistEl.innerHTML = "";
-        upgradeEl.style.display = "none";
-      });
+          // Tips
+          if (data.tips && data.tips.length > 0) {
+            tipsEl.innerHTML = data.tips
+              .map((t) => `<div>💡 ${t}</div>`)
+              .join("");
+          } else {
+            tipsEl.innerHTML = "";
+          }
+        })
+        .catch(() => {
+          checklistEl.innerHTML = "";
+          upgradeEl.style.display = "none";
+        });
     } else {
       upgradeEl.style.display = "none";
       checklistEl.innerHTML = "";
@@ -1445,12 +1502,21 @@ function updateTooltip(x, y, globalPos) {
   const buildType = state.selectedBuildType;
 
   // Show cost badge for single-placement buildings (park, police, hospital, etc.)
-  if (badge && globalPos && buildType && buildType !== "demolish" && !DRAG_TYPES.includes(buildType) && state.gameConfig) {
+  if (
+    badge &&
+    globalPos &&
+    buildType &&
+    buildType !== "demolish" &&
+    !DRAG_TYPES.includes(buildType) &&
+    state.gameConfig
+  ) {
     const cost = state.gameConfig.costs?.[buildType];
     if (cost !== undefined) {
       let hint = "";
-      if (buildType === "water_tower") hint = '<br><span style="font-size:10px;color:#00aaff">Must be adjacent to water</span>';
-      badge.innerHTML = `${buildType.replace(/_/g, ' ')} &middot; <span class="cost">$${Math.ceil(cost).toLocaleString()}</span>${hint}`;
+      if (buildType === "water_tower")
+        hint =
+          '<br><span style="font-size:10px;color:#00aaff">Must be adjacent to water</span>';
+      badge.innerHTML = `${buildType.replace(/_/g, " ")} &middot; <span class="cost">$${Math.ceil(cost).toLocaleString()}</span>${hint}`;
       badge.style.display = "block";
       badge.style.left = `${globalPos.x + 15}px`;
       badge.style.top = `${globalPos.y - 35}px`;
@@ -1650,7 +1716,10 @@ function setupBuildMenu() {
         const popoverWidth = powerPopover.offsetWidth;
         let left = rect.left + rect.width / 2 - popoverWidth / 2;
         // Clamp to viewport
-        left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
+        left = Math.max(
+          8,
+          Math.min(left, window.innerWidth - popoverWidth - 8),
+        );
         powerPopover.style.left = `${left}px`;
         powerPopover.style.bottom = `${window.innerHeight - rect.top + 10}px`;
       }
@@ -1658,7 +1727,11 @@ function setupBuildMenu() {
 
     // Close popover on outside click
     document.addEventListener("click", (e) => {
-      if (!powerPopover.contains(e.target) && e.target !== powerTrigger && !powerTrigger.contains(e.target)) {
+      if (
+        !powerPopover.contains(e.target) &&
+        e.target !== powerTrigger &&
+        !powerTrigger.contains(e.target)
+      ) {
         powerPopover.classList.remove("open");
       }
     });
@@ -1668,7 +1741,7 @@ function setupBuildMenu() {
   document.addEventListener("keydown", (e) => {
     // Don't handle shortcuts when typing in inputs
     if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-    
+
     if (e.key === "Escape") {
       // Close power popover
       if (powerPopover) powerPopover.classList.remove("open");
@@ -1690,7 +1763,7 @@ function setupBuildMenu() {
         console.log("[MoltCity] Build type deselected");
       }
     }
-    
+
     // P key - Open layers popup
     if (e.key === "p" || e.key === "P") {
       if (typeof window.openPopup === "function") {
@@ -1797,7 +1870,7 @@ function drawHeatmapTile(container, x, y, color, level) {
   graphics.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
   graphics.closePath();
   graphics.endFill();
-  graphics.zIndex = (x + y) * GRID_SIZE + x;
+  graphics.zIndex = (x + y) * NUM_LAYERS;
   container.addChild(graphics);
 }
 
@@ -1863,7 +1936,9 @@ async function renderPollutionLayer() {
     state.worldContainer.addChild(container);
     state.setPollutionLayer(container);
     state.setOverlayLayer("pollution", container);
-    console.log(`[Layers] Rendered ${data.pollutionMap.length} pollution tiles`);
+    console.log(
+      `[Layers] Rendered ${data.pollutionMap.length} pollution tiles`,
+    );
   } catch (err) {
     console.error("[Layers] Failed to load pollution map:", err);
     showToast("Failed to load pollution data", true);
@@ -1896,7 +1971,9 @@ async function renderCoverageLayer(type) {
 
     state.worldContainer.addChild(container);
     state.setOverlayLayer(type, container);
-    console.log(`[Layers] Rendered ${data.coverageMap.length} ${type} coverage tiles`);
+    console.log(
+      `[Layers] Rendered ${data.coverageMap.length} ${type} coverage tiles`,
+    );
   } catch (err) {
     console.error(`[Layers] Failed to load ${type} coverage:`, err);
     showToast(`Failed to load ${LAYER_LABELS[type]} data`, true);

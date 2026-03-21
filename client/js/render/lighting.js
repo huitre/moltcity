@@ -257,8 +257,8 @@ export function createBuildingLights() {
       halo.width = 32;
       halo.height = 30;
       halo.tint = color;
-      halo.alpha = 0.5;
-      halo.blendMode = PIXI.BLEND_MODES.ADD;
+      halo.alpha = 0.3;
+      halo.blendMode = PIXI.BLEND_MODES.LUMINOSITY;
       bldgGlow.addChild(halo);
 
       // Erase sprite — punches a hole in the night overlay

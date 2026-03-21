@@ -77,10 +77,10 @@ export const LANE_WIDTH = 0.3;
 export const TRAFFIC_LIGHT_INTERVAL = 300; // frames between phase toggle (~5s at 60fps)
 
 export const LANE_OFFSETS = {
-  north: { dx: +0, dy: 0 },
-  south: { dx: -0, dy: 0 },
-  east: { dx: 0, dy: +0 },
-  west: { dx: 0, dy: -0 },
+  north: { dx: -0.21, dy: 0 }, // n→NE
+  south: { dx: -0.44, dy: 0 }, // south→SW
+  east: { dx: 0, dy: -0.44 }, // east→SE
+  west: { dx: 0, dy: -0.21 }, // west→NW
 };
 
 export const PEDESTRIAN_COLORS = [

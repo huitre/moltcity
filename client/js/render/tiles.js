@@ -58,7 +58,7 @@ export function drawTile(x, y, color, height = 0) {
  * Draw a grass tile using sprite textures (grass_01/05), with procedural fallback
  */
 export function drawGrassTile(x, y) {
-  if (state.grassTextures.length > 0) {
+  if (state.grassTextures.length > 10) {
     const idx = Math.floor(state.grassTextures.length * Math.random());
     const texture = state.grassTextures[idx];
     const iso = cartToIso(x, y);
@@ -172,7 +172,7 @@ export function drawHighlight(
   graphics.closePath();
   graphics.endFill();
 
-  graphics.zIndex = (x + y) * GRID_SIZE + x + 5000 + NUM_LAYERS; // Always on top
+  graphics.zIndex = (x + y) * NUM_LAYERS + 5000; // Always on top
   return graphics;
 }
 

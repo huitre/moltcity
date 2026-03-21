@@ -53,13 +53,9 @@ function vehicleZIndex(vehicle) {
   // when moving toward the camera / into shallower tiles)
   const ax = Math.floor(vehicle.x);
   const ay = Math.floor(vehicle.y);
-  const tx = vehicle.targetX;
-  const ty = vehicle.targetY;
-  const actualZ = (ax + ay) * GRID_SIZE + ax + NUM_LAYERS + LAYER_ROAD + 1;
-  const lookZ = (lx + ly) * GRID_SIZE + lx + NUM_LAYERS + LAYER_ROAD + 1;
-  const targetZ = (tx + ty) * GRID_SIZE + tx + NUM_LAYERS + LAYER_ROAD + 1;
-  // return Math.max(actualZ, lookZ, targetZ);
-  return (ax + ay) * GRID_SIZE + ax + NUM_LAYERS + LAYER_VEHICLE;
+  const actualZ = (ax + ay) * NUM_LAYERS + LAYER_VEHICLE;
+  return actualZ;
+  return Math.max(actualZ, lookZ, targetZ);
 }
 
 function applyVehicleScale(sprite, config) {
@@ -270,6 +266,22 @@ export function animateVehicles(delta) {
     vehicle.laneX += (vehicle.targetLaneX - vehicle.laneX) * 0.15;
     vehicle.laneY += (vehicle.targetLaneY - vehicle.laneY) * 0.15;
 
+    // Force stop override from debug panel
+    if (vehicle.forceStop) {
+      vehicle.stopped = true;
+      // Still update sprite position but skip all movement
+      const iso = cartToIso(
+        vehicle.x + vehicle.laneX,
+        vehicle.y + vehicle.laneY,
+      );
+      vehicle.sprite.x = iso.x;
+      vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
+      if (!vehicle.zIndexLocked) {
+        vehicle.sprite.zIndex = vehicleZIndex(vehicle);
+      }
+      continue;
+    }
+
     // Check for vehicle ahead (queuing)
     const ahead = getVehicleAhead(vehicle, animatedVehicles);
     let speedScale = 1.0;
@@ -379,7 +391,9 @@ export function animateVehicles(delta) {
     const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
     vehicle.sprite.x = iso.x;
     vehicle.sprite.y = iso.y + TILE_HEIGHT / 2;
-    vehicle.sprite.zIndex = vehicleZIndex(vehicle);
+    if (!vehicle.zIndexLocked) {
+      vehicle.sprite.zIndex = vehicleZIndex(vehicle);
+    }
 
     // Remove if out of bounds
     if (
@@ -489,9 +503,15 @@ export function handleVehicleClick(globalPos) {
 /**
  * Show vehicle debug in admin panel's Vehicles tab
  */
+// Currently inspected vehicle (for live updates)
+let debugVehicle = null;
+let debugTickerId = null;
+
 function showVehicleDebug(vehicle) {
   const panel = document.getElementById("admin-panel");
   if (!panel) return;
+
+  debugVehicle = vehicle;
 
   const config = vehicle.vehicleData.config;
   const size = config.size || { width: 24, height: 24 };
@@ -503,14 +523,34 @@ function showVehicleDebug(vehicle) {
   if (content) content.style.display = "block";
 
   document.getElementById("vd-type").textContent = vehicle.vehicleType;
-  document.getElementById("vd-direction").textContent =
-    vehicle.dir + " → " + CARDINAL_TO_ISO[vehicle.dir];
-  document.getElementById("vd-texture-size").textContent =
-    vehicle.sprite.texture.width + "x" + vehicle.sprite.texture.height;
-  document.getElementById("vd-position").textContent =
-    "(" + Math.floor(vehicle.x) + ", " + Math.floor(vehicle.y) + ")";
 
+  // --- Clone all interactive inputs to remove old listeners ---
+  const cloneIds = [
+    "vd-zindex",
+    "vd-zindex-lock",
+    "vd-force-stop",
+    "vd-lane-x",
+    "vd-lane-y",
+    "vd-width",
+    "vd-height",
+    "vd-rotation",
+  ];
+  for (const id of cloneIds) {
+    const el = document.getElementById(id);
+    if (el) {
+      const clone = el.cloneNode(true);
+      el.replaceWith(clone);
+    }
+  }
+
+  // --- Populate static fields ---
   const zIndexInput = document.getElementById("vd-zindex");
+  const zIndexLock = document.getElementById("vd-zindex-lock");
+  const forceStop = document.getElementById("vd-force-stop");
+  const laneXInput = document.getElementById("vd-lane-x");
+  const laneYInput = document.getElementById("vd-lane-y");
+  const laneXVal = document.getElementById("vd-lane-x-val");
+  const laneYVal = document.getElementById("vd-lane-y-val");
   const widthInput = document.getElementById("vd-width");
   const heightInput = document.getElementById("vd-height");
   const rotationInput = document.getElementById("vd-rotation");
@@ -519,32 +559,65 @@ function showVehicleDebug(vehicle) {
   const rotationVal = document.getElementById("vd-rotation-val");
 
   zIndexInput.value = vehicle.sprite.zIndex;
+  zIndexLock.checked = !!vehicle.zIndexLocked;
+  document.getElementById("vd-zindex-lock-label").textContent =
+    vehicle.zIndexLocked ? "locked" : "auto";
+  forceStop.checked = !!vehicle.forceStop;
+  document.getElementById("vd-force-stop-label").textContent = vehicle.forceStop
+    ? "forced"
+    : "off";
+  laneXInput.value = vehicle.targetLaneX;
+  laneYInput.value = vehicle.targetLaneY;
+  laneXVal.textContent = vehicle.targetLaneX.toFixed(2);
+  laneYVal.textContent = vehicle.targetLaneY.toFixed(2);
   widthInput.value = size.width;
   heightInput.value = size.height;
   widthVal.textContent = size.width;
   heightVal.textContent = size.height;
-
   const rotDeg = Math.round((vehicle.sprite.rotation * 180) / Math.PI);
   rotationInput.value = rotDeg;
   rotationVal.textContent = rotDeg + "\u00B0";
 
-  // Remove old listeners by cloning
-  const newZIndex = zIndexInput.cloneNode(true);
-  const newWidth = widthInput.cloneNode(true);
-  const newHeight = heightInput.cloneNode(true);
-  const newRotation = rotationInput.cloneNode(true);
-  zIndexInput.replaceWith(newZIndex);
-  widthInput.replaceWith(newWidth);
-  heightInput.replaceWith(newHeight);
-  rotationInput.replaceWith(newRotation);
+  // --- Event listeners ---
 
-  newZIndex.addEventListener("input", () => {
-    const v = parseInt(newZIndex.value);
-    if (!isNaN(v)) vehicle.sprite.zIndex = v;
+  // Z-Index
+  zIndexInput.addEventListener("input", () => {
+    const v = parseInt(zIndexInput.value);
+    if (!isNaN(v)) {
+      vehicle.zIndexLocked = true;
+      zIndexLock.checked = true;
+      document.getElementById("vd-zindex-lock-label").textContent = "locked";
+      vehicle.sprite.zIndex = v;
+    }
+  });
+  zIndexLock.addEventListener("change", () => {
+    vehicle.zIndexLocked = zIndexLock.checked;
+    document.getElementById("vd-zindex-lock-label").textContent =
+      zIndexLock.checked ? "locked" : "auto";
   });
 
-  newWidth.addEventListener("input", () => {
-    const v = parseInt(newWidth.value);
+  // Force stop
+  forceStop.addEventListener("change", () => {
+    vehicle.forceStop = forceStop.checked;
+    document.getElementById("vd-force-stop-label").textContent =
+      forceStop.checked ? "forced" : "off";
+  });
+
+  // Lane offset
+  laneXInput.addEventListener("input", () => {
+    const v = parseFloat(laneXInput.value);
+    laneXVal.textContent = v.toFixed(2);
+    vehicle.targetLaneX = v;
+  });
+  laneYInput.addEventListener("input", () => {
+    const v = parseFloat(laneYInput.value);
+    laneYVal.textContent = v.toFixed(2);
+    vehicle.targetLaneY = v;
+  });
+
+  // Size
+  widthInput.addEventListener("input", () => {
+    const v = parseInt(widthInput.value);
     widthVal.textContent = v;
     config.size.width = v;
     for (const av of state.animatedVehicles) {
@@ -553,9 +626,8 @@ function showVehicleDebug(vehicle) {
       }
     }
   });
-
-  newHeight.addEventListener("input", () => {
-    const v = parseInt(newHeight.value);
+  heightInput.addEventListener("input", () => {
+    const v = parseInt(heightInput.value);
     heightVal.textContent = v;
     config.size.height = v;
     for (const av of state.animatedVehicles) {
@@ -565,8 +637,9 @@ function showVehicleDebug(vehicle) {
     }
   });
 
-  newRotation.addEventListener("input", () => {
-    const deg = parseInt(newRotation.value);
+  // Rotation
+  rotationInput.addEventListener("input", () => {
+    const deg = parseInt(rotationInput.value);
     rotationVal.textContent = deg + "\u00B0";
     const rad = (deg * Math.PI) / 180;
     DIR_ROTATION[vehicle.dir] = rad;
@@ -576,6 +649,49 @@ function showVehicleDebug(vehicle) {
       }
     }
   });
+
+  // --- Live update ticker (updates read-only fields each frame) ---
+  if (debugTickerId) cancelAnimationFrame(debugTickerId);
+  function tick() {
+    if (debugVehicle !== vehicle) return; // another vehicle selected
+    if (!state.animatedVehicles.includes(vehicle)) {
+      // Vehicle was removed
+      document.getElementById("vd-status").textContent = "despawned";
+      document.getElementById("vd-status").style.color = "#ff6b6b";
+      debugVehicle = null;
+      return;
+    }
+    // Position & direction
+    document.getElementById("vd-position").textContent =
+      "(" + vehicle.x.toFixed(1) + ", " + vehicle.y.toFixed(1) + ")";
+    document.getElementById("vd-target").textContent =
+      "(" + vehicle.targetX + ", " + vehicle.targetY + ") " + vehicle.dir;
+    document.getElementById("vd-direction").textContent =
+      vehicle.dir + " → " + CARDINAL_TO_ISO[vehicle.dir];
+    // Status
+    const statusEl = document.getElementById("vd-status");
+    if (vehicle.forceStop) {
+      statusEl.textContent = "force-stopped";
+      statusEl.style.color = "#e74c3c";
+    } else if (vehicle.stopped) {
+      statusEl.textContent = "stopped";
+      statusEl.style.color = "#f39c12";
+    } else {
+      statusEl.textContent = "moving";
+      statusEl.style.color = "#2ecc71";
+    }
+    // Z-index (update if not focused and not locked)
+    const zi = document.getElementById("vd-zindex");
+    if (zi && document.activeElement !== zi && !vehicle.zIndexLocked) {
+      zi.value = vehicle.sprite.zIndex;
+    }
+    // Texture size (can change with direction)
+    document.getElementById("vd-texture-size").textContent =
+      vehicle.sprite.texture.width + "x" + vehicle.sprite.texture.height;
+
+    debugTickerId = requestAnimationFrame(tick);
+  }
+  debugTickerId = requestAnimationFrame(tick);
 
   // Open admin panel on Vehicles tab
   panel.style.display = "block";
@@ -601,6 +717,6 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_ROAD + 1;
+  g.zIndex = (x + y) * NUM_LAYERS + LAYER_VEHICLE;
   return g;
 }

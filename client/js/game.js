@@ -229,8 +229,7 @@ export function render() {
 
     const g = new PIXI.Graphics();
     drawTrafficLightDots(g, parcel.x, parcel.y, connections);
-    g.zIndex =
-      (parcel.x + parcel.y) * GRID_SIZE + parcel.x + NUM_LAYERS + LAYER_POLE;
+    g.zIndex = (parcel.x + parcel.y) * NUM_LAYERS + LAYER_POLE;
     sceneLayer.addChild(g);
 
     state.trafficLightGraphics.push({
@@ -341,8 +340,7 @@ export function render() {
       const iso = cartToIso(road.rx + offX, road.ry + offY);
       sprite.x = iso.x;
       sprite.y = iso.y;
-      sprite.zIndex =
-        (road.rx + road.ry) * GRID_SIZE + road.rx + NUM_LAYERS + LAYER_VEHICLE;
+      sprite.zIndex = (road.rx + road.ry) * NUM_LAYERS + LAYER_VEHICLE;
       sceneLayer.addChild(sprite);
     }
   }
@@ -392,7 +390,7 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
   sprite.x = spriteIsoX;
   sprite.y = spriteIsoY;
-  sprite.zIndex = D_mid * GRID_SIZE + midX + NUM_LAYERS + LAYER_BUILDING;
+  sprite.zIndex = D_mid * NUM_LAYERS + LAYER_BUILDING;
   if (!powered) sprite.tint = 0x888888;
   return sprite;
 }
@@ -506,7 +504,7 @@ function drawBuilding(x, y, building) {
   const wallHeight = 20 + floors * 15;
   const cx = iso.x;
   const baseY = iso.y + TILE_HEIGHT;
-  const zIdx = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_BUILDING;
+  const zIdx = (x + y) * NUM_LAYERS + LAYER_BUILDING;
 
   switch (type) {
     case "house":
@@ -547,11 +545,7 @@ function drawStatusIcons(x, y, building) {
   const fw = building.width || 1;
   const fh = building.height || 1;
   const iso = cartToIso(x + (fw - 1) / 2, y + (fh - 1) / 2);
-  const zIdx =
-    (x + y + fw + fh - 2) * GRID_SIZE +
-    (x + fw - 1) +
-    NUM_LAYERS +
-    LAYER_STATUS;
+  const zIdx = (x + y + fw + fh - 2) * NUM_LAYERS + LAYER_STATUS;
 
   const container = new PIXI.Container();
   container.x = iso.x;
@@ -772,8 +766,7 @@ function drawPowerLine(from, to) {
   poleFrom.lineStyle(3, 0x8b4513);
   poleFrom.moveTo(isoFrom.x - TILE_WIDTH / 2, isoFrom.y + TILE_HEIGHT / 2);
   poleFrom.lineTo(fromPoleX, fromPoleTopY);
-  poleFrom.zIndex =
-    (from.x + from.y) * GRID_SIZE + from.x + NUM_LAYERS + LAYER_POLE;
+  poleFrom.zIndex = (from.x + from.y) * NUM_LAYERS + LAYER_POLE;
   parts.push(poleFrom);
 
   // Pole + wire at "to" tile (wire sorts with deeper endpoint)
@@ -784,7 +777,7 @@ function drawPowerLine(from, to) {
   poleTo.lineStyle(1, 0x333333);
   poleTo.moveTo(fromPoleX, fromPoleTopY);
   poleTo.quadraticCurveTo(midX, midY, toPoleX, toPoleTopY);
-  poleTo.zIndex = (to.x + to.y) * GRID_SIZE + to.x + NUM_LAYERS + LAYER_POLE;
+  poleTo.zIndex = (to.x + to.y) * NUM_LAYERS + LAYER_POLE;
   parts.push(poleTo);
 
   return parts;
@@ -808,10 +801,7 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max(
-    (from.x + from.y) * GRID_SIZE + from.x,
-    (to.x + to.y) * GRID_SIZE + to.x,
-  );
+  g.zIndex = Math.max((from.x + from.y) * NUM_LAYERS, (to.x + to.y) * NUM_LAYERS);
   return g;
 }
 
@@ -832,7 +822,7 @@ function drawAgent(x, y) {
   g.drawCircle(iso.x, iso.y + TILE_HEIGHT / 2 - 15, 4);
   g.endFill();
 
-  g.zIndex = (x + y) * GRID_SIZE + x + NUM_LAYERS + LAYER_VEHICLE;
+  g.zIndex = (x + y) * NUM_LAYERS + LAYER_VEHICLE;
   return g;
 }
 
