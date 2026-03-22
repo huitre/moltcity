@@ -2,11 +2,12 @@
 // MOLTCITY - Night Lighting System
 // ============================================
 //
-// Two-layer approach:
-//   1. ERASE layer (inside nightLayer) — white discs that punch holes in the
-//      dark overlay, revealing the lit scene underneath.
-//   2. ADD layer (on app.stage above nightLayer) — warm-colored discs for the
-//      visible glow tint the player sees.
+// Multiplicative lighting via manual RenderTexture:
+//   - All light sprites (window panes, halos, streetlight halos) live in
+//     a standalone lightsContainer whose transform is synced with worldContainer.
+//   - Each frame, lightsContainer is rendered to a RenderTexture with the
+//     ambient clearColor, then displayed via a MULTIPLY sprite over the scene.
+//   - Light sprites use ADD blend — additive on top of the ambient clearColor.
 
 import {
   TILE_WIDTH,
@@ -27,8 +28,8 @@ export const LIGHTING_CONFIG = {
     haloRadius: 8,
     haloColor: 0xffdd88,
     haloAlpha: 0.12,
-    eraseRadius: 30, // larger radius for scene illumination
-    eraseAlpha: 0.2, // how much darkness to remove (0-1)
+    eraseRadius: 30, // radius for scene illumination
+    eraseAlpha: 0.2, // how much to brighten (ADD intensity)
     poleHeight: 40,
     poleColor: 0x444444,
     bulbColor: 0xffffcc,
@@ -87,13 +88,11 @@ function drawParallelogram(g, x, y, w, h, face, color, alpha) {
   const skew = w * WIN_SKEW;
   g.beginFill(color, alpha);
   if (face === "right") {
-    // Right wall: left edge higher, right edge lower
     g.moveTo(x - w / 2, y - h / 2);
     g.lineTo(x + w / 2, y - h / 2 + skew);
     g.lineTo(x + w / 2, y + h / 2 + skew);
     g.lineTo(x - w / 2, y + h / 2);
   } else {
-    // Left wall: left edge lower, right edge higher
     g.moveTo(x - w / 2, y - h / 2 + skew);
     g.lineTo(x + w / 2, y - h / 2);
     g.lineTo(x + w / 2, y + h / 2);
@@ -103,56 +102,46 @@ function drawParallelogram(g, x, y, w, h, face, color, alpha) {
   g.endFill();
 }
 
-// ERASE layer — lives inside nightLayer, punches holes in the dark overlay
-let eraseContainer = null;
-// ADD layer — lives on stage above nightLayer, provides warm glow color
-let glowContainer = null;
+// Standalone container for all light sprites (NOT in worldContainer).
+// Transform synced with worldContainer each frame.
+let lightsContainer = null;
 
 let streetlightSprites = [];
 let buildingLightSprites = [];
 
-// Map from building.id → glow Container (consumed by game.js to group with building sprite)
-export const buildingGlowMap = new Map();
+// Current clear color for the lighting texture [r, g, b, a]
+let currentClearColor = [1, 1, 1, 1];
 
 /**
- * Initialize both lighting containers.
- * - eraseContainer goes into nightLayer (ERASE blend to reveal scene)
- * - glowContainer goes on app.stage above nightLayer (ADD blend for warm tint)
+ * Initialize the standalone lights container.
  */
 export function initLighting() {
-  // Clean up previous containers
-  if (eraseContainer) eraseContainer.parent?.removeChild(eraseContainer);
-  if (glowContainer) glowContainer.parent?.removeChild(glowContainer);
+  if (lightsContainer) lightsContainer.destroy({ children: true });
 
-  // ERASE container inside nightLayer — punches holes in the dark overlay
-  eraseContainer = new PIXI.Container();
-  eraseContainer.blendMode = PIXI.BLEND_MODES.ERASE;
-  if (state.nightLayer) {
-    state.nightLayer.addChild(eraseContainer);
-  }
-
-  // ADD container on stage — warm glow color on top
-  glowContainer = new PIXI.Container();
-  glowContainer.zIndex = 20001;
-  glowContainer.alpha = 0;
-  glowContainer.blendMode = PIXI.BLEND_MODES.ADD;
-  state.app.stage.addChild(glowContainer);
-
+  lightsContainer = new PIXI.Container();
   streetlightSprites = [];
   buildingLightSprites = [];
 }
 
 /**
+ * Set the ambient clear color for the lighting texture.
+ * Called by ambient.js each frame based on the day/night cycle.
+ */
+export function setLightingClearColor(r, g, b) {
+  currentClearColor[0] = r;
+  currentClearColor[1] = g;
+  currentClearColor[2] = b;
+  currentClearColor[3] = 1;
+}
+
+/**
  * Create streetlight halos for street_lamp buildings.
- * The lamp sprite itself is rendered by the normal building pipeline (drawBuilding).
  */
 export function createStreetlights() {
-  if (!eraseContainer) initLighting();
+  if (!lightsContainer) initLighting();
 
-  // Clear existing streetlight sprites from both containers
   for (const sl of streetlightSprites) {
-    sl.eraseDisc.parent?.removeChild(sl.eraseDisc);
-    sl.glowDisc.parent?.removeChild(sl.glowDisc);
+    sl.halo.parent?.removeChild(sl.halo);
   }
   streetlightSprites = [];
 
@@ -163,7 +152,6 @@ export function createStreetlights() {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
 
-    // Offset toward adjacent road (match drawBuilding sidewalk logic)
     let offX = 0,
       offY = 0;
     const shift = 0.35;
@@ -181,14 +169,12 @@ export function createStreetlights() {
       parcel.y,
     );
     streetlightSprites.push(streetlight);
-    eraseContainer.addChild(streetlight.eraseDisc);
-    glowContainer.addChild(streetlight.glowDisc);
+    lightsContainer.addChild(streetlight.halo);
   }
 }
 
 /**
- * Create a dual-layer halo for a streetlight.
- * Returns an erase disc (reveals scene) and a glow disc (warm color).
+ * Create a halo sprite for a streetlight (ADD blend).
  */
 function createStreetlightHalo(screenX, screenY, tileX, tileY) {
   const cfg = LIGHTING_CONFIG.streetlight;
@@ -198,42 +184,29 @@ function createStreetlightHalo(screenX, screenY, tileX, tileY) {
   const bulbY = -lampHeight + 2;
   const tex = createGlowTexture(32);
 
-  // --- ERASE disc: gradient sprite that punches a hole in the darkness ---
-  const eraseDisc = new PIXI.Sprite(tex);
-  eraseDisc.anchor.set(0.5);
-  eraseDisc.x = baseX;
-  eraseDisc.y = baseY + bulbY;
-  eraseDisc.width = cfg.eraseRadius * 2;
-  eraseDisc.height = cfg.eraseRadius * 2;
-  eraseDisc.alpha = cfg.eraseAlpha;
+  const halo = new PIXI.Sprite(tex);
+  halo.anchor.set(0.5);
+  halo.x = baseX;
+  halo.y = baseY + bulbY;
+  halo.width = cfg.eraseRadius * 2;
+  halo.height = cfg.eraseRadius * 2;
+  halo.tint = cfg.haloColor;
+  halo.alpha = cfg.eraseAlpha;
+  halo.blendMode = PIXI.BLEND_MODES.ADD;
 
-  // --- GLOW disc: warm-colored gradient sprite (additive) ---
-  const glowDisc = new PIXI.Sprite(tex);
-  glowDisc.anchor.set(0.5);
-  glowDisc.x = baseX;
-  glowDisc.y = baseY + bulbY;
-  glowDisc.width = cfg.haloRadius * 2;
-  glowDisc.height = cfg.haloRadius * 2;
-  glowDisc.tint = cfg.haloColor;
-  glowDisc.alpha = cfg.haloAlpha;
-
-  return { eraseDisc, glowDisc, tileX, tileY };
+  return { halo, tileX, tileY };
 }
 
 /**
- * Create building window lights based on per-sprite "windows" data from sprites.json.
- * Buildings without a "windows" field in their sprite data get no window lights.
+ * Create building window lights based on per-sprite "windows" data.
  */
 export function createBuildingLights() {
-  if (!eraseContainer) initLighting();
+  if (!lightsContainer) initLighting();
 
-  // Clear existing building lights
   for (const bl of buildingLightSprites) {
-    bl.glowContainer.parent?.removeChild(bl.glowContainer);
-    bl.eraseContainer?.parent?.removeChild(bl.eraseContainer);
+    bl.container.parent?.removeChild(bl.container);
   }
   buildingLightSprites = [];
-  buildingGlowMap.clear();
 
   const { buildings, parcels } = state;
   const cfg = LIGHTING_CONFIG;
@@ -259,14 +232,11 @@ export function createBuildingLights() {
     const scaledW = sd.width * scale;
     const scaledH = sd.height * scale;
 
-    const bldgGlow = new PIXI.Container();
-    const bldgErase = new PIXI.Container(); // erase layer for night overlay
+    const bldgLightContainer = new PIXI.Container();
 
-    // Per-sprite window size (configurable from editor)
     const winW = sd.windowSize?.w || DEFAULT_WIN_W;
     const winH = sd.windowSize?.h || DEFAULT_WIN_H;
 
-    // Per-sprite tint: use windowTint if set, otherwise null (randomise per window)
     const spriteTint = sd.windowTint
       ? parseInt(sd.windowTint.replace("#", ""), 16)
       : null;
@@ -294,78 +264,79 @@ export function createBuildingLights() {
       halo.tint = color;
       halo.alpha = 0.15;
       halo.blendMode = PIXI.BLEND_MODES.ADD;
-      bldgGlow.addChild(halo);
+      bldgLightContainer.addChild(halo);
 
       // Parallelogram window pane (bright, warm color)
       const pane = new PIXI.Graphics();
       drawParallelogram(pane, windowX, windowY, winW, winH, face, color, 0.5);
       pane.blendMode = PIXI.BLEND_MODES.ADD;
-      bldgGlow.addChild(pane);
+      bldgLightContainer.addChild(pane);
 
-      // Erase parallelogram — punches a shaped hole in the night overlay
-      const erase = new PIXI.Graphics();
-      drawParallelogram(erase, windowX, windowY, winW + 4, winH + 3, face, 0xffffff, 0.5);
-      bldgErase.addChild(erase);
+      // Tight radial glow around the parallelogram (warm aura)
+      const aura = new PIXI.Sprite(tex);
+      aura.anchor.set(0.5);
+      aura.x = windowX;
+      aura.y = windowY;
+      aura.width = winW + 10;
+      aura.height = winH + 10;
+      aura.tint = color;
+      aura.alpha = 0.3;
+      aura.blendMode = PIXI.BLEND_MODES.ADD;
+      bldgLightContainer.addChild(aura);
     }
 
-    bldgGlow.x = iso.x;
-    bldgGlow.y = iso.y + TILE_HEIGHT / 2;
-    bldgErase.x = iso.x;
-    bldgErase.y = iso.y + TILE_HEIGHT / 2;
+    bldgLightContainer.x = iso.x;
+    bldgLightContainer.y = iso.y + TILE_HEIGHT / 2;
 
-    if (bldgGlow.children.length > 0) {
-      bldgGlow.alpha = 0;
-      bldgErase.alpha = 0;
-      eraseContainer.addChild(bldgErase);
+    if (bldgLightContainer.children.length > 0) {
+      bldgLightContainer.alpha = 0;
+      lightsContainer.addChild(bldgLightContainer);
       buildingLightSprites.push({
-        glowContainer: bldgGlow,
-        eraseContainer: bldgErase,
+        container: bldgLightContainer,
         building,
         parcel,
       });
-      // Store glow in map — game.js will group it with the building sprite
-      // into a single container so they z-sort together.
-      buildingGlowMap.set(building.id, bldgGlow);
     }
   }
 }
 
 /**
- * Update lighting intensity based on time of day.
- * Call this from updateDayNightOverlay.
+ * Update lighting intensity and render the lighting texture.
+ * Called each frame from updateDayNightOverlay.
  */
 export function updateLighting(nightAlpha) {
-  if (!eraseContainer || !glowContainer) return;
+  if (!lightsContainer) return;
 
-  // Sync both containers' transforms with worldContainer
-  const wc = state.worldContainer;
-  eraseContainer.x = wc.x;
-  eraseContainer.y = wc.y;
-  eraseContainer.scale.set(wc.scale.x, wc.scale.y);
-  glowContainer.x = wc.x;
-  glowContainer.y = wc.y;
-  glowContainer.scale.set(wc.scale.x, wc.scale.y);
+  const { app, worldContainer, lightingTexture } = state;
+  if (!app || !worldContainer || !lightingTexture) return;
+
+  // Sync lightsContainer transform with worldContainer (pan/zoom)
+  lightsContainer.x = worldContainer.x;
+  lightsContainer.y = worldContainer.y;
+  lightsContainer.scale.set(worldContainer.scale.x, worldContainer.scale.y);
 
   // Lights visible when it's dark (nightAlpha > 0.1)
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
   const alpha = Math.min(1, lightIntensity);
-  eraseContainer.alpha = alpha;
-  glowContainer.alpha = alpha; // streetlight glows only
 
-  // Building window glows live in sceneLayer — update alpha individually
+  // Building window lights — fade in as night falls
   for (const bl of buildingLightSprites) {
-    bl.glowContainer.alpha = alpha;
-    if (bl.eraseContainer) bl.eraseContainer.alpha = alpha;
+    bl.container.alpha = alpha;
   }
 
-  // Flicker effect for streetlights
+  // Streetlight halos — fade in + flicker
   const time = Date.now() * 0.001;
   for (let i = 0; i < streetlightSprites.length; i++) {
     const sl = streetlightSprites[i];
     const flicker = 0.9 + Math.sin(time * 3 + i * 2) * 0.1;
-    sl.eraseDisc.alpha = flicker;
-    sl.glowDisc.alpha = flicker;
+    sl.halo.alpha = alpha * flicker;
   }
+
+  // Render lights to the lighting texture with current ambient clear color
+  const renderer = app.renderer;
+  renderer.renderTexture.bind(lightingTexture);
+  renderer.renderTexture.clear(currentClearColor);
+  renderer.render(lightsContainer, { renderTexture: lightingTexture, clear: false });
 }
 
 /**
@@ -377,8 +348,8 @@ export function rebuildLights() {
 }
 
 /**
- * Get the glow container for debug access
+ * Get the lighting container for debug access
  */
 export function getLightingContainer() {
-  return glowContainer;
+  return lightsContainer;
 }

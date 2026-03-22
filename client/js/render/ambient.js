@@ -2,7 +2,7 @@
 // MOLTCITY - Ambient Effects (Clouds, Birds, Day/Night)
 // ============================================
 
-import { updateLighting } from "./lighting.js";
+import { updateLighting, setLightingClearColor } from "./lighting.js";
 
 import {
   CLOUD_COUNT,
@@ -30,7 +30,7 @@ function getSunsetSprite() {
       state.app.screen.height,
     );
     sunsetSprite.alpha = 0;
-    sunsetSprite.zIndex = 19999; // Just below dayNightOverlay (20000)
+    sunsetSprite.zIndex = 19998; // Below lightingSprite (19999) and dayNightOverlay (20000)
     state.app.stage.addChild(sunsetSprite);
   }
   // Resize to fill the screen, texture repeats naturally
@@ -286,17 +286,25 @@ export function updateDayNightOverlay() {
   const shadowsAlpha = lerp(prev[5], next[5], t);
   const birdsAlpha = lerp(prev[6], next[6], t);
 
-  // Main overlay — single full-screen tint
-  if (alpha > 0.001) {
-    dayNightOverlay.beginFill(color, alpha);
-    dayNightOverlay.drawRect(0, 0, width, height);
-    dayNightOverlay.endFill();
+  // Update lighting clear color — this replaces the full-screen color fill.
+  // Formula: component = 1 - alpha + alpha * (colorChannel / 255)
+  // Day (alpha=0) → [1,1,1,1] (MULTIPLY with white = no effect)
+  // Night (alpha>0) → tinted dark (scene darkened by MULTIPLY)
+  {
+    const r = ((color >> 16) & 0xff) / 255;
+    const g = ((color >> 8) & 0xff) / 255;
+    const b = (color & 0xff) / 255;
+    setLightingClearColor(
+      1 - alpha + alpha * r,
+      1 - alpha + alpha * g,
+      1 - alpha + alpha * b,
+    );
   }
 
   // Hide sunset sprite (replaced by smooth color interpolation)
   getSunsetSprite().alpha = 0;
 
-  // Stars
+  // Stars drawn on dayNightOverlay (above the lighting layer)
   if (starsAlpha > 0.01) {
     drawStars(dayNightOverlay, width, height, starsAlpha);
   }

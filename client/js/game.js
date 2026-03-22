@@ -44,7 +44,6 @@ import {
 import {
   initLighting,
   rebuildLights,
-  buildingGlowMap,
 } from "./render/lighting.js";
 
 let renderContainer = null;
@@ -250,28 +249,16 @@ export function render() {
     rebuildLights();
   }
 
-  // Draw buildings — group each building with its window glow into a render group
+  // Draw buildings — lights render separately via lighting texture
   statusIcons = [];
   for (const building of buildings) {
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (parcel) {
       const result = drawBuilding(parcel.x, parcel.y, building);
       const parts = Array.isArray(result) ? result : [result];
-      const glow = buildingGlowMap.get(building.id);
-
-      if (glow) {
-        // Render group: building sprite(s) + glow in one container for z-sort
-        const group = new PIXI.Container();
-        for (const part of parts) group.addChild(part);
-        group.addChild(glow);
-        group.zIndex = parts[0].zIndex;
-        group._buildingType = building.type;
-        sceneLayer.addChild(group);
-      } else {
-        for (const part of parts) {
-          part._buildingType = building.type;
-          sceneLayer.addChild(part);
-        }
+      for (const part of parts) {
+        part._buildingType = building.type;
+        sceneLayer.addChild(part);
       }
 
       const icons = drawStatusIcons(parcel.x, parcel.y, building);

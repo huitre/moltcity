@@ -65,6 +65,7 @@ export async function initPixi() {
   });
 
   document.getElementById("game-container").appendChild(app.view);
+  app.stage.sortableChildren = true;
   state.setApp(app);
 
   // Skybox background — added first so it renders behind everything
@@ -116,17 +117,25 @@ export async function initPixi() {
   worldContainer.addChild(cloudsContainer);
   state.setCloudsContainer(cloudsContainer);
 
-  // Night layer — framebuffer-backed container so ERASE blend can punch
-  // holes in the dark overlay, revealing the lit scene underneath
-  const nightLayer = new PIXI.Container();
-  nightLayer.zIndex = 20000;
-  nightLayer.filters = [new PIXI.filters.AlphaFilter(1)];
-  app.stage.addChild(nightLayer);
-  state.setNightLayer(nightLayer);
+  // Lighting render texture — light sprites are rendered here each frame,
+  // then displayed with MULTIPLY blend over the scene.
+  // The clear color acts as ambient darkness; lights drawn with ADD brighten it.
+  const lightingTexture = PIXI.RenderTexture.create({
+    width: app.screen.width,
+    height: app.screen.height,
+    resolution: window.devicePixelRatio || 1,
+  });
+  const lightingSprite = new PIXI.Sprite(lightingTexture);
+  lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+  lightingSprite.zIndex = 19999;
+  app.stage.addChild(lightingSprite);
+  state.setLightingTexture(lightingTexture);
+  state.setLightingSprite(lightingSprite);
 
-  // Day/night overlay (screen space - stays fixed on screen, above everything)
+  // Day/night overlay — stars only (screen space, above the lighting layer)
   const dayNightOverlay = new PIXI.Graphics();
-  nightLayer.addChild(dayNightOverlay);
+  dayNightOverlay.zIndex = 20000;
+  app.stage.addChild(dayNightOverlay);
   state.setDayNightOverlay(dayNightOverlay);
 
   // Tilt-shift filter for miniature/diorama effect (screen-size adaptive)
@@ -140,6 +149,8 @@ export async function initPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     skybox.width = app.screen.width;
     skybox.height = app.screen.height;
+    // Resize lighting render texture to match new screen size
+    lightingTexture.resize(app.screen.width, app.screen.height);
     updateTiltShift(); // Recalculate tilt-shift for new screen size
   });
 
