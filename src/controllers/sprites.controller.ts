@@ -95,7 +95,7 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
       source: string;
       category: string | null;
       index: number | null;
-      updates: { width?: number; height?: number; anchor?: { x: number; y: number }; windows?: { x: number; y: number }[]; windowTint?: string | null };
+      updates: { width?: number; height?: number; anchor?: { x: number; y: number }; windows?: { x: number; y: number; face?: string }[]; windowTint?: string | null; windowSize?: { w: number; h: number }; size?: { width: number; height: number }; laneOffsets?: Record<string, { dx: number; dy: number }>; rotation?: Record<string, number> };
     };
 
     if (!source || !updates) {
@@ -143,6 +143,10 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
         entry.windowTint = updates.windowTint;
       }
     }
+    if (updates.windowSize !== undefined) entry.windowSize = updates.windowSize;
+    if (updates.size !== undefined) entry.size = updates.size;
+    if (updates.laneOffsets !== undefined) entry.laneOffsets = updates.laneOffsets;
+    if (updates.rotation !== undefined) entry.rotation = updates.rotation;
 
     fs.writeFileSync(spritesJsonPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
 

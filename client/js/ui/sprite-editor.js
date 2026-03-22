@@ -117,20 +117,28 @@ function drawWindowPreview() {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(winImage, offsetX, offsetY, imgW, imgH);
 
-  // Window markers
+  // Window markers — draw small parallelograms to show face
   for (let i = 0; i < windows.length; i++) {
     const p = normToCanvas(windows[i].x, windows[i].y);
     const isActive = i === winDragIdx;
+    const face = windows[i].face || 'left';
+    const pw = 10, ph = 6;
+    const skew = pw * 0.5;
 
-    // Outer glow
+    // Parallelogram shape
     ctx.beginPath();
-    ctx.arc(p.cx, p.cy, MARKER_RADIUS + 2, 0, Math.PI * 2);
-    ctx.fillStyle = isActive ? 'rgba(78, 205, 196, 0.3)' : 'rgba(255, 221, 119, 0.2)';
-    ctx.fill();
-
-    // Marker circle
-    ctx.beginPath();
-    ctx.arc(p.cx, p.cy, MARKER_RADIUS, 0, Math.PI * 2);
+    if (face === 'right') {
+      ctx.moveTo(p.cx - pw / 2, p.cy - ph / 2);
+      ctx.lineTo(p.cx + pw / 2, p.cy - ph / 2 + skew);
+      ctx.lineTo(p.cx + pw / 2, p.cy + ph / 2 + skew);
+      ctx.lineTo(p.cx - pw / 2, p.cy + ph / 2);
+    } else {
+      ctx.moveTo(p.cx - pw / 2, p.cy - ph / 2 + skew);
+      ctx.lineTo(p.cx + pw / 2, p.cy - ph / 2);
+      ctx.lineTo(p.cx + pw / 2, p.cy + ph / 2);
+      ctx.lineTo(p.cx - pw / 2, p.cy + ph / 2 + skew);
+    }
+    ctx.closePath();
     ctx.fillStyle = isActive ? '#4ecdc4' : 'rgba(255, 221, 119, 0.85)';
     ctx.fill();
     ctx.strokeStyle = '#fff';
@@ -142,7 +150,7 @@ function drawWindowPreview() {
     ctx.font = 'bold 7px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(i.toString(), p.cx, p.cy);
+    ctx.fillText(i.toString(), p.cx, p.cy + (face === 'left' ? skew / 2 : skew / 2));
   }
 
   // Update count badge
@@ -164,12 +172,14 @@ function rebuildWindowList() {
     const row = document.createElement('div');
     row.className = 'se-win-entry';
 
+    const face = win.face || 'left';
     row.innerHTML = `
       <span class="se-win-idx">#${i}</span>
       <label>X</label>
       <input type="number" min="0" max="1" step="0.01" value="${win.x}" data-idx="${i}" data-axis="x" />
       <label>Y</label>
       <input type="number" min="0" max="1" step="0.01" value="${win.y}" data-idx="${i}" data-axis="y" />
+      <button class="se-win-face" data-idx="${i}" title="Toggle face (left/right wall)">${face === 'right' ? 'R' : 'L'}</button>
       <button class="se-win-delete" data-idx="${i}">&times;</button>
     `;
     list.appendChild(row);
@@ -183,6 +193,18 @@ function rebuildWindowList() {
       const v = parseFloat(input.value);
       if (!isNaN(v) && v >= 0 && v <= 1 && windows[idx]) {
         windows[idx][axis] = Math.round(v * 100) / 100;
+        drawWindowPreview();
+        scheduleRender();
+      }
+    });
+  });
+
+  list.querySelectorAll('.se-win-face').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      if (windows[idx]) {
+        windows[idx].face = windows[idx].face === 'right' ? 'left' : 'right';
+        btn.textContent = windows[idx].face === 'right' ? 'R' : 'L';
         drawWindowPreview();
         scheduleRender();
       }
@@ -245,6 +267,7 @@ function initWindowCanvas() {
     } else {
       const norm = canvasToNorm(pos.x, pos.y);
       if (norm) {
+        norm.face = 'left';
         spriteData.windows.push(norm);
         winDragIdx = spriteData.windows.length - 1;
         drawWindowPreview();
@@ -380,6 +403,7 @@ function populateEditor(resolved) {
     zIndex: currentSprites.length > 0 ? currentSprites[0].zIndex : 0,
     windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
     windowTint: spriteData.windowTint || null,
+    windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
   };
 
   // Populate read-only fields
@@ -502,12 +526,15 @@ function populateEditor(resolved) {
         anchor: { x: spriteData.anchor.x, y: spriteData.anchor.y },
       };
       if (spriteData.windows) {
-        updates.windows = spriteData.windows.map(w => ({ x: w.x, y: w.y }));
+        updates.windows = spriteData.windows.map(w => ({ x: w.x, y: w.y, face: w.face || 'left' }));
       }
       if (spriteData.windowTint) {
         updates.windowTint = spriteData.windowTint;
       } else {
         updates.windowTint = null; // remove from sprites.json
+      }
+      if (spriteData.windowSize) {
+        updates.windowSize = spriteData.windowSize;
       }
       await updateSpriteConfig({ source, category, index, updates });
       statusEl.textContent = 'Saved!';
@@ -519,6 +546,7 @@ function populateEditor(resolved) {
         anchorY: spriteData.anchor.y,
         windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
         windowTint: spriteData.windowTint || null,
+        windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
       };
     } catch (err) {
       statusEl.textContent = `Error: ${err.message}`;
@@ -545,6 +573,18 @@ function populateEditor(resolved) {
     } else {
       delete spriteData.windowTint;
     }
+
+    if (originalValues.windowSize) {
+      spriteData.windowSize = { ...originalValues.windowSize };
+    } else {
+      delete spriteData.windowSize;
+    }
+
+    // Reset window size UI
+    const winWReset = document.getElementById('se-win-w');
+    const winHReset = document.getElementById('se-win-h');
+    if (winWReset) winWReset.value = originalValues.windowSize?.w || 8;
+    if (winHReset) winHReset.value = originalValues.windowSize?.h || 5;
 
     // Reset tint picker UI
     const tintPickerReset = document.getElementById('se-win-tint');
@@ -606,6 +646,30 @@ function populateEditor(resolved) {
     tintPicker.addEventListener('input', () => {
       if (!tintRandom.checked) {
         spriteData.windowTint = tintPicker.value;
+      }
+    });
+  }
+
+  // Window size inputs
+  replaceWithClone('se-win-w');
+  replaceWithClone('se-win-h');
+  const winWInput = document.getElementById('se-win-w');
+  const winHInput = document.getElementById('se-win-h');
+  if (winWInput && winHInput) {
+    winWInput.value = spriteData.windowSize?.w || 8;
+    winHInput.value = spriteData.windowSize?.h || 5;
+    winWInput.addEventListener('input', () => {
+      const v = parseInt(winWInput.value);
+      if (v > 0) {
+        if (!spriteData.windowSize) spriteData.windowSize = { w: 8, h: 5 };
+        spriteData.windowSize.w = v;
+      }
+    });
+    winHInput.addEventListener('input', () => {
+      const v = parseInt(winHInput.value);
+      if (v > 0) {
+        if (!spriteData.windowSize) spriteData.windowSize = { w: 8, h: 5 };
+        spriteData.windowSize.h = v;
       }
     });
   }

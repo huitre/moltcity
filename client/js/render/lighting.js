@@ -41,6 +41,11 @@ export const LIGHTING_CONFIG = {
 // Street lamp texture scale
 const STREETLAMP_SCALE = 14 / 142; // target height 14px
 
+// Default window parallelogram size (pixels in screen space)
+const DEFAULT_WIN_W = 8;
+const DEFAULT_WIN_H = 5;
+const WIN_SKEW = 0.5; // iso 2:1 ratio
+
 // Cached radial-gradient glow texture (white center → transparent edge)
 let glowTexture = null;
 
@@ -71,6 +76,31 @@ function createGlowTexture(radius = 32) {
   ctx.fillRect(0, 0, size, size);
   glowTexture = PIXI.Texture.from(canvas);
   return glowTexture;
+}
+
+/**
+ * Draw an isometric parallelogram (window pane shape) on a PIXI.Graphics.
+ * face="left" → left wall (top slopes up-right),
+ * face="right" → right wall (top slopes down-right).
+ */
+function drawParallelogram(g, x, y, w, h, face, color, alpha) {
+  const skew = w * WIN_SKEW;
+  g.beginFill(color, alpha);
+  if (face === "right") {
+    // Right wall: left edge higher, right edge lower
+    g.moveTo(x - w / 2, y - h / 2);
+    g.lineTo(x + w / 2, y - h / 2 + skew);
+    g.lineTo(x + w / 2, y + h / 2 + skew);
+    g.lineTo(x - w / 2, y + h / 2);
+  } else {
+    // Left wall: left edge lower, right edge higher
+    g.moveTo(x - w / 2, y - h / 2 + skew);
+    g.lineTo(x + w / 2, y - h / 2);
+    g.lineTo(x + w / 2, y + h / 2);
+    g.lineTo(x - w / 2, y + h / 2 + skew);
+  }
+  g.closePath();
+  g.endFill();
 }
 
 // ERASE layer — lives inside nightLayer, punches holes in the dark overlay
@@ -232,6 +262,10 @@ export function createBuildingLights() {
     const bldgGlow = new PIXI.Container();
     const bldgErase = new PIXI.Container(); // erase layer for night overlay
 
+    // Per-sprite window size (configurable from editor)
+    const winW = sd.windowSize?.w || DEFAULT_WIN_W;
+    const winH = sd.windowSize?.h || DEFAULT_WIN_H;
+
     // Per-sprite tint: use windowTint if set, otherwise null (randomise per window)
     const spriteTint = sd.windowTint
       ? parseInt(sd.windowTint.replace("#", ""), 16)
@@ -245,30 +279,32 @@ export function createBuildingLights() {
       const anchor = sd.anchor || { x: 0.5, y: 1 };
       const windowX = (pos.x - anchor.x) * scaledW;
       const windowY = (pos.y - anchor.y) * scaledH;
+      const face = pos.face || "left";
       const color =
         spriteTint ??
         cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
 
-      // Radial gradient halo sprite (additive blend)
+      // Soft radial glow behind the parallelogram (light spill)
       const halo = new PIXI.Sprite(tex);
       halo.anchor.set(0.5);
       halo.x = windowX;
       halo.y = windowY;
-      halo.width = 32;
-      halo.height = 30;
+      halo.width = winW * 3;
+      halo.height = winH * 3;
       halo.tint = color;
-      halo.alpha = 0.3;
-      halo.blendMode = PIXI.BLEND_MODES.LUMINOSITY;
+      halo.alpha = 0.15;
+      halo.blendMode = PIXI.BLEND_MODES.ADD;
       bldgGlow.addChild(halo);
 
-      // Erase sprite — punches a hole in the night overlay
-      const erase = new PIXI.Sprite(tex);
-      erase.anchor.set(0.5);
-      erase.x = windowX;
-      erase.y = windowY;
-      erase.width = 20;
-      erase.height = 18;
-      erase.alpha = 0.15;
+      // Parallelogram window pane (bright, warm color)
+      const pane = new PIXI.Graphics();
+      drawParallelogram(pane, windowX, windowY, winW, winH, face, color, 0.5);
+      pane.blendMode = PIXI.BLEND_MODES.ADD;
+      bldgGlow.addChild(pane);
+
+      // Erase parallelogram — punches a shaped hole in the night overlay
+      const erase = new PIXI.Graphics();
+      drawParallelogram(erase, windowX, windowY, winW + 4, winH + 3, face, 0xffffff, 0.5);
       bldgErase.addChild(erase);
     }
 

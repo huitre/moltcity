@@ -19,6 +19,7 @@ import {
   LAYER_VEHICLE,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
+import { updateSpriteConfig } from "../api.js";
 import * as state from "../state.js";
 import {
   getRoadAt,
@@ -28,14 +29,48 @@ import {
   hasRoadAtFast,
 } from "./roads.js";
 
-// Correction angle: sprites use 45° steps, iso roads are at ~27° (atan(0.5))
-const ISO_CORRECTION = Math.PI / 4 - Math.atan(0.94);
-const DIR_ROTATION = {
-  north: ISO_CORRECTION,
-  east: -ISO_CORRECTION,
-  south: ISO_CORRECTION,
-  west: -ISO_CORRECTION,
-};
+// Default rotation (degrees) — used when vehicle config has no per-type rotation
+const ISO_CORRECTION_DEG = 2;
+const DEFAULT_ROTATION = { NE: ISO_CORRECTION_DEG, SE: -ISO_CORRECTION_DEG, SW: ISO_CORRECTION_DEG, NW: -ISO_CORRECTION_DEG };
+
+/** Apply lane offset config to all vehicles of the same type (live preview) */
+function applyLaneToAll(vehicleType, config) {
+  for (const v of state.animatedVehicles) {
+    if (v.vehicleType !== vehicleType) continue;
+    const isoDir = CARDINAL_TO_ISO[v.dir];
+    const off = config.laneOffsets?.[isoDir];
+    if (off) {
+      v.targetLaneX = off.dx;
+      v.targetLaneY = off.dy;
+    }
+  }
+}
+
+/** Apply rotation config to all vehicles of the same type (live preview) */
+function applyRotationToAll(vehicleType, config) {
+  for (const v of state.animatedVehicles) {
+    if (v.vehicleType !== vehicleType) continue;
+    const isoDir = CARDINAL_TO_ISO[v.dir];
+    const deg = config.rotation?.[isoDir] ?? DEFAULT_ROTATION[isoDir] ?? 0;
+    v.sprite.rotation = (deg * Math.PI) / 180;
+  }
+}
+
+/** Get lane offset {dx,dy} for a vehicle's cardinal direction from its per-type config */
+function getVehicleLaneOffset(vehicle, cardinalDir) {
+  const isoDir = CARDINAL_TO_ISO[cardinalDir];
+  const cfg = vehicle.vehicleData.config;
+  if (cfg.laneOffsets?.[isoDir]) return cfg.laneOffsets[isoDir];
+  return LANE_OFFSETS[cardinalDir];
+}
+
+/** Get rotation in radians for a vehicle's cardinal direction from its per-type config */
+function getVehicleRotation(vehicle, cardinalDir) {
+  const isoDir = CARDINAL_TO_ISO[cardinalDir];
+  const cfg = vehicle.vehicleData.config;
+  const deg = cfg.rotation?.[isoDir] ?? DEFAULT_ROTATION[isoDir] ?? 0;
+  return (deg * Math.PI) / 180;
+}
 
 /**
  * Compute vehicle z-index as the max of current tile and target tile.
@@ -71,9 +106,11 @@ function applyVehicleScale(sprite, config) {
  * Returns true if the tile is an intersection and the vehicle's axis is blocked
  */
 function isRedLight(dir, tileX, tileY) {
-  if (state.roadPositionSet.size === 0) return false;
-  const connections = getConnectionCount(tileX, tileY);
-  if (connections < 3) return false; // not an intersection
+  // Only stop at tiles that actually have a traffic light placed
+  const hasLight = state.trafficLightGraphics.some(
+    (tl) => tl.x === tileX && tl.y === tileY,
+  );
+  if (!hasLight) return false;
 
   const isNS = dir === "north" || dir === "south";
   // Phase 0 = N/S green, Phase 1 = E/W green
@@ -190,19 +227,23 @@ export function spawnVehicle(vehicleTypes) {
   const texture = vehicleData.directions.get(CARDINAL_TO_ISO[dir]);
   if (!texture) return;
 
-  // Lane offset for initial direction
-  const laneOff = LANE_OFFSETS[dir];
+  // Lane offset for initial direction (per-type from config)
+  const isoDir = CARDINAL_TO_ISO[dir];
+  const laneOff = vehicleData.config.laneOffsets?.[isoDir] || LANE_OFFSETS[dir];
   const spawnX = parcel.x + 0.5 + laneOff.dx;
   const spawnY = parcel.y + 0.5 + laneOff.dy;
 
   // Skip spawn if another vehicle is too close
   if (isSpawnBlocked(spawnX, spawnY)) return;
 
+  // Rotation from per-type config (degrees → radians)
+  const rotDeg = vehicleData.config.rotation?.[isoDir] ?? DEFAULT_ROTATION[isoDir] ?? 0;
+
   const sprite = new PIXI.Sprite(texture);
   sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
   sprite.anchor.set(0.5, 1);
   applyVehicleScale(sprite, vehicleData.config);
-  sprite.rotation = DIR_ROTATION[dir] || 0;
+  sprite.rotation = (rotDeg * Math.PI) / 180;
 
   const vehicle = {
     x: parcel.x + 0.5,
@@ -282,23 +323,30 @@ export function animateVehicles(delta) {
       continue;
     }
 
-    // Check for vehicle ahead (queuing)
+    // Check for vehicle ahead (queuing) — only fully stop if it's at a red light
     const ahead = getVehicleAhead(vehicle, animatedVehicles);
     let speedScale = 1.0;
     if (ahead) {
       const adx = ahead.x - vehicle.x;
       const ady = ahead.y - vehicle.y;
       const aheadDist = Math.sqrt(adx * adx + ady * ady);
-      if (ahead.stopped || aheadDist < FOLLOW_DISTANCE * 0.5) {
+      // Only queue behind a vehicle that is stopped at a traffic light
+      if (ahead.stoppedAtLight && aheadDist < FOLLOW_DISTANCE * 0.5) {
         speedScale = 0;
         vehicle.stopped = true;
-      } else {
-        // Slow down proportionally as we approach
-        speedScale = Math.max(0.1, aheadDist / FOLLOW_DISTANCE);
+        vehicle.stoppedAtLight = true; // propagate: we're also queued at a light
+      } else if (aheadDist < FOLLOW_DISTANCE * 0.3) {
+        // Too close — slow down to avoid overlap, but don't fully stop
+        speedScale = Math.max(0.15, aheadDist / (FOLLOW_DISTANCE * 0.3));
         vehicle.stopped = false;
+        vehicle.stoppedAtLight = false;
+      } else {
+        vehicle.stopped = false;
+        vehicle.stoppedAtLight = false;
       }
     } else {
       vehicle.stopped = false;
+      vehicle.stoppedAtLight = false;
     }
 
     // Move toward target
@@ -347,6 +395,7 @@ export function animateVehicles(delta) {
       if (isRedLight(nextDir, nextTileX, nextTileY)) {
         // Stay at tile center - keep target at current tile so we re-check next frame
         vehicle.stopped = true;
+        vehicle.stoppedAtLight = true;
         vehicle.targetX = currentX;
         vehicle.targetY = currentY;
       } else {
@@ -354,9 +403,10 @@ export function animateVehicles(delta) {
         vehicle.targetX = currentX + DIR_VECTORS[nextDir].dx;
         vehicle.targetY = currentY + DIR_VECTORS[nextDir].dy;
         vehicle.stopped = false;
+        vehicle.stoppedAtLight = false;
 
-        // Update lane offset for new direction
-        const laneOff = LANE_OFFSETS[nextDir];
+        // Update lane offset for new direction (per-type)
+        const laneOff = getVehicleLaneOffset(vehicle, nextDir);
         vehicle.targetLaneX = laneOff.dx;
         vehicle.targetLaneY = laneOff.dy;
 
@@ -369,7 +419,7 @@ export function animateVehicles(delta) {
           vehicle.sprite.texture.baseTexture.scaleMode =
             PIXI.SCALE_MODES.NEAREST;
           applyVehicleScale(vehicle.sprite, vehicle.vehicleData.config);
-          vehicle.sprite.rotation = DIR_ROTATION[nextDir] || 0;
+          vehicle.sprite.rotation = getVehicleRotation(vehicle, nextDir);
         }
       }
     } else if (!vehicle.stopped) {
@@ -378,6 +428,7 @@ export function animateVehicles(delta) {
       const nextTileY = Math.round(vehicle.targetY);
       if (dist < 0.7 && isRedLight(vehicle.dir, nextTileX, nextTileY)) {
         vehicle.stopped = true;
+        vehicle.stoppedAtLight = true;
       } else {
         // Move toward target with speed scaling (queuing)
         vehicle.effectiveSpeed = vehicle.speed * speedScale;
@@ -526,15 +577,13 @@ function showVehicleDebug(vehicle) {
 
   // --- Clone all interactive inputs to remove old listeners ---
   const cloneIds = [
-    "vd-zindex",
-    "vd-zindex-lock",
-    "vd-force-stop",
-    "vd-lane-x",
-    "vd-lane-y",
-    "vd-width",
-    "vd-height",
-    "vd-rotation",
+    "vd-zindex", "vd-zindex-lock", "vd-force-stop",
+    "vd-width", "vd-height", "vd-save",
   ];
+  const ISO_DIRS = ["NE", "SE", "SW", "NW"];
+  for (const d of ISO_DIRS) {
+    cloneIds.push(`vd-lo-${d}-dx`, `vd-lo-${d}-dy`, `vd-lo-${d}-rot`);
+  }
   for (const id of cloneIds) {
     const el = document.getElementById(id);
     if (el) {
@@ -543,20 +592,22 @@ function showVehicleDebug(vehicle) {
     }
   }
 
+  // Ensure config has per-type laneOffsets and rotation objects
+  if (!config.laneOffsets) config.laneOffsets = {};
+  if (!config.rotation) config.rotation = {};
+  for (const d of ISO_DIRS) {
+    if (!config.laneOffsets[d]) config.laneOffsets[d] = { dx: 0, dy: 0 };
+    if (config.rotation[d] === undefined) config.rotation[d] = DEFAULT_ROTATION[d] || 0;
+  }
+
   // --- Populate static fields ---
   const zIndexInput = document.getElementById("vd-zindex");
   const zIndexLock = document.getElementById("vd-zindex-lock");
   const forceStop = document.getElementById("vd-force-stop");
-  const laneXInput = document.getElementById("vd-lane-x");
-  const laneYInput = document.getElementById("vd-lane-y");
-  const laneXVal = document.getElementById("vd-lane-x-val");
-  const laneYVal = document.getElementById("vd-lane-y-val");
   const widthInput = document.getElementById("vd-width");
   const heightInput = document.getElementById("vd-height");
-  const rotationInput = document.getElementById("vd-rotation");
   const widthVal = document.getElementById("vd-width-val");
   const heightVal = document.getElementById("vd-height-val");
-  const rotationVal = document.getElementById("vd-rotation-val");
 
   zIndexInput.value = vehicle.sprite.zIndex;
   zIndexLock.checked = !!vehicle.zIndexLocked;
@@ -566,17 +617,34 @@ function showVehicleDebug(vehicle) {
   document.getElementById("vd-force-stop-label").textContent = vehicle.forceStop
     ? "forced"
     : "off";
-  laneXInput.value = vehicle.targetLaneX;
-  laneYInput.value = vehicle.targetLaneY;
-  laneXVal.textContent = vehicle.targetLaneX.toFixed(2);
-  laneYVal.textContent = vehicle.targetLaneY.toFixed(2);
   widthInput.value = size.width;
   heightInput.value = size.height;
   widthVal.textContent = size.width;
   heightVal.textContent = size.height;
-  const rotDeg = Math.round((vehicle.sprite.rotation * 180) / Math.PI);
-  rotationInput.value = rotDeg;
-  rotationVal.textContent = rotDeg + "\u00B0";
+
+  // --- Populate and wire lane offset / rotation grid ---
+  for (const d of ISO_DIRS) {
+    const dxEl = document.getElementById(`vd-lo-${d}-dx`);
+    const dyEl = document.getElementById(`vd-lo-${d}-dy`);
+    const rotEl = document.getElementById(`vd-lo-${d}-rot`);
+    dxEl.value = config.laneOffsets[d].dx;
+    dyEl.value = config.laneOffsets[d].dy;
+    rotEl.value = config.rotation[d];
+
+    // When changed, update config and apply to all vehicles of this type
+    dxEl.addEventListener("input", () => {
+      config.laneOffsets[d].dx = parseFloat(dxEl.value) || 0;
+      applyLaneToAll(vehicle.vehicleType, config);
+    });
+    dyEl.addEventListener("input", () => {
+      config.laneOffsets[d].dy = parseFloat(dyEl.value) || 0;
+      applyLaneToAll(vehicle.vehicleType, config);
+    });
+    rotEl.addEventListener("input", () => {
+      config.rotation[d] = parseFloat(rotEl.value) || 0;
+      applyRotationToAll(vehicle.vehicleType, config);
+    });
+  }
 
   // --- Event listeners ---
 
@@ -603,18 +671,6 @@ function showVehicleDebug(vehicle) {
       forceStop.checked ? "forced" : "off";
   });
 
-  // Lane offset
-  laneXInput.addEventListener("input", () => {
-    const v = parseFloat(laneXInput.value);
-    laneXVal.textContent = v.toFixed(2);
-    vehicle.targetLaneX = v;
-  });
-  laneYInput.addEventListener("input", () => {
-    const v = parseFloat(laneYInput.value);
-    laneYVal.textContent = v.toFixed(2);
-    vehicle.targetLaneY = v;
-  });
-
   // Size
   widthInput.addEventListener("input", () => {
     const v = parseInt(widthInput.value);
@@ -637,16 +693,23 @@ function showVehicleDebug(vehicle) {
     }
   });
 
-  // Rotation
-  rotationInput.addEventListener("input", () => {
-    const deg = parseInt(rotationInput.value);
-    rotationVal.textContent = deg + "\u00B0";
-    const rad = (deg * Math.PI) / 180;
-    DIR_ROTATION[vehicle.dir] = rad;
-    for (const av of state.animatedVehicles) {
-      if (av.dir === vehicle.dir) {
-        av.sprite.rotation = rad;
-      }
+  // Save button
+  document.getElementById("vd-save").addEventListener("click", async () => {
+    const statusEl = document.getElementById("vd-save-status");
+    statusEl.textContent = "Saving...";
+    statusEl.style.color = "#4ecdc4";
+    try {
+      const updates = {
+        size: config.size,
+        laneOffsets: config.laneOffsets,
+        rotation: config.rotation,
+      };
+      await updateSpriteConfig({ source: "vehicles", category: vehicle.vehicleType, index: null, updates });
+      statusEl.textContent = "Saved!";
+      statusEl.style.color = "#2ecc71";
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.style.color = "#ff6b6b";
     }
   });
 
