@@ -86,8 +86,9 @@ const windowGlowTextures = {};
  * Create a parallelogram-shaped gradient texture for window lights.
  * Bright opaque center → soft transparent edges, with downward light spill.
  */
-function createWindowGlowTexture(face = "left") {
-  if (windowGlowTextures[face]) return windowGlowTextures[face];
+function createWindowGlowTexture(face = "left", skewVal = WIN_SKEW) {
+  const cacheKey = `${face}-${skewVal}`;
+  if (windowGlowTextures[cacheKey]) return windowGlowTextures[cacheKey];
 
   const size = 64;
   const canvas = document.createElement("canvas");
@@ -98,7 +99,7 @@ function createWindowGlowTexture(face = "left") {
   // Parallelogram proportions within the canvas
   const pW = size * 0.3;
   const pH = size * 0.22;
-  const skew = pW * WIN_SKEW;
+  const skew = pW * skewVal;
   const cx = size / 2;
   const cy = size / 2;
 
@@ -129,8 +130,8 @@ function createWindowGlowTexture(face = "left") {
   ctx.fill();
   ctx.restore();
 
-  windowGlowTextures[face] = PIXI.Texture.from(canvas);
-  return windowGlowTextures[face];
+  windowGlowTextures[cacheKey] = PIXI.Texture.from(canvas);
+  return windowGlowTextures[cacheKey];
 }
 
 // Standalone container for all light sprites (NOT in worldContainer).
@@ -269,6 +270,7 @@ export function createBuildingLights() {
 
     const winW = sd.windowSize?.w || DEFAULT_WIN_W;
     const winH = sd.windowSize?.h || DEFAULT_WIN_H;
+    const winSkew = sd.windowSkew ?? WIN_SKEW;
 
     const spriteTint = sd.windowTint
       ? parseInt(sd.windowTint.replace("#", ""), 16)
@@ -286,7 +288,7 @@ export function createBuildingLights() {
         cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
 
       // Single parallelogram gradient sprite (edges → transparent center + glow)
-      const winTex = createWindowGlowTexture(face);
+      const winTex = createWindowGlowTexture(face, winSkew);
       const winSprite = new PIXI.Sprite(winTex);
       winSprite.anchor.set(0.5);
       winSprite.x = windowX;

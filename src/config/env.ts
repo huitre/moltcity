@@ -3,6 +3,26 @@
 // ============================================
 
 import { z } from 'zod';
+import { readFileSync, readdirSync } from 'fs';
+
+// Auto-load Google OAuth credentials from client_secret JSON if present
+function loadGoogleClientSecret() {
+  try {
+    const files = readdirSync('.').filter(f => f.startsWith('client_secret') && f.endsWith('.json'));
+    if (files.length === 0) return;
+    const data = JSON.parse(readFileSync(files[0], 'utf-8'));
+    const creds = data.web || data.installed;
+    if (!creds) return;
+    if (!process.env.GOOGLE_CLIENT_ID) process.env.GOOGLE_CLIENT_ID = creds.client_id;
+    if (!process.env.GOOGLE_CLIENT_SECRET) process.env.GOOGLE_CLIENT_SECRET = creds.client_secret;
+    if (!process.env.GOOGLE_CALLBACK_URL) {
+      process.env.GOOGLE_CALLBACK_URL = `http://localhost:${process.env.PORT || 3000}/auth/google/callback`;
+    }
+    console.log('[OAuth] Loaded Google credentials from', files[0]);
+  } catch { /* ignore missing/malformed file */ }
+}
+
+loadGoogleClientSecret();
 
 // Custom coerce helpers
 const coerceNumber = z.coerce.number();
