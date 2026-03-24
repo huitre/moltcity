@@ -5,6 +5,7 @@
 import * as api from '../api.js';
 import * as state from '../state.js';
 import { render } from '../game.js';
+import { getWinSkew, setWinSkew, rebuildLights } from '../render/lighting.js';
 
 let selectedBuilding = null;
 
@@ -142,6 +143,81 @@ function initTiltShiftControls() {
   }
 }
 
+function initMaskControls() {
+  const cb = document.getElementById('mask-enabled');
+  if (cb) {
+    cb.checked = state.buildingMasksEnabled;
+    cb.addEventListener('change', () => {
+      state.setBuildingMasksEnabled(cb.checked);
+      render();
+    });
+  }
+}
+
+function initWindowLightControls() {
+  const slider = document.getElementById('win-skew');
+  const valSpan = document.getElementById('win-skew-val');
+  if (!slider) return;
+
+  slider.value = getWinSkew();
+  if (valSpan) valSpan.textContent = getWinSkew();
+
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    if (valSpan) valSpan.textContent = v;
+    setWinSkew(v);
+    rebuildLights();
+  });
+}
+
+function initOffsetSlider(id, getter, setter) {
+  const slider = document.getElementById(id);
+  const valSpan = document.getElementById(id + '-val');
+  if (!slider) return;
+
+  slider.value = getter();
+  if (valSpan) valSpan.textContent = getter();
+
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    if (valSpan) valSpan.textContent = v;
+    setter(v);
+    render();
+  });
+}
+
+const TL_DIRS = ['north', 'south', 'east', 'west'];
+
+function initOffsetControls() {
+  // Per-direction traffic light offsets
+  for (const dir of TL_DIRS) {
+    initOffsetSlider(`tl-${dir}-x`,
+      () => state.trafficLightOffsets[dir].x,
+      (v) => state.setTrafficLightOffset(dir, 'x', v));
+    initOffsetSlider(`tl-${dir}-y`,
+      () => state.trafficLightOffsets[dir].y,
+      (v) => state.setTrafficLightOffset(dir, 'y', v));
+  }
+  // Street lamp offsets
+  initOffsetSlider('sl-off-x', () => state.streetLampOffsetX, state.setStreetLampOffsetX);
+  initOffsetSlider('sl-off-y', () => state.streetLampOffsetY, state.setStreetLampOffsetY);
+}
+
+function populateOffsetControls() {
+  const set = (id, val) => {
+    const input = document.getElementById(id);
+    const valSpan = document.getElementById(id + '-val');
+    if (input) input.value = val;
+    if (valSpan) valSpan.textContent = val;
+  };
+  for (const dir of TL_DIRS) {
+    set(`tl-${dir}-x`, state.trafficLightOffsets[dir].x);
+    set(`tl-${dir}-y`, state.trafficLightOffsets[dir].y);
+  }
+  set('sl-off-x', state.streetLampOffsetX);
+  set('sl-off-y', state.streetLampOffsetY);
+}
+
 function populateTiltShiftTab() {
   const f = state.tiltShiftFilter;
   if (!f) return;
@@ -161,6 +237,13 @@ function populateTiltShiftTab() {
   if (cb) cb.checked = f.enabled;
 }
 
+function populateWindowLightTab() {
+  const slider = document.getElementById('win-skew');
+  const valSpan = document.getElementById('win-skew-val');
+  if (slider) slider.value = getWinSkew();
+  if (valSpan) valSpan.textContent = getWinSkew();
+}
+
 // ── Open / Close ───────────────────────────────
 
 export function openAdminPanel(tab) {
@@ -169,6 +252,8 @@ export function openAdminPanel(tab) {
 
   populateCityTab();
   populateTiltShiftTab();
+  populateWindowLightTab();
+  populateOffsetControls();
 
   panel.style.display = 'block';
 
@@ -193,6 +278,9 @@ export { closeAdminPanel as closeDebugPanel };
 export function initDebugPanel() {
   initTabs();
   initTiltShiftControls();
+  initMaskControls();
+  initWindowLightControls();
+  initOffsetControls();
 
   const applyBtn = document.getElementById('debug-apply-btn');
   if (applyBtn) {

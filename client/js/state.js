@@ -58,6 +58,18 @@ export let pollutionLayerVisible = false;
 export let overlayLayers = {};
 export let overlayVisible = {};
 export let tiltShiftFilter = null;
+export let buildingMasksEnabled = false;
+
+// Traffic light per-direction offsets (pixels in iso space)
+export let trafficLightOffsets = {
+  north: { x: 1, y: 6 },
+  south: { x: -2, y: -3 },
+  east: { x: -7, y: 2 },
+  west: { x: 6, y: 1 },
+};
+// Street lamp offsets
+export let streetLampOffsetX = 4;
+export let streetLampOffsetY = 0;
 
 // Ambient elements
 export const clouds = [];
@@ -85,7 +97,12 @@ export let spritesConfig = null;
 export const defaultSprites = new Map();
 export const roadSprites = new Map();
 export const vehicleSprites = new Map();
-export const residentialSprites = { low: [], medium: [], high: [], veryhigh: [] };
+export const residentialSprites = {
+  low: [],
+  medium: [],
+  high: [],
+  veryhigh: [],
+};
 export const officeSprites = { low: [], medium: [], high: [], veryhigh: [] };
 export const serviceSprites = { police: [], hospital: [], firestation: [] };
 export const grassTextures = [];
@@ -132,63 +149,196 @@ export let dragDrawPreview = null;
 export let economyData = null;
 
 // State setters
-export function setCurrentCityId(id) { currentCityId = id; window.__currentCityId = id; }
-export function setCitiesList(list) { citiesList = list; }
-export function setCurrentUser(user) { currentUser = user; }
-export function setCurrentToken(token) { currentToken = token; }
-export function setGameConfig(config) { gameConfig = config; }
-export function setChainConfig(config) { chainConfig = config; }
-export function setApp(pixiApp) { app = pixiApp; }
-export function setWorldContainer(container) { worldContainer = container; }
-export function setWs(websocket) { ws = websocket; }
-export function setCityData(data) { cityData = data; }
-export function setParcels(data) { parcels = data; }
-export function setBuildings(data) { buildings = data; }
-export function setRoads(data) { roads = data; }
-export function setAgents(data) { agents = data; }
-export function setVehicles(data) { vehicles = data; }
-export function setPowerLines(data) { powerLines = data; }
-export function setWaterPipes(data) { waterPipes = data; }
-export function setSelectedBuildType(type) { selectedBuildType = type; }
-export function setSelectedBuilding(building) { selectedBuilding = building; }
-export function setIsDaylight(value) { isDaylight = value; }
-export function setPendingPurchase(purchase) { pendingPurchase = purchase; }
-export function setSelectionGraphics(graphics) { selectionGraphics = graphics; }
-export function setHighlightGraphics(graphics) { highlightGraphics = graphics; }
-export function setInfraStartPoint(point) { infraStartPoint = point; }
-export function setCloudsContainer(container) { cloudsContainer = container; }
-export function setCloudShadowsContainer(container) { cloudShadowsContainer = container; }
-export function setBirdsContainer(container) { birdsContainer = container; }
-export function setDayNightOverlay(overlay) { dayNightOverlay = overlay; }
-export function setNightLayer(layer) { nightLayer = layer; }
-export function setLightingTexture(tex) { lightingTexture = tex; }
-export function setLightingSprite(spr) { lightingSprite = spr; }
-export function setSkybox(s) { skybox = s; }
-export function setVehiclesContainer(container) { vehiclesContainer = container; }
-export function setPedestriansContainer(container) { pedestriansContainer = container; }
-export function setSceneLayer(layer) { sceneLayer = layer; }
-export function setPlacementHintLayer(layer) { placementHintLayer = layer; }
-export function setPollutionLayer(layer) { pollutionLayer = layer; }
-export function setPollutionLayerVisible(visible) { pollutionLayerVisible = visible; }
-export function setOverlayLayer(type, layer) { overlayLayers[type] = layer; }
-export function setOverlayVisible(type, visible) { overlayVisible[type] = visible; }
-export function setTiltShiftFilter(filter) { tiltShiftFilter = filter; }
-export function setCurrentPopulation(pop) { currentPopulation = pop; }
-export function setCurrentHour(hour) { currentHour = hour; }
-export function setMaxAnimatedVehicles(max) { MAX_ANIMATED_VEHICLES = max; }
-export function setMaxPedestrians(max) { MAX_PEDESTRIANS = max; }
-export function setSpritesConfig(config) { spritesConfig = config; }
-export function setProvider(p) { provider = p; }
-export function setSigner(s) { signer = s; }
-export function setWalletAddress(addr) { walletAddress = addr; }
-export function setCurrentElection(election) { currentElection = election; }
-export function setCurrentMayor(mayor) { currentMayor = mayor; }
-export function setElectionCandidates(candidates) { electionCandidates = candidates; }
-export function setIsDragDrawing(v) { isDragDrawing = v; }
-export function setDragDrawStart(p) { dragDrawStart = p; }
-export function setDragDrawTiles(t) { dragDrawTiles = t; }
-export function setDragDrawPreview(c) { dragDrawPreview = c; }
-export function setEconomyData(data) { economyData = data; }
-export function setTrafficLightPhase(phase) { trafficLightPhase = phase; }
-export function setTrafficLightTimer(timer) { trafficLightTimer = timer; }
-export function setRoadPositionSet(set) { roadPositionSet = set; }
+export function setCurrentCityId(id) {
+  currentCityId = id;
+  window.__currentCityId = id;
+}
+export function setCitiesList(list) {
+  citiesList = list;
+}
+export function setCurrentUser(user) {
+  currentUser = user;
+}
+export function setCurrentToken(token) {
+  currentToken = token;
+}
+export function setGameConfig(config) {
+  gameConfig = config;
+}
+export function setChainConfig(config) {
+  chainConfig = config;
+}
+export function setApp(pixiApp) {
+  app = pixiApp;
+}
+export function setWorldContainer(container) {
+  worldContainer = container;
+}
+export function setWs(websocket) {
+  ws = websocket;
+}
+export function setCityData(data) {
+  cityData = data;
+}
+export function setParcels(data) {
+  parcels = data;
+}
+export function setBuildings(data) {
+  buildings = data;
+}
+export function setRoads(data) {
+  roads = data;
+}
+export function setAgents(data) {
+  agents = data;
+}
+export function setVehicles(data) {
+  vehicles = data;
+}
+export function setPowerLines(data) {
+  powerLines = data;
+}
+export function setWaterPipes(data) {
+  waterPipes = data;
+}
+export function setSelectedBuildType(type) {
+  selectedBuildType = type;
+}
+export function setSelectedBuilding(building) {
+  selectedBuilding = building;
+}
+export function setIsDaylight(value) {
+  isDaylight = value;
+}
+export function setPendingPurchase(purchase) {
+  pendingPurchase = purchase;
+}
+export function setSelectionGraphics(graphics) {
+  selectionGraphics = graphics;
+}
+export function setHighlightGraphics(graphics) {
+  highlightGraphics = graphics;
+}
+export function setInfraStartPoint(point) {
+  infraStartPoint = point;
+}
+export function setCloudsContainer(container) {
+  cloudsContainer = container;
+}
+export function setCloudShadowsContainer(container) {
+  cloudShadowsContainer = container;
+}
+export function setBirdsContainer(container) {
+  birdsContainer = container;
+}
+export function setDayNightOverlay(overlay) {
+  dayNightOverlay = overlay;
+}
+export function setNightLayer(layer) {
+  nightLayer = layer;
+}
+export function setLightingTexture(tex) {
+  lightingTexture = tex;
+}
+export function setLightingSprite(spr) {
+  lightingSprite = spr;
+}
+export function setSkybox(s) {
+  skybox = s;
+}
+export function setVehiclesContainer(container) {
+  vehiclesContainer = container;
+}
+export function setPedestriansContainer(container) {
+  pedestriansContainer = container;
+}
+export function setSceneLayer(layer) {
+  sceneLayer = layer;
+}
+export function setPlacementHintLayer(layer) {
+  placementHintLayer = layer;
+}
+export function setPollutionLayer(layer) {
+  pollutionLayer = layer;
+}
+export function setPollutionLayerVisible(visible) {
+  pollutionLayerVisible = visible;
+}
+export function setOverlayLayer(type, layer) {
+  overlayLayers[type] = layer;
+}
+export function setOverlayVisible(type, visible) {
+  overlayVisible[type] = visible;
+}
+export function setTiltShiftFilter(filter) {
+  tiltShiftFilter = filter;
+}
+export function setBuildingMasksEnabled(v) {
+  buildingMasksEnabled = v;
+}
+export function setTrafficLightOffset(dir, axis, v) {
+  trafficLightOffsets[dir][axis] = v;
+}
+export function setStreetLampOffsetX(v) {
+  streetLampOffsetX = v;
+}
+export function setStreetLampOffsetY(v) {
+  streetLampOffsetY = v;
+}
+export function setCurrentPopulation(pop) {
+  currentPopulation = pop;
+}
+export function setCurrentHour(hour) {
+  currentHour = hour;
+}
+export function setMaxAnimatedVehicles(max) {
+  MAX_ANIMATED_VEHICLES = max;
+}
+export function setMaxPedestrians(max) {
+  MAX_PEDESTRIANS = max;
+}
+export function setSpritesConfig(config) {
+  spritesConfig = config;
+}
+export function setProvider(p) {
+  provider = p;
+}
+export function setSigner(s) {
+  signer = s;
+}
+export function setWalletAddress(addr) {
+  walletAddress = addr;
+}
+export function setCurrentElection(election) {
+  currentElection = election;
+}
+export function setCurrentMayor(mayor) {
+  currentMayor = mayor;
+}
+export function setElectionCandidates(candidates) {
+  electionCandidates = candidates;
+}
+export function setIsDragDrawing(v) {
+  isDragDrawing = v;
+}
+export function setDragDrawStart(p) {
+  dragDrawStart = p;
+}
+export function setDragDrawTiles(t) {
+  dragDrawTiles = t;
+}
+export function setDragDrawPreview(c) {
+  dragDrawPreview = c;
+}
+export function setEconomyData(data) {
+  economyData = data;
+}
+export function setTrafficLightPhase(phase) {
+  trafficLightPhase = phase;
+}
+export function setTrafficLightTimer(timer) {
+  trafficLightTimer = timer;
+}
+export function setRoadPositionSet(set) {
+  roadPositionSet = set;
+}

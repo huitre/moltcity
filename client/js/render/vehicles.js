@@ -29,9 +29,33 @@ import {
   hasRoadAtFast,
 } from "./roads.js";
 
+
+// Traffic light sprite textures (loaded once)
+const trafficLightTextures = {};
+let trafficLightTexturesLoaded = false;
+
+// Direction → sprite file mapping
+// Light is on the right side of the road, before the intersection
+// north connection → NW corner (top), south → SE corner (bottom)
+// east → NE corner (right), west → SW corner (left)
+const TRAFFIC_LIGHT_DIR_MAP = {
+  north: "traffic_light_SW",
+  south: "traffic_light_NE",
+  east: "traffic_light_NW",
+  west: "traffic_light_SE",
+};
+
+// Traffic light sprite scale (target ~16px tall from original)
+const TRAFFIC_LIGHT_SCALE = 0.18;
+
 // Default rotation (degrees) — used when vehicle config has no per-type rotation
 const ISO_CORRECTION_DEG = 2;
-const DEFAULT_ROTATION = { NE: ISO_CORRECTION_DEG, SE: -ISO_CORRECTION_DEG, SW: ISO_CORRECTION_DEG, NW: -ISO_CORRECTION_DEG };
+const DEFAULT_ROTATION = {
+  NE: ISO_CORRECTION_DEG,
+  SE: -ISO_CORRECTION_DEG,
+  SW: ISO_CORRECTION_DEG,
+  NW: -ISO_CORRECTION_DEG,
+};
 
 /** Apply lane offset config to all vehicles of the same type (live preview) */
 function applyLaneToAll(vehicleType, config) {
@@ -130,6 +154,9 @@ function getVehicleAhead(vehicle, allVehicles) {
     const other = allVehicles[i];
     if (other === vehicle) continue;
 
+    // Only consider vehicles heading in the same direction
+    if (other.dir !== vehicle.dir) continue;
+
     // Vector from vehicle to other
     const dx = other.x - vehicle.x;
     const dy = other.y - vehicle.y;
@@ -158,9 +185,34 @@ function isSpawnBlocked(x, y) {
   for (const v of state.animatedVehicles) {
     const dx = v.x - x;
     const dy = v.y - y;
-    if (dx * dx + dy * dy < 0.25) return true; // 0.5^2
+    if (dx * dx + dy * dy < 0.64) return true; // 0.8^2
   }
   return false;
+}
+
+/**
+ * Load traffic light sprite textures
+ */
+export async function loadTrafficLightTextures() {
+  if (trafficLightTexturesLoaded) return;
+  const names = [
+    "traffic_light_NE",
+    "traffic_light_NW",
+    "traffic_light_SE",
+    "traffic_light_SW",
+  ];
+  await Promise.all(
+    names.map((name) =>
+      PIXI.Assets.load(`/sprites/roads/${name}.png`)
+        .then((tex) => {
+          tex.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+          trafficLightTextures[name] = tex;
+        })
+        .catch((err) => console.warn(`[Traffic] Failed to load ${name}:`, err)),
+    ),
+  );
+  trafficLightTexturesLoaded = true;
+  console.log("[Traffic] Loaded traffic light textures");
 }
 
 /**
@@ -237,7 +289,8 @@ export function spawnVehicle(vehicleTypes) {
   if (isSpawnBlocked(spawnX, spawnY)) return;
 
   // Rotation from per-type config (degrees → radians)
-  const rotDeg = vehicleData.config.rotation?.[isoDir] ?? DEFAULT_ROTATION[isoDir] ?? 0;
+  const rotDeg =
+    vehicleData.config.rotation?.[isoDir] ?? DEFAULT_ROTATION[isoDir] ?? 0;
 
   const sprite = new PIXI.Sprite(texture);
   sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
@@ -285,8 +338,8 @@ export function animateVehicles(delta) {
   state.setTrafficLightTimer(state.trafficLightTimer + delta);
   if (state.trafficLightTimer >= TRAFFIC_LIGHT_INTERVAL) {
     state.setTrafficLightTimer(0);
-    state.setTrafficLightPhase(state.trafficLightPhase === 0 ? 1 : 0);
-    updateTrafficLightGraphics();
+    const newPhase = state.trafficLightPhase === 0 ? 1 : 0;
+    state.setTrafficLightPhase(newPhase);
   }
 
   // Try to maintain vehicle count
@@ -323,21 +376,31 @@ export function animateVehicles(delta) {
       continue;
     }
 
-    // Check for vehicle ahead (queuing) — only fully stop if it's at a red light
+    // Check for vehicle ahead (queuing)
     const ahead = getVehicleAhead(vehicle, animatedVehicles);
     let speedScale = 1.0;
+    const MIN_GAP = 0.55; // minimum gap before full stop (tiles)
     if (ahead) {
       const adx = ahead.x - vehicle.x;
       const ady = ahead.y - vehicle.y;
       const aheadDist = Math.sqrt(adx * adx + ady * ady);
-      // Only queue behind a vehicle that is stopped at a traffic light
-      if (ahead.stoppedAtLight && aheadDist < FOLLOW_DISTANCE * 0.5) {
+
+      if (aheadDist < MIN_GAP) {
+        // Too close — full stop to prevent overlap
         speedScale = 0;
         vehicle.stopped = true;
-        vehicle.stoppedAtLight = true; // propagate: we're also queued at a light
-      } else if (aheadDist < FOLLOW_DISTANCE * 0.3) {
-        // Too close — slow down to avoid overlap, but don't fully stop
-        speedScale = Math.max(0.15, aheadDist / (FOLLOW_DISTANCE * 0.3));
+        vehicle.stoppedAtLight = ahead.stoppedAtLight; // propagate light status
+      } else if (aheadDist < FOLLOW_DISTANCE) {
+        // Within follow range — smooth deceleration proportional to gap
+        const t = (aheadDist - MIN_GAP) / (FOLLOW_DISTANCE - MIN_GAP);
+        speedScale = Math.max(0.1, t);
+        // Match ahead vehicle speed if it's slower
+        if (
+          ahead.effectiveSpeed !== undefined &&
+          ahead.effectiveSpeed < vehicle.speed * speedScale
+        ) {
+          speedScale = ahead.effectiveSpeed / vehicle.speed;
+        }
         vehicle.stopped = false;
         vehicle.stoppedAtLight = false;
       } else {
@@ -463,61 +526,143 @@ export function animateVehicles(delta) {
 }
 
 /**
- * Update traffic light graphic colors when phase changes
+ * Animate traffic light glows — update tint and Y position per phase.
+ * Red bulb is higher on the pole, green is lower.
  */
-function updateTrafficLightGraphics() {
+const GLOW_BULB_SHIFT = 28; // green bulb offset (lower on pole)
+
+export function animateTrafficGlowLights() {
+  const phase = state.trafficLightPhase;
   for (const tl of state.trafficLightGraphics) {
-    if (!tl || !tl.graphics) continue;
-    const g = tl.graphics;
-    g.clear();
-    drawTrafficLightDots(g, tl.x, tl.y, tl.connections);
+    if (!tl || !tl.sprites) continue;
+    for (const s of tl.sprites) {
+      if (!s.glow) continue;
+      const isGreen = s.axis === "ns" ? phase === 0 : phase === 1;
+      const bulbShift = isGreen ? GLOW_BULB_SHIFT : 0;
+      s.glow.tint = isGreen ? 0x00ff44 : 0xff2200;
+      s.glow.y = s.glowBaseY + (s.glowOffY + bulbShift) * TRAFFIC_LIGHT_SCALE;
+    }
   }
 }
 
+// Cached glow texture for traffic lights
+let tlGlowTexture = null;
+
+function createTLGlowTexture() {
+  if (tlGlowTexture) return tlGlowTexture;
+  const size = 32;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const r = size / 2;
+  const grad = ctx.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.3, "rgba(255,255,255,0.7)");
+  grad.addColorStop(0.6, "rgba(255,255,255,0.3)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  tlGlowTexture = PIXI.Texture.from(canvas);
+  return tlGlowTexture;
+}
+
+// Front-facing directions (lights visible to camera)
+const FRONT_FACING = { traffic_light_NE: true, traffic_light_NW: true };
+
+// Glow offset relative to sprite anchor (0.5, 1) — approximate bulb position
+const GLOW_OFFSETS = {
+  traffic_light_SE: { x: -22, y: -120 },
+  traffic_light_SW: { x: 22, y: -120 },
+  traffic_light_NE: { x: -22, y: -120 },
+  traffic_light_NW: { x: 22, y: -120 },
+};
+
 /**
- * Draw traffic light dots on a graphics object for an intersection
+ * Create traffic light sprites for an intersection and add to container.
+ * All lights get a colored glow. FRONT_FACING controls glow z-index ordering.
  */
-export function drawTrafficLightDots(g, tileX, tileY, connections) {
+export function createTrafficLightSprites(
+  container,
+  tileX,
+  tileY,
+  connections,
+  zIndex,
+) {
   const iso = cartToIso(tileX + 0.5, tileY + 0.5);
-  const cy = iso.y + TILE_HEIGHT / 2; // tile center in iso screen space
+  const off = state.trafficLightOffsets;
+
+  // Iso corner positions (diamond vertices) + per-direction offset
+  const hw = TILE_WIDTH / 2;
+  const hh = TILE_HEIGHT / 2;
+
+  // Right side of the road, before the intersection (approach side)
+  // north → top, south → bottom, east → right, west → left
+  const positions = {
+    north: {
+      px: iso.x + off.north.x,
+      py: iso.y - hh + off.north.y,
+      axis: "ns",
+    },
+    south: {
+      px: iso.x + off.south.x,
+      py: iso.y + hh + off.south.y,
+      axis: "ns",
+    },
+    east: {
+      px: iso.x + hw + off.east.x,
+      py: iso.y + off.east.y,
+      axis: "ew",
+    },
+    west: {
+      px: iso.x - hw + off.west.x,
+      py: iso.y + off.west.y,
+      axis: "ew",
+    },
+  };
+
   const phase = state.trafficLightPhase;
+  const sprites = [];
 
-  // N/S axis color: phase 0 = green, phase 1 = red
-  const nsColor = phase === 0 ? 0x00ff00 : 0xff0000;
-  // E/W axis color: phase 1 = green, phase 0 = red
-  const ewColor = phase === 1 ? 0x00ff00 : 0xff0000;
+  for (const [dir, connected] of Object.entries(connections)) {
+    if (!connected) continue;
+    const texName = TRAFFIC_LIGHT_DIR_MAP[dir];
+    const tex = trafficLightTextures[texName];
+    if (!tex) continue;
 
-  const r = 3;
-  // Iso tile edge midpoints relative to tile center:
-  // North (-y): top vertex      → dx=0,             dy=-TILE_HEIGHT/2
-  // East  (+x): right vertex    → dx=+TILE_WIDTH/2, dy=0
-  // South (+y): bottom vertex   → dx=0,             dy=+TILE_HEIGHT/2
-  // West  (-x): left vertex     → dx=-TILE_WIDTH/2, dy=0
-  // We place dots partway toward each edge (60% toward edge midpoint)
-  const f = 0.6;
-  const hw = (TILE_WIDTH / 2) * f;
-  const hh = (TILE_HEIGHT / 2) * f;
+    const pos = positions[dir];
+    const sprite = new PIXI.Sprite(tex);
+    sprite.anchor.set(0.5, 1);
+    sprite.x = pos.px;
+    sprite.y = pos.py;
+    sprite.scale.set(TRAFFIC_LIGHT_SCALE);
+    sprite.zIndex = zIndex;
+    container.addChild(sprite);
 
-  if (connections.north) {
-    g.beginFill(nsColor, 0.9);
-    g.drawCircle(iso.x + hw, cy - hh, r);
-    g.endFill();
+    // Create glow sprite (tint + Y position set by animateTrafficGlowLights)
+    const glowTex = createTLGlowTexture();
+    const glow = new PIXI.Sprite(glowTex);
+    glow.anchor.set(0.5);
+    const glowOff = GLOW_OFFSETS[texName] || { x: 0, y: -15 };
+    glow.x = pos.px + glowOff.x * TRAFFIC_LIGHT_SCALE;
+    glow.y = pos.py + glowOff.y * TRAFFIC_LIGHT_SCALE;
+    glow.width = 8;
+    glow.height = 8;
+    glow.alpha = 0.8;
+    glow.zIndex = FRONT_FACING[texName] ? zIndex + 1 : zIndex - 1;
+    container.addChild(glow);
+
+    sprites.push({
+      sprite,
+      axis: pos.axis,
+      glow,
+      dir: texName,
+      glowBaseY: pos.py,
+      glowOffY: glowOff.y,
+    });
   }
-  if (connections.south) {
-    g.beginFill(nsColor, 0.9);
-    g.drawCircle(iso.x - hw, cy + hh, r);
-    g.endFill();
-  }
-  if (connections.east) {
-    g.beginFill(ewColor, 0.9);
-    g.drawCircle(iso.x + hw, cy + hh, r);
-    g.endFill();
-  }
-  if (connections.west) {
-    g.beginFill(ewColor, 0.9);
-    g.drawCircle(iso.x - hw, cy - hh, r);
-    g.endFill();
-  }
+
+  return sprites;
 }
 
 /**
@@ -577,8 +722,12 @@ function showVehicleDebug(vehicle) {
 
   // --- Clone all interactive inputs to remove old listeners ---
   const cloneIds = [
-    "vd-zindex", "vd-zindex-lock", "vd-force-stop",
-    "vd-width", "vd-height", "vd-save",
+    "vd-zindex",
+    "vd-zindex-lock",
+    "vd-force-stop",
+    "vd-width",
+    "vd-height",
+    "vd-save",
   ];
   const ISO_DIRS = ["NE", "SE", "SW", "NW"];
   for (const d of ISO_DIRS) {
@@ -597,7 +746,8 @@ function showVehicleDebug(vehicle) {
   if (!config.rotation) config.rotation = {};
   for (const d of ISO_DIRS) {
     if (!config.laneOffsets[d]) config.laneOffsets[d] = { dx: 0, dy: 0 };
-    if (config.rotation[d] === undefined) config.rotation[d] = DEFAULT_ROTATION[d] || 0;
+    if (config.rotation[d] === undefined)
+      config.rotation[d] = DEFAULT_ROTATION[d] || 0;
   }
 
   // --- Populate static fields ---
@@ -704,7 +854,12 @@ function showVehicleDebug(vehicle) {
         laneOffsets: config.laneOffsets,
         rotation: config.rotation,
       };
-      await updateSpriteConfig({ source: "vehicles", category: vehicle.vehicleType, index: null, updates });
+      await updateSpriteConfig({
+        source: "vehicles",
+        category: vehicle.vehicleType,
+        index: null,
+        updates,
+      });
       statusEl.textContent = "Saved!";
       statusEl.style.color = "#2ecc71";
     } catch (err) {

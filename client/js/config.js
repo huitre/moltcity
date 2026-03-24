@@ -42,8 +42,8 @@ export const BIRD_COUNT = 12;
 export const NUM_LAYERS = 5;
 export const LAYER_ROAD = 0;
 export const LAYER_BUILDING = 1;
-export const LAYER_VEHICLE = 2; // vehicles, pedestrians, bins
 export const LAYER_POLE = 3; // power poles, traffic light dots
+export const LAYER_VEHICLE = 3; // vehicles, pedestrians, bins
 export const LAYER_STATUS = 4; // status icons (power/water/waste)
 
 // Building limits
@@ -62,7 +62,7 @@ export const BUILDING_FOOTPRINTS = {
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
-  park: { w: 2, h: 2 },
+  park: { w: 1, h: 1 },
   garbage_depot: { w: 2, h: 2 },
   shopping_mall: { w: 4, h: 4 },
 };
@@ -72,7 +72,7 @@ export const VEHICLE_SPEED = 0.1;
 export const PEDESTRIAN_SPEED = 0.2;
 
 // Lane & traffic config
-export const FOLLOW_DISTANCE = 0.6;
+export const FOLLOW_DISTANCE = 1.5;
 export const LANE_WIDTH = 0.3;
 export const TRAFFIC_LIGHT_INTERVAL = 300; // frames between phase toggle (~5s at 60fps)
 

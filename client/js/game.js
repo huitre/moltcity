@@ -31,8 +31,10 @@ import {
 } from "./render/roads.js";
 import {
   animateVehicles,
+  animateTrafficGlowLights,
   initVehicles,
-  drawTrafficLightDots,
+  createTrafficLightSprites,
+  loadTrafficLightTextures,
 } from "./render/vehicles.js";
 import { animatePedestrians } from "./render/pedestrians.js";
 import {
@@ -41,10 +43,7 @@ import {
   animateAmbient,
   updateDayNightOverlay,
 } from "./render/ambient.js";
-import {
-  initLighting,
-  rebuildLights,
-} from "./render/lighting.js";
+import { initLighting, rebuildLights, updateTrafficLightGlowPhase } from "./render/lighting.js";
 
 let renderContainer = null;
 let statusIcons = [];
@@ -83,6 +82,11 @@ function gameLoop(delta) {
 
   // Animate vehicles
   animateVehicles(delta);
+
+  // Update traffic light glows (tint + bulb Y position)
+  animateTrafficGlowLights();
+  // Sync lighting halos to scene glow positions
+  updateTrafficLightGlowPhase();
 
   // Animate pedestrians
   animatePedestrians(delta);
@@ -210,7 +214,7 @@ export function render() {
     }
   }
 
-  // Draw traffic light indicators at intersections (3+ connections)
+  // Draw traffic light sprites at intersections (3+ connections)
   state.trafficLightGraphics.length = 0;
   for (const road of roads) {
     const parcel = parcels.find((p) => p.id === road.parcelId);
@@ -226,13 +230,17 @@ export function render() {
       west: dirs.includes("west"),
     };
 
-    const g = new PIXI.Graphics();
-    drawTrafficLightDots(g, parcel.x, parcel.y, connections);
-    g.zIndex = (parcel.x + parcel.y) * NUM_LAYERS + LAYER_POLE;
-    sceneLayer.addChild(g);
+    const zIdx = (parcel.x + parcel.y) * NUM_LAYERS + LAYER_POLE;
+    const sprites = createTrafficLightSprites(
+      sceneLayer,
+      parcel.x,
+      parcel.y,
+      connections,
+      zIdx,
+    );
 
     state.trafficLightGraphics.push({
-      graphics: g,
+      sprites,
       x: parcel.x,
       y: parcel.y,
       connections,
@@ -357,10 +365,87 @@ export function render() {
 }
 
 /**
+ * Bake the isometric footprint mask directly into the sprite texture via Canvas 2D.
+ * Avoids per-frame stencil buffer overhead from PIXI.Graphics masks — the result
+ * is a regular batchable sprite with zero runtime masking cost.
+ */
+function createMaskedTexture(
+  texture,
+  spriteData,
+  scale,
+  spriteIsoX,
+  spriteIsoY,
+  bx,
+  by,
+  fw,
+  fh,
+) {
+  const srcW = spriteData.width;
+  const srcH = spriteData.height;
+  const ax = spriteData.anchor.x;
+  const ay = spriteData.anchor.y;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = srcW;
+  canvas.height = srcH;
+  const ctx = canvas.getContext("2d");
+
+  // Draw the original texture onto the canvas
+  const source = texture.baseTexture.resource.source;
+  const frame = texture.frame;
+  ctx.drawImage(
+    source,
+    frame.x,
+    frame.y,
+    frame.width,
+    frame.height,
+    0,
+    0,
+    srcW,
+    srcH,
+  );
+
+  // Convert world iso coordinates to texture-local pixel coordinates
+  const toTex = (wx, wy) => ({
+    // x: (wx - spriteIsoX) / scale + ax * srcW,
+    // y: (wy - spriteIsoY) / scale + ay * srcH,
+    wx,
+    wy,
+  });
+
+  // Isometric diamond corners in world space
+  const top = cartToIso(bx, by);
+  const right = cartToIso(bx + fw, by);
+  const bottom = cartToIso(bx + fw, by + fh);
+  const left = cartToIso(bx, by + fh);
+  const heightExtend = srcH;
+
+  // Mask polygon in texture space
+  const pts = [
+    toTex(left.x, top.y - heightExtend),
+    toTex(right.x, top.y - heightExtend),
+    toTex(right.x, right.y),
+    toTex(bottom.x, bottom.y),
+    toTex(left.x, left.y),
+  ];
+
+  // Keep only pixels inside the polygon
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fill();
+
+  const maskedTex = PIXI.Texture.from(canvas);
+  maskedTex.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+  return maskedTex;
+}
+
+/**
  * Create building sprite(s) with proper z-index layering.
- * For single-tile buildings, returns one PIXI.Sprite.
- * For multi-tile buildings, returns an array of [mask, strip, mask, strip, ...]
- * where each strip is a masked copy of the sprite at a different depth row.
+ * When masking is enabled, the footprint clip is baked into the texture
+ * (no runtime stencil overhead).
  */
 function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   const tileSpan = spriteData.tiles || 1;
@@ -372,13 +457,29 @@ function createBuildingSprites(texture, spriteData, bx, by, fw, fh, powered) {
   const D_mid = bx + by + Math.floor((fw + fh - 2) / 2);
   const midX = Math.min(bx + fw - 1, D_mid - by);
 
-  const sprite = new PIXI.Sprite(texture);
+  let tex = texture;
+  if (state.buildingMasksEnabled) {
+    tex = createMaskedTexture(
+      texture,
+      spriteData,
+      scale,
+      spriteIsoX,
+      spriteIsoY,
+      bx,
+      by,
+      fw,
+      fh,
+    );
+  }
+
+  const sprite = new PIXI.Sprite(tex);
   sprite.scale.set(scale);
   sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
   sprite.x = spriteIsoX;
   sprite.y = spriteIsoY;
-  sprite.zIndex = D_mid * NUM_LAYERS + LAYER_BUILDING;
   if (!powered) sprite.tint = 0x888888;
+
+  sprite.zIndex = D_mid * NUM_LAYERS + LAYER_BUILDING;
   return sprite;
 }
 
@@ -447,7 +548,7 @@ function drawBuilding(x, y, building) {
     if (hasRd(x, y - 1)) offY -= shift;
     if (hasRd(x, y + 1)) offY += shift;
 
-    return createBuildingSprites(
+    const result = createBuildingSprites(
       spriteData.texture,
       spriteData,
       x + offX,
@@ -456,6 +557,9 @@ function drawBuilding(x, y, building) {
       fh,
       powered,
     );
+    result.x += state.streetLampOffsetX;
+    result.y += state.streetLampOffsetY;
+    return result;
   }
 
   // Try service/park sprites
@@ -788,7 +892,10 @@ function drawWaterPipe(from, to) {
   g.drawCircle(isoTo.x, isoTo.y + TILE_HEIGHT / 2, 4);
   g.endFill();
 
-  g.zIndex = Math.max((from.x + from.y) * NUM_LAYERS, (to.x + to.y) * NUM_LAYERS);
+  g.zIndex = Math.max(
+    (from.x + from.y) * NUM_LAYERS,
+    (to.x + to.y) * NUM_LAYERS,
+  );
   return g;
 }
 

@@ -45,13 +45,13 @@ const STREETLAMP_SCALE = 14 / 142; // target height 14px
 // Default window parallelogram size (pixels in screen space)
 const DEFAULT_WIN_W = 8;
 const DEFAULT_WIN_H = 5;
-const WIN_SKEW = 0.5; // iso 2:1 ratio
+let WIN_SKEW = 0.4; // iso 2:1 ratio
 
 // Cached radial-gradient glow texture (white center → transparent edge)
 let glowTexture = null;
 
 /**
- * Create a reusable white radial-gradient texture for window halos.
+ * Create a reusable white radial-gradient texture for streetlight halos.
  * Center is opaque white, edge is fully transparent.
  */
 function createGlowTexture(radius = 32) {
@@ -79,27 +79,58 @@ function createGlowTexture(radius = 32) {
   return glowTexture;
 }
 
+// Cached window glow textures per face orientation
+const windowGlowTextures = {};
+
 /**
- * Draw an isometric parallelogram (window pane shape) on a PIXI.Graphics.
- * face="left" → left wall (top slopes up-right),
- * face="right" → right wall (top slopes down-right).
+ * Create a parallelogram-shaped gradient texture for window lights.
+ * Bright opaque center → soft transparent edges, with downward light spill.
  */
-function drawParallelogram(g, x, y, w, h, face, color, alpha) {
-  const skew = w * WIN_SKEW;
-  g.beginFill(color, alpha);
-  if (face === "right") {
-    g.moveTo(x - w / 2, y - h / 2);
-    g.lineTo(x + w / 2, y - h / 2 + skew);
-    g.lineTo(x + w / 2, y + h / 2 + skew);
-    g.lineTo(x - w / 2, y + h / 2);
-  } else {
-    g.moveTo(x - w / 2, y - h / 2 + skew);
-    g.lineTo(x + w / 2, y - h / 2);
-    g.lineTo(x + w / 2, y + h / 2);
-    g.lineTo(x - w / 2, y + h / 2 + skew);
+function createWindowGlowTexture(face = "left") {
+  if (windowGlowTextures[face]) return windowGlowTextures[face];
+
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  // Parallelogram proportions within the canvas
+  const pW = size * 0.3;
+  const pH = size * 0.22;
+  const skew = pW * WIN_SKEW;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  function buildPath() {
+    ctx.beginPath();
+    if (face === "right") {
+      ctx.moveTo(cx - pW / 2, cy - pH / 2);
+      ctx.lineTo(cx + pW / 2, cy - pH / 2 + skew);
+      ctx.lineTo(cx + pW / 2, cy + pH / 2 + skew);
+      ctx.lineTo(cx - pW / 2, cy + pH / 2);
+    } else {
+      ctx.moveTo(cx - pW / 2, cy - pH / 2 + skew);
+      ctx.lineTo(cx + pW / 2, cy - pH / 2);
+      ctx.lineTo(cx + pW / 2, cy + pH / 2);
+      ctx.lineTo(cx - pW / 2, cy + pH / 2 + skew);
+    }
+    ctx.closePath();
   }
-  g.closePath();
-  g.endFill();
+
+  // Bright center with soft glow fading outward + slight downward spill
+  ctx.save();
+  buildPath();
+  ctx.shadowColor = "rgba(255,255,255,0.5)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.fill();
+  ctx.restore();
+
+  windowGlowTextures[face] = PIXI.Texture.from(canvas);
+  return windowGlowTextures[face];
 }
 
 // Standalone container for all light sprites (NOT in worldContainer).
@@ -108,6 +139,7 @@ let lightsContainer = null;
 
 let streetlightSprites = [];
 let buildingLightSprites = [];
+let trafficLightGlowSprites = [];
 
 // Current clear color for the lighting texture [r, g, b, a]
 let currentClearColor = [1, 1, 1, 1];
@@ -121,6 +153,7 @@ export function initLighting() {
   lightsContainer = new PIXI.Container();
   streetlightSprites = [];
   buildingLightSprites = [];
+  trafficLightGlowSprites = [];
 }
 
 /**
@@ -163,8 +196,8 @@ export function createStreetlights() {
 
     const lightIso = cartToIso(parcel.x + 0.5 + offX, parcel.y + 0.5 + offY);
     const streetlight = createStreetlightHalo(
-      lightIso.x,
-      lightIso.y,
+      lightIso.x + state.streetLampOffsetX,
+      lightIso.y + state.streetLampOffsetY,
       parcel.x,
       parcel.y,
     );
@@ -241,8 +274,6 @@ export function createBuildingLights() {
       ? parseInt(sd.windowTint.replace("#", ""), 16)
       : null;
 
-    const tex = createGlowTexture(32);
-
     for (const pos of windows) {
       if (Math.random() > 0.6) continue;
 
@@ -254,35 +285,18 @@ export function createBuildingLights() {
         spriteTint ??
         cfg.windowColors[Math.floor(Math.random() * cfg.windowColors.length)];
 
-      // Soft radial glow behind the parallelogram (light spill)
-      const halo = new PIXI.Sprite(tex);
-      halo.anchor.set(0.5);
-      halo.x = windowX;
-      halo.y = windowY;
-      halo.width = winW * 3;
-      halo.height = winH * 3;
-      halo.tint = color;
-      halo.alpha = 0.15;
-      halo.blendMode = PIXI.BLEND_MODES.ADD;
-      bldgLightContainer.addChild(halo);
-
-      // Parallelogram window pane (bright, warm color)
-      const pane = new PIXI.Graphics();
-      drawParallelogram(pane, windowX, windowY, winW, winH, face, color, 0.5);
-      pane.blendMode = PIXI.BLEND_MODES.ADD;
-      bldgLightContainer.addChild(pane);
-
-      // Tight radial glow around the parallelogram (warm aura)
-      const aura = new PIXI.Sprite(tex);
-      aura.anchor.set(0.5);
-      aura.x = windowX;
-      aura.y = windowY;
-      aura.width = winW + 10;
-      aura.height = winH + 10;
-      aura.tint = color;
-      aura.alpha = 0.3;
-      aura.blendMode = PIXI.BLEND_MODES.ADD;
-      bldgLightContainer.addChild(aura);
+      // Single parallelogram gradient sprite (edges → transparent center + glow)
+      const winTex = createWindowGlowTexture(face);
+      const winSprite = new PIXI.Sprite(winTex);
+      winSprite.anchor.set(0.5);
+      winSprite.x = windowX;
+      winSprite.y = windowY;
+      winSprite.width = winW * 3;
+      winSprite.height = winH * 3;
+      winSprite.tint = color;
+      winSprite.alpha = 0.7;
+      winSprite.blendMode = PIXI.BLEND_MODES.ADD;
+      bldgLightContainer.addChild(winSprite);
     }
 
     bldgLightContainer.x = iso.x;
@@ -332,11 +346,72 @@ export function updateLighting(nightAlpha) {
     sl.halo.alpha = alpha * flicker;
   }
 
+  // Traffic light glows — fade in at night
+  for (const tg of trafficLightGlowSprites) {
+    tg.sprite.alpha = alpha * 0.5;
+  }
+
   // Render lights to the lighting texture with current ambient clear color
   const renderer = app.renderer;
   renderer.renderTexture.bind(lightingTexture);
   renderer.renderTexture.clear(currentClearColor);
-  renderer.render(lightsContainer, { renderTexture: lightingTexture, clear: false });
+  renderer.render(lightsContainer, {
+    renderTexture: lightingTexture,
+    clear: false,
+  });
+}
+
+/**
+ * Create traffic light glows in the lighting container.
+ * Uses intersection data from state.trafficLightGraphics.
+ */
+export function createTrafficLightGlows() {
+  if (!lightsContainer) initLighting();
+
+  for (const tg of trafficLightGlowSprites) {
+    tg.sprite.parent?.removeChild(tg.sprite);
+  }
+  trafficLightGlowSprites = [];
+
+  const tex = createGlowTexture(32);
+  const phase = state.trafficLightPhase;
+
+  for (const tl of state.trafficLightGraphics) {
+    if (!tl || !tl.sprites) continue;
+    for (const s of tl.sprites) {
+      if (!s.glow) continue; // only front-facing have scene glow
+
+      // Create a matching glow in the lighting container
+      const halo = new PIXI.Sprite(tex);
+      halo.anchor.set(0.5);
+      halo.x = s.glow.x;
+      halo.y = s.glow.y;
+      halo.width = 16;
+      halo.height = 16;
+      halo.alpha = 0.4;
+      halo.blendMode = PIXI.BLEND_MODES.ADD;
+
+      const isGreen = s.axis === "ns" ? phase === 0 : phase === 1;
+      halo.tint = isGreen ? 0x00ff44 : 0xff2200;
+
+      lightsContainer.addChild(halo);
+      trafficLightGlowSprites.push({ sprite: halo, axis: s.axis, sceneGlow: s.glow });
+    }
+  }
+}
+
+/**
+ * Sync traffic light lighting halos — tint and position from scene glows.
+ */
+export function updateTrafficLightGlowPhase() {
+  const phase = state.trafficLightPhase;
+  for (const tg of trafficLightGlowSprites) {
+    const isGreen = tg.axis === "ns" ? phase === 0 : phase === 1;
+    tg.sprite.tint = isGreen ? 0x00ff44 : 0xff2200;
+    if (tg.sceneGlow) {
+      tg.sprite.y = tg.sceneGlow.y;
+    }
+  }
 }
 
 /**
@@ -345,6 +420,7 @@ export function updateLighting(nightAlpha) {
 export function rebuildLights() {
   createStreetlights();
   createBuildingLights();
+  createTrafficLightGlows();
 }
 
 /**
@@ -352,4 +428,20 @@ export function rebuildLights() {
  */
 export function getLightingContainer() {
   return lightsContainer;
+}
+
+/**
+ * Get/set the window light skew factor.
+ * Setting invalidates cached textures so they regenerate on next rebuild.
+ */
+export function getWinSkew() {
+  return WIN_SKEW;
+}
+
+export function setWinSkew(v) {
+  WIN_SKEW = v;
+  // Invalidate cached textures so they regenerate with new skew
+  for (const key of Object.keys(windowGlowTextures)) {
+    delete windowGlowTextures[key];
+  }
 }

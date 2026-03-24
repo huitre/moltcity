@@ -3,3 +3,5 @@ node_modules
 mip-bot.pem
 dist/
 moltcity.db*
+# CocoIndex Code (ccc)
+/.cocoindex_code/

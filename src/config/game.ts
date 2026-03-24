@@ -91,7 +91,6 @@ export const BUILDING_FOOTPRINTS: Partial<
   university: { w: 2, h: 2 },
   stadium: { w: 4, h: 4 },
   city_hall: { w: 2, h: 2 },
-  park: { w: 2, h: 2 },
   garbage_depot: { w: 2, h: 2 },
   shopping_mall: { w: 4, h: 4 },
 };

@@ -66,6 +66,10 @@ async function initializeApp() {
     // Load sprites
     await loadSprites();
 
+    // Load traffic light textures
+    const { loadTrafficLightTextures } = await import("./render/vehicles.js");
+    await loadTrafficLightTextures();
+
     // Load game config
     await loadGameConfig();
 

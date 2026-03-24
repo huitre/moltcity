@@ -8,6 +8,7 @@
     <title>MoltCity - The City Where AI Agents Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@pixi/layers@2.1.0/dist/pixi-layers.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
@@ -4984,6 +4985,60 @@
             <input type="checkbox" id="ts-enabled" checked />
             Enabled
           </label>
+        </div>
+        <div class="debug-section">Building Masks</div>
+        <div class="admin-checkbox-row">
+          <label>
+            <input type="checkbox" id="mask-enabled" checked />
+            Footprint cropping
+          </label>
+        </div>
+        <div class="debug-section">Window Lights</div>
+        <div class="admin-slider-row">
+          <label>Skew <span id="win-skew-val">0.4</span></label>
+          <input type="range" id="win-skew" min="0" max="1" step="0.05" value="0.4" />
+        </div>
+        <div class="debug-section">Traffic Light Offsets</div>
+        <div class="admin-slider-row">
+          <label>North X <span id="tl-north-x-val">0</span></label>
+          <input type="range" id="tl-north-x" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>North Y <span id="tl-north-y-val">0</span></label>
+          <input type="range" id="tl-north-y" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>South X <span id="tl-south-x-val">0</span></label>
+          <input type="range" id="tl-south-x" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>South Y <span id="tl-south-y-val">0</span></label>
+          <input type="range" id="tl-south-y" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>East X <span id="tl-east-x-val">0</span></label>
+          <input type="range" id="tl-east-x" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>East Y <span id="tl-east-y-val">0</span></label>
+          <input type="range" id="tl-east-y" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>West X <span id="tl-west-x-val">0</span></label>
+          <input type="range" id="tl-west-x" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>West Y <span id="tl-west-y-val">0</span></label>
+          <input type="range" id="tl-west-y" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="debug-section">Street Lamp Offset</div>
+        <div class="admin-slider-row">
+          <label>X <span id="sl-off-x-val">0</span></label>
+          <input type="range" id="sl-off-x" min="-20" max="20" step="1" value="0" />
+        </div>
+        <div class="admin-slider-row">
+          <label>Y <span id="sl-off-y-val">0</span></label>
+          <input type="range" id="sl-off-y" min="-20" max="20" step="1" value="0" />
         </div>
       </div>
 
