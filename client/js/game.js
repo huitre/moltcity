@@ -43,7 +43,11 @@ import {
   animateAmbient,
   updateDayNightOverlay,
 } from "./render/ambient.js";
-import { initLighting, rebuildLights, updateTrafficLightGlowPhase } from "./render/lighting.js";
+import {
+  initLighting,
+  rebuildLights,
+  updateTrafficLightGlowPhase,
+} from "./render/lighting.js";
 
 let renderContainer = null;
 let statusIcons = [];
@@ -230,13 +234,11 @@ export function render() {
       west: dirs.includes("west"),
     };
 
-    const zIdx = (parcel.x + parcel.y) * NUM_LAYERS + LAYER_POLE;
     const sprites = createTrafficLightSprites(
       sceneLayer,
       parcel.x,
       parcel.y,
       connections,
-      zIdx,
     );
 
     state.trafficLightGraphics.push({
@@ -559,6 +561,7 @@ function drawBuilding(x, y, building) {
     );
     result.x += state.streetLampOffsetX;
     result.y += state.streetLampOffsetY;
+    result.zIndex = Math.round((result.y / (TILE_HEIGHT / 2)) * NUM_LAYERS);
     return result;
   }
 

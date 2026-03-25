@@ -123,7 +123,7 @@ function drawWindowPreview() {
     const isActive = i === winDragIdx;
     const face = windows[i].face || 'left';
     const pw = 10, ph = 6;
-    const skew = pw * 0.5;
+    const skew = pw * (spriteData.windowSkew ?? 0.4);
 
     // Parallelogram shape
     ctx.beginPath();
@@ -404,6 +404,7 @@ function populateEditor(resolved) {
     windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
     windowTint: spriteData.windowTint || null,
     windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
+    windowSkew: spriteData.windowSkew ?? null,
   };
 
   // Populate read-only fields
@@ -536,6 +537,11 @@ function populateEditor(resolved) {
       if (spriteData.windowSize) {
         updates.windowSize = spriteData.windowSize;
       }
+      if (spriteData.windowSkew != null) {
+        updates.windowSkew = spriteData.windowSkew;
+      } else {
+        updates.windowSkew = null;
+      }
       await updateSpriteConfig({ source, category, index, updates });
       statusEl.textContent = 'Saved!';
       statusEl.style.color = '#2ecc71';
@@ -547,6 +553,7 @@ function populateEditor(resolved) {
         windows: spriteData.windows ? JSON.parse(JSON.stringify(spriteData.windows)) : null,
         windowTint: spriteData.windowTint || null,
         windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
+        windowSkew: spriteData.windowSkew ?? null,
       };
     } catch (err) {
       statusEl.textContent = `Error: ${err.message}`;
@@ -580,11 +587,19 @@ function populateEditor(resolved) {
       delete spriteData.windowSize;
     }
 
-    // Reset window size UI
+    if (originalValues.windowSkew != null) {
+      spriteData.windowSkew = originalValues.windowSkew;
+    } else {
+      delete spriteData.windowSkew;
+    }
+
+    // Reset window size / skew UI
     const winWReset = document.getElementById('se-win-w');
     const winHReset = document.getElementById('se-win-h');
+    const winSkewReset = document.getElementById('se-win-skew');
     if (winWReset) winWReset.value = originalValues.windowSize?.w || 8;
     if (winHReset) winHReset.value = originalValues.windowSize?.h || 5;
+    if (winSkewReset) winSkewReset.value = originalValues.windowSkew ?? 0.4;
 
     // Reset tint picker UI
     const tintPickerReset = document.getElementById('se-win-tint');
@@ -670,6 +685,19 @@ function populateEditor(resolved) {
       if (v > 0) {
         if (!spriteData.windowSize) spriteData.windowSize = { w: 8, h: 5 };
         spriteData.windowSize.h = v;
+      }
+    });
+  }
+
+  // Window skew input
+  replaceWithClone('se-win-skew');
+  const winSkewInput = document.getElementById('se-win-skew');
+  if (winSkewInput) {
+    winSkewInput.value = spriteData.windowSkew ?? 0.4;
+    winSkewInput.addEventListener('input', () => {
+      const v = parseFloat(winSkewInput.value);
+      if (v >= 0 && v <= 1) {
+        spriteData.windowSkew = v;
       }
     });
   }

@@ -202,6 +202,7 @@ export function createStreetlights() {
       parcel.x,
       parcel.y,
     );
+    building.z += LAYER_POLE;
     streetlightSprites.push(streetlight);
     lightsContainer.addChild(streetlight.halo);
   }
@@ -397,7 +398,11 @@ export function createTrafficLightGlows() {
       halo.tint = isGreen ? 0x00ff44 : 0xff2200;
 
       lightsContainer.addChild(halo);
-      trafficLightGlowSprites.push({ sprite: halo, axis: s.axis, sceneGlow: s.glow });
+      trafficLightGlowSprites.push({
+        sprite: halo,
+        axis: s.axis,
+        sceneGlow: s.glow,
+      });
     }
   }
 }

@@ -15,8 +15,6 @@ import {
   LANE_WIDTH,
   TRAFFIC_LIGHT_INTERVAL,
   NUM_LAYERS,
-  LAYER_ROAD,
-  LAYER_VEHICLE,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
 import { updateSpriteConfig } from "../api.js";
@@ -28,7 +26,6 @@ import {
   getConnectionCount,
   hasRoadAtFast,
 } from "./roads.js";
-
 
 // Traffic light sprite textures (loaded once)
 const trafficLightTextures = {};
@@ -97,24 +94,12 @@ function getVehicleRotation(vehicle, cardinalDir) {
 }
 
 /**
- * Compute vehicle z-index as the max of current tile and target tile.
- * This ensures the sprite gets the higher z-index as soon as it starts
- * moving toward a tile that is "in front" (closer to camera), preventing
- * the vehicle from rendering behind buildings on the next tile.
+ * Compute vehicle z-index from screen Y position.
+ * Scale screen Y to match tile-based z-index range
+ * (NUM_LAYERS per TILE_HEIGHT/2 pixels of depth).
  */
 function vehicleZIndex(vehicle) {
-  const dir = DIR_VECTORS[vehicle.dir] || { dx: 0, dy: 0 };
-  const margin = 0.3;
-  // Look-ahead tile (0.3 tiles ahead in movement direction)
-  const lx = Math.floor(vehicle.x + margin * dir.dx);
-  const ly = Math.floor(vehicle.y + margin * dir.dy);
-  // Actual tile the vehicle is on (prevents premature z-drop
-  // when moving toward the camera / into shallower tiles)
-  const ax = Math.floor(vehicle.x);
-  const ay = Math.floor(vehicle.y);
-  const actualZ = (ax + ay) * NUM_LAYERS + LAYER_VEHICLE;
-  return actualZ;
-  return Math.max(actualZ, lookZ, targetZ);
+  return Math.round((vehicle.sprite.y / (TILE_HEIGHT / 2)) * NUM_LAYERS);
 }
 
 function applyVehicleScale(sprite, config) {
@@ -587,7 +572,6 @@ export function createTrafficLightSprites(
   tileX,
   tileY,
   connections,
-  zIndex,
 ) {
   const iso = cartToIso(tileX + 0.5, tileY + 0.5);
   const off = state.trafficLightOffsets;
@@ -636,7 +620,7 @@ export function createTrafficLightSprites(
     sprite.x = pos.px;
     sprite.y = pos.py;
     sprite.scale.set(TRAFFIC_LIGHT_SCALE);
-    sprite.zIndex = zIndex;
+    sprite.zIndex = Math.round((pos.py / (TILE_HEIGHT / 2)) * NUM_LAYERS);
     container.addChild(sprite);
 
     // Create glow sprite (tint + Y position set by animateTrafficGlowLights)
@@ -649,7 +633,7 @@ export function createTrafficLightSprites(
     glow.width = 8;
     glow.height = 8;
     glow.alpha = 0.8;
-    glow.zIndex = FRONT_FACING[texName] ? zIndex + 1 : zIndex - 1;
+    glow.zIndex = sprite.zIndex;
     container.addChild(glow);
 
     sprites.push({
@@ -935,6 +919,8 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = (x + y) * NUM_LAYERS + LAYER_VEHICLE;
+  g.zIndex = Math.round(
+    ((iso.y / 10 + TILE_HEIGHT / 2) / (TILE_HEIGHT / 2)) * NUM_LAYERS,
+  );
   return g;
 }
