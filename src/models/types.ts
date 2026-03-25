@@ -272,6 +272,8 @@ export interface City {
   stats: CityStats;
   economy: CityEconomy;
   mayor: string | null; // userId
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // === Events ===

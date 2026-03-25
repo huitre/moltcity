@@ -49,8 +49,8 @@ export class CityService {
     return this.cityRepo.getAllCities();
   }
 
-  async createCity(name: string, creatorUserId: string): Promise<City> {
-    const city = await this.cityRepo.createCity(name, creatorUserId);
+  async createCity(name: string, creatorUserId: string, latitude?: number, longitude?: number): Promise<City> {
+    const city = await this.cityRepo.createCity(name, creatorUserId, latitude, longitude);
     await this.generateWaterTerrain(city.id);
     return city;
   }

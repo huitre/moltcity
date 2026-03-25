@@ -13,6 +13,17 @@ import {
 } from "../config.js";
 import * as state from "../state.js";
 import { cartToIso, isoToCart, clamp } from "../utils.js";
+import {
+  isGlobeFullyActive,
+  isGlobeZoomMode,
+  showGlobeForZoom,
+  hideGlobeFromZoom,
+  handleGlobeWheel,
+} from "../ui/globe.js";
+
+// Globe crossfade thresholds
+const GLOBE_FADE_HIGH = 0.35; // scale where globe starts appearing
+const GLOBE_FADE_LOW = 0.15; // scale where globe is fully opaque
 
 /**
  * Calculate tilt-shift parameters based on screen size
@@ -190,6 +201,7 @@ export function setupInteractions(
 
   // Mouse down - start drag or select
   app.stage.on("pointerdown", (e) => {
+    if (isGlobeZoomMode()) return;
     startPos = { x: e.global.x, y: e.global.y };
     lastPos = { x: e.global.x, y: e.global.y };
 
@@ -208,6 +220,7 @@ export function setupInteractions(
 
   // Mouse move - drag camera, drag-draw, or hover
   app.stage.on("pointermove", (e) => {
+    if (isGlobeZoomMode()) return;
     const localPos = worldContainer.toLocal(e.global);
     const gridPos = isoToCart(localPos.x, localPos.y);
 
@@ -255,6 +268,7 @@ export function setupInteractions(
 
   // Mouse up - end drag-draw, click, or camera pan
   app.stage.on("pointerup", (e) => {
+    if (isGlobeZoomMode()) return;
     if (isInDragDraw) {
       if (onDragEnd) onDragEnd();
       isInDragDraw = false;
@@ -301,21 +315,41 @@ export function setupInteractions(
     isPendingDragDraw = false;
   });
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom (with globe crossfade)
   app.view.addEventListener("wheel", (e) => {
     e.preventDefault();
+
+    // Fully in globe mode — forward scroll to globe altitude
+    if (isGlobeFullyActive()) {
+      handleGlobeWheel(e.deltaY);
+      // If handleGlobeWheel signaled exit, fullyInGlobe is now false
+      // and next scroll will go through the city zoom path below
+      return;
+    }
+
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = clamp(worldContainer.scale.x * scaleFactor, 0.05, 8);
+    const newScale = clamp(
+      worldContainer.scale.x * scaleFactor,
+      GLOBE_FADE_LOW,
+      8,
+    );
 
     // Zoom toward mouse position
     const mousePos = { x: e.clientX, y: e.clientY };
     const worldPos = worldContainer.toLocal(mousePos);
-
     worldContainer.scale.set(newScale);
-
     const newScreenPos = worldContainer.toGlobal(worldPos);
     worldContainer.x += mousePos.x - newScreenPos.x;
     worldContainer.y += mousePos.y - newScreenPos.y;
+
+    // Globe crossfade when zoomed out far enough
+    if (newScale < GLOBE_FADE_HIGH) {
+      const opacity =
+        1 - (newScale - GLOBE_FADE_LOW) / (GLOBE_FADE_HIGH - GLOBE_FADE_LOW);
+      showGlobeForZoom(opacity);
+    } else if (isGlobeZoomMode()) {
+      hideGlobeFromZoom();
+    }
   });
 
   // ============================================
@@ -387,7 +421,11 @@ export function setupInteractions(
 
         // Calculate new scale based on pinch
         const scaleRatio = currentDistance / touchState.initialDistance;
-        const newScale = clamp(touchState.initialScale * scaleRatio, 0.05, 8);
+        const newScale = clamp(
+          touchState.initialScale * scaleRatio,
+          GLOBE_FADE_LOW,
+          8,
+        );
 
         // Apply zoom centered on pinch center
         const worldPos = worldContainer.toLocal(touchState.initialCenter);
@@ -411,6 +449,16 @@ export function setupInteractions(
         );
 
         touchState.lastCenter = currentCenter;
+
+        // Globe crossfade for pinch zoom
+        if (newScale < GLOBE_FADE_HIGH) {
+          const opacity =
+            1 -
+            (newScale - GLOBE_FADE_LOW) / (GLOBE_FADE_HIGH - GLOBE_FADE_LOW);
+          showGlobeForZoom(opacity);
+        } else if (isGlobeZoomMode()) {
+          hideGlobeFromZoom();
+        }
       }
     },
     { passive: false },

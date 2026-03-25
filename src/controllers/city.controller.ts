@@ -28,6 +28,8 @@ import path from 'path';
 
 const createCitySchema = z.object({
   name: z.string().min(1).max(100),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export const cityController: FastifyPluginAsync = async (fastify) => {
@@ -54,7 +56,7 @@ export const cityController: FastifyPluginAsync = async (fastify) => {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const body = createCitySchema.parse(request.body);
-    const city = await cityService.createCity(body.name, request.user!.userId);
+    const city = await cityService.createCity(body.name, request.user!.userId, body.latitude, body.longitude);
 
     // Start simulation engine if not already running
     if (fastify.simulationEngine && !fastify.simulationEngine.isRunning()) {

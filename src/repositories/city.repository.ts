@@ -29,13 +29,15 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
     return results.map(row => this.rowToCity(row));
   }
 
-  async createCity(name: string, creatorUserId: string): Promise<City> {
+  async createCity(name: string, creatorUserId: string, latitude?: number, longitude?: number): Promise<City> {
     const id = this.generateId();
     await this.db.insert(city).values({
       id,
       name,
       createdBy: creatorUserId,
       mayorId: creatorUserId,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
     });
     return (await this.getCity(id))!;
   }
@@ -142,6 +144,8 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
         budgetYtd: this.parseJson<BudgetYtd>(row.budgetYtd, { revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0 }, expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 } }),
         creditRating: row.creditRating,
       },
+      latitude: row.latitude ?? null,
+      longitude: row.longitude ?? null,
     };
   }
 

@@ -90,10 +90,15 @@ export async function getCities() {
   return fetchApi('/api/cities');
 }
 
-export async function createCity(name) {
+export async function createCity(name, latitude, longitude) {
+  const body = { name };
+  if (latitude != null && longitude != null) {
+    body.latitude = latitude;
+    body.longitude = longitude;
+  }
   return fetchApi('/api/cities', {
     method: 'POST',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(body),
   });
 }
 

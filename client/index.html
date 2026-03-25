@@ -10,6 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pixi/layers@2.1.0/dist/pixi-layers.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/globe.gl@2.35.1/dist/globe.gl.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
@@ -3651,6 +3653,181 @@
           transform: scale(0.98);
         }
       }
+
+      /* ===== Globe Overlay ===== */
+      #globe-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 99999;
+        background: rgba(0, 0, 0, 0.95);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      #globe-overlay.visible { opacity: 1; }
+
+      #globe-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      #globe-ui {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+      }
+
+      #globe-header {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        pointer-events: none;
+      }
+      #globe-header h2 {
+        font-family: 'Press Start 2P', monospace;
+        color: var(--text-gold);
+        font-size: 16px;
+        text-shadow: 0 0 30px rgba(78, 205, 196, 0.6), 0 0 60px rgba(78, 205, 196, 0.3);
+        letter-spacing: 6px;
+        margin: 0;
+      }
+      #globe-subtitle {
+        font-family: 'Press Start 2P', monospace;
+        color: #4ecdc4;
+        font-size: 8px;
+        margin-top: 10px;
+        opacity: 0.8;
+      }
+
+      #globe-close {
+        position: absolute;
+        top: 20px;
+        right: 24px;
+        pointer-events: auto;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid #555;
+        color: #eee;
+        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #globe-close:hover { background: rgba(255,255,255,0.15); }
+
+      #globe-city-panel {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        pointer-events: auto;
+        background: linear-gradient(135deg, var(--wood-dark), var(--wood-mid));
+        border: 2px solid var(--wood-border);
+        padding: 20px 28px;
+        text-align: center;
+        min-width: 320px;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      #globe-city-panel.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      #globe-coords {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        color: #4ecdc4;
+        margin-bottom: 12px;
+        letter-spacing: 1px;
+      }
+
+      #globe-city-name {
+        font-family: 'Press Start 2P', monospace;
+        background: rgba(0,0,0,0.4);
+        border: 2px solid var(--wood-border);
+        color: var(--text-light);
+        padding: 10px 14px;
+        font-size: 11px;
+        width: 100%;
+        margin-bottom: 14px;
+        outline: none;
+      }
+      #globe-city-name:focus {
+        border-color: #4ecdc4;
+        box-shadow: 0 0 8px rgba(78, 205, 196, 0.3);
+      }
+      #globe-city-name::placeholder {
+        color: rgba(245, 230, 208, 0.3);
+      }
+
+      .globe-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      #globe-confirm {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 9px;
+        padding: 8px 18px;
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: #fff;
+        border: 2px solid #1e8449;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: transform 0.1s, box-shadow 0.2s;
+      }
+      #globe-confirm:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0 12px rgba(46, 204, 113, 0.4);
+      }
+      #globe-confirm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      #globe-cancel {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 9px;
+        padding: 8px 14px;
+        background: rgba(0,0,0,0.3);
+        color: #aaa;
+        border: 1px solid #555;
+        cursor: pointer;
+      }
+      #globe-cancel:hover { color: #fff; border-color: #888; }
+
+      /* Zoom-mode: no CSS transition, no UI, pass-through pointer events */
+      #globe-overlay.zoom-mode {
+        transition: none;
+        pointer-events: none;
+      }
+      #globe-overlay.zoom-mode #globe-header,
+      #globe-overlay.zoom-mode #globe-close,
+      #globe-overlay.zoom-mode #globe-city-panel {
+        display: none !important;
+      }
+      #globe-overlay.zoom-mode::after {
+        display: none;
+      }
+
+      /* Scanline overlay for retro feel */
+      #globe-overlay::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+        pointer-events: none;
+        z-index: 1;
+      }
     </style>
   </head>
   <body>
@@ -4563,6 +4740,26 @@
             <p style="color: #555; margin-top: 16px; font-size: 12px">
               skill.md contains all endpoints and examples
             </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Globe Overlay for City Selection -->
+    <div id="globe-overlay" style="display:none">
+      <div id="globe-container"></div>
+      <div id="globe-ui">
+        <div id="globe-header">
+          <h2>WORLD MAP</h2>
+          <p id="globe-subtitle">Click anywhere to found a new city</p>
+        </div>
+        <button id="globe-close">&#x2715;</button>
+        <div id="globe-city-panel">
+          <div id="globe-coords"></div>
+          <input type="text" id="globe-city-name" placeholder="Name your city..." maxlength="100" autocomplete="off" />
+          <div class="globe-buttons">
+            <button id="globe-confirm">FOUND CITY</button>
+            <button id="globe-cancel">CANCEL</button>
           </div>
         </div>
       </div>

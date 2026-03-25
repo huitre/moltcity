@@ -524,6 +524,8 @@ export class CityRepository {
         creditRating: row.credit_rating ?? 'A',
       },
       mayor: row.mayor_id,
+      latitude: row.latitude ?? null,
+      longitude: row.longitude ?? null,
     };
   }
 

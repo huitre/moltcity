@@ -75,6 +75,8 @@ function rowToCity(row: any): City {
       budgetYtd: parseJson<BudgetYtd>(row.budget_ytd, { revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0 }, expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 } }),
       creditRating: row.credit_rating,
     },
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
   };
 }
 

@@ -39,6 +39,7 @@ import { startScreenshotCapture } from "./screenshot.js";
 import { initTimelapse } from "./timelapse.js";
 import { initReplay } from "./replay.js";
 import { handleVehicleClick, findClickedVehicle } from "./render/vehicles.js";
+import { openGlobe, onGlobeCityCreated } from "./ui/globe.js";
 
 let appInitialized = false;
 
@@ -58,6 +59,19 @@ async function initializeApp() {
   appInitialized = true;
 
   console.log("[MoltCity] Initializing...");
+
+  // Register globe city-created callback
+  onGlobeCityCreated(async (city) => {
+    if (city._switch) {
+      // Switching to existing city (clicked a pinpoint)
+      await switchCity(city.id);
+    } else {
+      // New city created
+      await switchCity(city.id);
+      buildCitySelectorUI();
+      window.dispatchEvent(new CustomEvent("city-created", { detail: city }));
+    }
+  });
 
   try {
     // Initialize Pixi.js
@@ -371,26 +385,14 @@ function buildCitySelectorUI() {
     container.appendChild(select);
   }
 
-  // "New City" button
+  // "New City" button — opens the 3D globe
   const btn = document.createElement("button");
   btn.textContent = "+";
   btn.title = "Create new city";
   btn.style.cssText =
     "background:#4ecdc4;color:#000;border:none;padding:2px 6px;font-size:12px;border-radius:3px;cursor:pointer;margin-left:4px;font-weight:bold;";
-  btn.addEventListener("click", async () => {
-    const name = prompt("Enter a name for your new city:");
-    if (!name || !name.trim()) return;
-    try {
-      const result = await api.createCity(name.trim());
-      const city = result.city || result;
-      state.setCitiesList([...state.citiesList, city]);
-      await switchCity(city.id);
-      buildCitySelectorUI();
-      // Trigger welcome popup for new city
-      window.dispatchEvent(new CustomEvent("city-created", { detail: city }));
-    } catch (e) {
-      alert("Failed to create city: " + e.message);
-    }
+  btn.addEventListener("click", () => {
+    openGlobe();
   });
   container.appendChild(btn);
 }
