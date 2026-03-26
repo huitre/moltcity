@@ -3,7 +3,7 @@
 // ============================================
 
 import { FastifyPluginAsync } from 'fastify';
-import { SC2K_ECONOMY } from '../config/game.js';
+import { SC2K_ECONOMY, INFRASTRUCTURE_FEES } from '../config/game.js';
 import type { Bond } from '../models/types.js';
 import { calculateCreditRating } from '../simulation/engine.js';
 import { UserRepository } from '../repositories/user.repository.js';
@@ -94,6 +94,17 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
       projBondInterest += (bond.amount * (bond.rate / 100)) / 365;
     }
 
+    // Infrastructure fees projection
+    const INFRA_SKIP = ['road','power_plant','wind_turbine','coal_plant','nuclear_plant','water_tower','garbage_depot','park','plaza','power_line','water_pipe'];
+    let projInfraFees = 0;
+    for (const b of completedBuildings) {
+      if (INFRA_SKIP.includes(b.type)) continue;
+      const powerFee = Math.ceil((b.powerRequired / 1000) * INFRASTRUCTURE_FEES.POWER_RATE);
+      const waterFee = Math.ceil((b.waterRequired / 100) * INFRASTRUCTURE_FEES.WATER_RATE);
+      const garbageFee = (INFRASTRUCTURE_FEES.GARBAGE_FEE as Record<string, number>)[b.type] || 1;
+      projInfraFees += powerFee + waterFee + garbageFee;
+    }
+
     return {
       treasury: city.stats.treasury,
       isMayor,
@@ -105,7 +116,8 @@ export const economyController: FastifyPluginAsync = async (fastify) => {
           propertyTaxC: projRevC,
           propertyTaxI: projRevI,
           ordinances: projOrdRevenue,
-          total: projRevR + projRevC + projRevI + projOrdRevenue,
+          infrastructureFees: projInfraFees,
+          total: projRevR + projRevC + projRevI + projOrdRevenue + projInfraFees,
         },
         expenses: {
           police: projPolice,

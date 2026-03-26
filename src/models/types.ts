@@ -242,6 +242,7 @@ export interface BudgetYtd {
     propertyTaxC: number;
     propertyTaxI: number;
     ordinances: number;
+    infrastructureFees: number;
   };
   expenses: {
     police: number;

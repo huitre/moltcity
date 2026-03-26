@@ -1081,7 +1081,7 @@ export class EmploymentSimulator {
   private lastPayrollDay: number = 0;
   private lastJobMatchTick: number = 0;
 
-  constructor(private db: SimulationDb) {}
+  constructor(private db: SimulationDb, private cityId: string) {}
 
   /**
    * Main simulation tick
@@ -1192,6 +1192,12 @@ export class EmploymentSimulator {
     }
 
     if (totalPaid > 0) {
+      // Deduct payroll from city treasury
+      const city = this.db.city.getCity(this.cityId);
+      if (city) {
+        this.db.city.updateTreasury(this.cityId, city.stats.treasury - totalPaid);
+      }
+
       console.log(`[Employment] Payroll processed: ${totalPaid} MOLT paid to ${employed.length} workers`);
       events.push({
         type: 'payroll_processed' as CityEventType,
@@ -1405,6 +1411,7 @@ export class TaxationSimulator {
     ytd.revenues.propertyTaxC += dailyTaxC;
     ytd.revenues.propertyTaxI += dailyTaxI;
     ytd.revenues.ordinances += ordinanceRevenue;
+    ytd.revenues.infrastructureFees += infraFeesCollected;
     ytd.expenses.police += policeExp;
     ytd.expenses.fire += fireExp;
     ytd.expenses.health += healthExp;
@@ -1469,7 +1476,7 @@ class CitySimulatorBundle {
     this.vehicleSimulator = new VehicleSimulator(db);
     this.rentEnforcementSimulator = new RentEnforcementSimulator(db, logger);
     this.populationSimulator = new PopulationSimulator(db);
-    this.employmentSimulator = new EmploymentSimulator(db);
+    this.employmentSimulator = new EmploymentSimulator(db, db.cityId);
     this.taxationSimulator = new TaxationSimulator(db, db.cityId, logger);
     this.landValueSimulator = new LandValueSimulator(db);
     this.zoneEvolutionSimulator = new ZoneEvolutionSimulator(db, logger);
