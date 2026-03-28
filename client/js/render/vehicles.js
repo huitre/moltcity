@@ -26,6 +26,7 @@ import {
   getConnectionCount,
   hasRoadAtFast,
 } from "./roads.js";
+import { createGlowTexture, getLightingContainer } from "./lighting.js";
 
 // Traffic light sprite textures (loaded once)
 const trafficLightTextures = {};
@@ -108,6 +109,85 @@ function applyVehicleScale(sprite, config) {
     size.width / sprite.texture.width,
     size.height / sprite.texture.height,
   );
+}
+
+// Default headlight offsets per iso direction (fallback when not in sprites.json)
+// dx/dy = center offset from sprite position, sx/sy = spread (L at -sx/+sy, R at +sx/-sy)
+const DEFAULT_HEADLIGHT_OFFSETS = {
+  NE: { dx: -2, dy: -12, sx: 3, sy: 0 },
+  SW: { dx: 2, dy: -4, sx: 3, sy: 0 },
+  SE: { dx: 2, dy: -12, sx: 1, sy: 2 },
+  NW: { dx: -2, dy: -4, sx: 1, sy: 2 },
+};
+
+const HEADLIGHT_SIZE = 18;
+const HEADLIGHT_TINT = 0xffdd88;
+
+/**
+ * Create two headlight glow sprites for a vehicle in the lighting container.
+ */
+function createHeadlights(vehicle) {
+  const container = getLightingContainer();
+  if (!container) return;
+
+  const tex = createGlowTexture(32);
+
+  const headlightL = new PIXI.Sprite(tex);
+  headlightL.anchor.set(0.5);
+  headlightL.width = HEADLIGHT_SIZE;
+  headlightL.height = HEADLIGHT_SIZE;
+  headlightL.tint = HEADLIGHT_TINT;
+  headlightL.alpha = 0;
+  headlightL.blendMode = PIXI.BLEND_MODES.ADD;
+
+  const headlightR = new PIXI.Sprite(tex);
+  headlightR.anchor.set(0.5);
+  headlightR.width = HEADLIGHT_SIZE;
+  headlightR.height = HEADLIGHT_SIZE;
+  headlightR.tint = HEADLIGHT_TINT;
+  headlightR.alpha = 0;
+  headlightR.blendMode = PIXI.BLEND_MODES.ADD;
+
+  container.addChild(headlightL);
+  container.addChild(headlightR);
+
+  vehicle.headlightL = headlightL;
+  vehicle.headlightR = headlightR;
+}
+
+/**
+ * Update headlight positions based on vehicle screen position and direction.
+ * Reads per-type offsets from vehicle config, falls back to defaults.
+ */
+function updateHeadlightPositions(vehicle) {
+  if (!vehicle.headlightL || !vehicle.headlightR) return;
+
+  const isoDir = CARDINAL_TO_ISO[vehicle.dir];
+  const hlCfg = vehicle.vehicleData.config.headlightOffsets;
+  const off = hlCfg?.[isoDir] || DEFAULT_HEADLIGHT_OFFSETS[isoDir];
+  if (!off) return;
+
+  const sprX = vehicle.sprite.x;
+  const sprY = vehicle.sprite.y;
+
+  vehicle.headlightL.x = sprX + off.dx - (off.sx || 0);
+  vehicle.headlightL.y = sprY + off.dy + (off.sy || 0);
+  vehicle.headlightR.x = sprX + off.dx + (off.sx || 0);
+  vehicle.headlightR.y = sprY + off.dy - (off.sy || 0);
+}
+
+/**
+ * Remove headlight sprites from the lighting container.
+ */
+function removeHeadlights(vehicle) {
+  if (vehicle.headlightL) {
+    vehicle.headlightL.parent?.removeChild(vehicle.headlightL);
+    vehicle.headlightL = null;
+  }
+  if (vehicle.headlightR) {
+    vehicle.headlightR.parent?.removeChild(vehicle.headlightR);
+    vehicle.headlightR = null;
+  }
 }
 
 /**
@@ -311,6 +391,10 @@ export function spawnVehicle(vehicleTypes) {
   // Add directly to worldContainer for proper z-sorting with buildings
   state.sceneLayer.addChild(sprite);
   animatedVehicles.push(vehicle);
+
+  // Create headlight glow sprites in the lighting container
+  createHeadlights(vehicle);
+  updateHeadlightPositions(vehicle);
 }
 
 /**
@@ -358,6 +442,7 @@ export function animateVehicles(delta) {
       if (!vehicle.zIndexLocked) {
         vehicle.sprite.zIndex = vehicleZIndex(vehicle);
       }
+      updateHeadlightPositions(vehicle);
       continue;
     }
 
@@ -415,6 +500,7 @@ export function animateVehicles(delta) {
         : !!getRoadAt(currentX, currentY);
 
       if (!targetRoadExists) {
+        removeHeadlights(vehicle);
         state.sceneLayer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
@@ -427,6 +513,7 @@ export function animateVehicles(delta) {
       ).filter((d) => d !== OPPOSITE_DIR[vehicle.dir]);
 
       if (validDirs.length === 0) {
+        removeHeadlights(vehicle);
         state.sceneLayer.removeChild(vehicle.sprite);
         animatedVehicles.splice(i, 1);
         continue;
@@ -493,6 +580,7 @@ export function animateVehicles(delta) {
     if (!vehicle.zIndexLocked) {
       vehicle.sprite.zIndex = vehicleZIndex(vehicle);
     }
+    updateHeadlightPositions(vehicle);
 
     // Remove if out of bounds
     if (
@@ -501,6 +589,7 @@ export function animateVehicles(delta) {
       vehicle.y < 0 ||
       vehicle.y >= GRID_SIZE
     ) {
+      removeHeadlights(vehicle);
       state.sceneLayer.removeChild(vehicle.sprite);
       animatedVehicles.splice(i, 1);
     }
@@ -633,7 +722,7 @@ export function createTrafficLightSprites(
     glow.width = 8;
     glow.height = 8;
     glow.alpha = 0.8;
-    glow.zIndex = sprite.zIndex;
+    glow.zIndex = Math.round((glow.y / (TILE_HEIGHT / 2)) * NUM_LAYERS) - (FRONT_FACING[texName] ? 1 : 0);
     container.addChild(glow);
 
     sprites.push({
@@ -716,6 +805,7 @@ function showVehicleDebug(vehicle) {
   const ISO_DIRS = ["NE", "SE", "SW", "NW"];
   for (const d of ISO_DIRS) {
     cloneIds.push(`vd-lo-${d}-dx`, `vd-lo-${d}-dy`, `vd-lo-${d}-rot`);
+    cloneIds.push(`vd-hl-${d}-dx`, `vd-hl-${d}-dy`, `vd-hl-${d}-sx`, `vd-hl-${d}-sy`);
   }
   for (const id of cloneIds) {
     const el = document.getElementById(id);
@@ -725,13 +815,16 @@ function showVehicleDebug(vehicle) {
     }
   }
 
-  // Ensure config has per-type laneOffsets and rotation objects
+  // Ensure config has per-type laneOffsets, rotation, and headlightOffsets objects
   if (!config.laneOffsets) config.laneOffsets = {};
   if (!config.rotation) config.rotation = {};
+  if (!config.headlightOffsets) config.headlightOffsets = {};
   for (const d of ISO_DIRS) {
     if (!config.laneOffsets[d]) config.laneOffsets[d] = { dx: 0, dy: 0 };
     if (config.rotation[d] === undefined)
       config.rotation[d] = DEFAULT_ROTATION[d] || 0;
+    if (!config.headlightOffsets[d])
+      config.headlightOffsets[d] = { ...DEFAULT_HEADLIGHT_OFFSETS[d] };
   }
 
   // --- Populate static fields ---
@@ -777,6 +870,31 @@ function showVehicleDebug(vehicle) {
     rotEl.addEventListener("input", () => {
       config.rotation[d] = parseFloat(rotEl.value) || 0;
       applyRotationToAll(vehicle.vehicleType, config);
+    });
+  }
+
+  // --- Populate and wire headlight offset grid ---
+  for (const d of ISO_DIRS) {
+    const hlDx = document.getElementById(`vd-hl-${d}-dx`);
+    const hlDy = document.getElementById(`vd-hl-${d}-dy`);
+    const hlSx = document.getElementById(`vd-hl-${d}-sx`);
+    const hlSy = document.getElementById(`vd-hl-${d}-sy`);
+    hlDx.value = config.headlightOffsets[d].dx;
+    hlDy.value = config.headlightOffsets[d].dy;
+    hlSx.value = config.headlightOffsets[d].sx;
+    hlSy.value = config.headlightOffsets[d].sy;
+
+    hlDx.addEventListener("input", () => {
+      config.headlightOffsets[d].dx = parseFloat(hlDx.value) || 0;
+    });
+    hlDy.addEventListener("input", () => {
+      config.headlightOffsets[d].dy = parseFloat(hlDy.value) || 0;
+    });
+    hlSx.addEventListener("input", () => {
+      config.headlightOffsets[d].sx = parseFloat(hlSx.value) || 0;
+    });
+    hlSy.addEventListener("input", () => {
+      config.headlightOffsets[d].sy = parseFloat(hlSy.value) || 0;
     });
   }
 
@@ -837,6 +955,7 @@ function showVehicleDebug(vehicle) {
         size: config.size,
         laneOffsets: config.laneOffsets,
         rotation: config.rotation,
+        headlightOffsets: config.headlightOffsets,
       };
       await updateSpriteConfig({
         source: "vehicles",

@@ -1192,12 +1192,6 @@ export class EmploymentSimulator {
     }
 
     if (totalPaid > 0) {
-      // Deduct payroll from city treasury
-      const city = this.db.city.getCity(this.cityId);
-      if (city) {
-        this.db.city.updateTreasury(this.cityId, city.stats.treasury - totalPaid);
-      }
-
       console.log(`[Employment] Payroll processed: ${totalPaid} MOLT paid to ${employed.length} workers`);
       events.push({
         type: 'payroll_processed' as CityEventType,
@@ -1295,7 +1289,7 @@ export class TaxationSimulator {
     }
     this.lastProcessedDay = time.day;
 
-    const city = this.db.city.getCity(this.cityId);
+    let city = this.db.city.getCity(this.cityId);
     if (!city) return events;
 
     const buildings = this.db.buildings.getAllBuildings();
@@ -1307,18 +1301,18 @@ export class TaxationSimulator {
       if (['road', 'power_plant', 'wind_turbine', 'coal_plant', 'nuclear_plant', 'water_tower', 'garbage_depot', 'park', 'plaza', 'power_line', 'water_pipe'].includes(building.type)) {
         continue;
       }
-      const owner = this.db.agents.findAgent(building.ownerId);
-      if (!owner) continue;
 
       const powerFee = Math.ceil((building.powerRequired / 1000) * INFRASTRUCTURE_FEES.POWER_RATE);
       const waterFee = Math.ceil((building.waterRequired / 100) * INFRASTRUCTURE_FEES.WATER_RATE);
       const garbageFee = INFRASTRUCTURE_FEES.GARBAGE_FEE[building.type] || 1;
       const totalFee = powerFee + waterFee + garbageFee;
 
-      if (owner.wallet.balance >= totalFee) {
+      const owner = this.db.agents.findAgent(building.ownerId);
+      if (owner && owner.wallet.balance >= totalFee) {
         this.db.agents.updateWalletBalance(owner.id, owner.wallet.balance - totalFee);
-        infraFeesCollected += totalFee;
       }
+      // Fee is always collected by the city (building is operating)
+      infraFeesCollected += totalFee;
     }
 
     // ── 2. SC2k property tax revenue (population-based) ──
@@ -1405,7 +1399,15 @@ export class TaxationSimulator {
     const newTreasury = city.stats.treasury + netCashFlow;
     this.db.city.updateTreasury(this.cityId, newTreasury);
 
-    // ── 8. Update YTD budget tracking ──
+    // ── 8. Reset YTD on new year (day 1, before accumulating) ──
+    if (time.day === 1 && time.year > 1) {
+      this.db.city.resetBudgetYtd(this.cityId);
+      // Re-read city to get the zeroed YTD
+      const freshCity = this.db.city.getCity(this.cityId);
+      if (freshCity) city = freshCity;
+    }
+
+    // ── 9. Update YTD budget tracking ──
     const ytd = city.economy.budgetYtd;
     ytd.revenues.propertyTaxR += dailyTaxR;
     ytd.revenues.propertyTaxC += dailyTaxC;
@@ -1420,15 +1422,10 @@ export class TaxationSimulator {
     ytd.expenses.bondInterest += bondInterest;
     this.db.city.updateBudgetYtd(this.cityId, ytd);
 
-    // ── 9. Update credit rating ──
+    // ── 10. Update credit rating ──
     const rating = calculateCreditRating(newTreasury, city.economy.bonds, completedBuildings);
     if (rating !== city.economy.creditRating) {
       this.db.city.updateCreditRating(this.cityId, rating);
-    }
-
-    // ── 10. Reset YTD on new year (day 1) ──
-    if (time.day === 1) {
-      this.db.city.resetBudgetYtd(this.cityId);
     }
 
     if (Math.abs(netCashFlow) > 0.01) {

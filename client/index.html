@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>MoltCity - The City Where AI Agents Live</title>
@@ -478,11 +481,15 @@
         position: fixed;
         z-index: 300;
         min-width: 180px;
-        background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+        background: linear-gradient(
+          180deg,
+          var(--wood-mid) 0%,
+          var(--wood-dark) 100%
+        );
         border: 2px solid var(--wood-border);
         border-radius: 4px;
         padding: 4px 0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         animation: tooltipFadeIn 0.15s ease-out;
       }
       .demolish-picker-item {
@@ -572,7 +579,11 @@
         .build-option:hover {
           transform: none;
           border-color: var(--wood-border);
-          background: linear-gradient(180deg, var(--wood-dark) 0%, #4a2e18 100%);
+          background: linear-gradient(
+            180deg,
+            var(--wood-dark) 0%,
+            #4a2e18 100%
+          );
         }
         .build-option:active {
           transform: scale(0.92);
@@ -691,10 +702,17 @@
         position: fixed;
         flex-direction: row;
         gap: 6px;
-        background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+        background: linear-gradient(
+          180deg,
+          var(--wood-mid) 0%,
+          var(--wood-dark) 100%
+        );
         border: 3px solid var(--wood-border);
         padding: 8px;
-        box-shadow: inset 2px 2px 0 var(--wood-highlight), inset -2px -2px 0 var(--wood-grain), 0 6px 20px rgba(0, 0, 0, 0.6);
+        box-shadow:
+          inset 2px 2px 0 var(--wood-highlight),
+          inset -2px -2px 0 var(--wood-grain),
+          0 6px 20px rgba(0, 0, 0, 0.6);
         z-index: 1000;
       }
       .build-popover::after {
@@ -730,7 +748,9 @@
       #build-menu.city-hall-required .build-group.city-hall-group {
         display: flex !important;
       }
-      #build-menu.city-hall-required .build-group.city-hall-group .build-option.admin-only {
+      #build-menu.city-hall-required
+        .build-group.city-hall-group
+        .build-option.admin-only {
         display: flex !important;
       }
 
@@ -753,8 +773,13 @@
         animation: pulse-banner 2s ease-in-out infinite;
       }
       @keyframes pulse-banner {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
       }
 
       /* Floor selector panel */
@@ -1094,7 +1119,7 @@
         position: fixed;
         bottom: 80px;
         right: 10px;
-        width: 300px;
+        min-width: 300px;
         max-height: calc(100vh - 140px);
         overflow-y: auto;
         background: linear-gradient(
@@ -2862,7 +2887,9 @@
       }
 
       /* Demand Meter Popup */
-      #popup-demand { width: 240px; }
+      #popup-demand {
+        width: 240px;
+      }
       .demand-meter {
         display: flex;
         justify-content: center;
@@ -2881,14 +2908,15 @@
       .demand-bar-track {
         width: 28px;
         height: 100px;
-        background: rgba(0,0,0,0.3);
+        background: rgba(0, 0, 0, 0.3);
         border: 2px solid var(--wood-border);
         position: relative;
         overflow: hidden;
       }
       .demand-bar-mid {
         position: absolute;
-        left: 0; right: 0;
+        left: 0;
+        right: 0;
         top: 50%;
         height: 1px;
         background: var(--wood-highlight);
@@ -2897,8 +2925,12 @@
       }
       .demand-bar-fill {
         position: absolute;
-        left: 2px; right: 2px;
-        transition: height 0.3s, bottom 0.3s, top 0.3s;
+        left: 2px;
+        right: 2px;
+        transition:
+          height 0.3s,
+          bottom 0.3s,
+          top 0.3s;
       }
       .demand-bar-fill.positive {
         bottom: 50%;
@@ -2914,7 +2946,7 @@
       }
       .demand-val {
         font-size: 7px;
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         color: var(--wood-highlight);
       }
       .demand-legend {
@@ -2932,7 +2964,8 @@
       }
       .demand-legend-item .dot {
         display: inline-block;
-        width: 6px; height: 6px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         margin-right: 3px;
         vertical-align: middle;
@@ -2942,12 +2975,14 @@
         color: var(--wood-highlight);
         text-align: center;
         padding: 6px 8px;
-        background: rgba(0,0,0,0.2);
+        background: rgba(0, 0, 0, 0.2);
         border: 2px solid var(--wood-border);
         margin-top: 8px;
         line-height: 1.6;
       }
-      .demand-info strong { color: var(--text-gold); }
+      .demand-info strong {
+        color: var(--text-gold);
+      }
 
       /* Services Popup specific */
       #popup-services .service-row {
@@ -3032,7 +3067,9 @@
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.15);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: background 0.2s, border-color 0.2s;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
       }
       .layer-toggle-row.active .layer-indicator {
         background: #4ecdc4;
@@ -3244,7 +3281,7 @@
       /* ============================================
          MOBILE RESPONSIVE STYLES
          ============================================ */
-      
+
       /* Prevent text selection and callout on touch devices */
       @media (pointer: coarse) {
         * {
@@ -3252,7 +3289,8 @@
           -webkit-user-select: none;
           user-select: none;
         }
-        input, textarea {
+        input,
+        textarea {
           -webkit-user-select: text;
           user-select: text;
         }
@@ -3642,7 +3680,11 @@
         /* Active states for touch */
         .build-option:active {
           transform: scale(0.95);
-          background: linear-gradient(180deg, var(--wood-mid) 0%, var(--wood-dark) 100%);
+          background: linear-gradient(
+            180deg,
+            var(--wood-mid) 0%,
+            var(--wood-dark) 100%
+          );
         }
 
         .toolbar-btn:active {
@@ -3657,13 +3699,18 @@
       /* ===== Globe Overlay ===== */
       #globe-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: 99999;
         background: rgba(0, 0, 0, 0.95);
         opacity: 0;
         transition: opacity 0.4s ease;
       }
-      #globe-overlay.visible { opacity: 1; }
+      #globe-overlay.visible {
+        opacity: 1;
+      }
 
       #globe-container {
         width: 100%;
@@ -3672,7 +3719,10 @@
 
       #globe-ui {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         pointer-events: none;
       }
 
@@ -3685,15 +3735,17 @@
         pointer-events: none;
       }
       #globe-header h2 {
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         color: var(--text-gold);
         font-size: 16px;
-        text-shadow: 0 0 30px rgba(78, 205, 196, 0.6), 0 0 60px rgba(78, 205, 196, 0.3);
+        text-shadow:
+          0 0 30px rgba(78, 205, 196, 0.6),
+          0 0 60px rgba(78, 205, 196, 0.3);
         letter-spacing: 6px;
         margin: 0;
       }
       #globe-subtitle {
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         color: #4ecdc4;
         font-size: 8px;
         margin-top: 10px;
@@ -3705,7 +3757,7 @@
         top: 20px;
         right: 24px;
         pointer-events: auto;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0, 0, 0, 0.5);
         border: 1px solid #555;
         color: #eee;
         font-size: 18px;
@@ -3715,7 +3767,9 @@
         cursor: pointer;
         transition: background 0.2s;
       }
-      #globe-close:hover { background: rgba(255,255,255,0.15); }
+      #globe-close:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
 
       #globe-city-panel {
         position: absolute;
@@ -3729,7 +3783,9 @@
         text-align: center;
         min-width: 320px;
         opacity: 0;
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
       }
       #globe-city-panel.visible {
         opacity: 1;
@@ -3737,7 +3793,7 @@
       }
 
       #globe-coords {
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         font-size: 8px;
         color: #4ecdc4;
         margin-bottom: 12px;
@@ -3745,8 +3801,8 @@
       }
 
       #globe-city-name {
-        font-family: 'Press Start 2P', monospace;
-        background: rgba(0,0,0,0.4);
+        font-family: "Press Start 2P", monospace;
+        background: rgba(0, 0, 0, 0.4);
         border: 2px solid var(--wood-border);
         color: var(--text-light);
         padding: 10px 14px;
@@ -3769,7 +3825,7 @@
         justify-content: center;
       }
       #globe-confirm {
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         font-size: 9px;
         padding: 8px 18px;
         background: linear-gradient(135deg, #2ecc71, #27ae60);
@@ -3777,7 +3833,9 @@
         border: 2px solid #1e8449;
         cursor: pointer;
         letter-spacing: 1px;
-        transition: transform 0.1s, box-shadow 0.2s;
+        transition:
+          transform 0.1s,
+          box-shadow 0.2s;
       }
       #globe-confirm:hover {
         transform: scale(1.03);
@@ -3789,15 +3847,18 @@
         transform: none;
       }
       #globe-cancel {
-        font-family: 'Press Start 2P', monospace;
+        font-family: "Press Start 2P", monospace;
         font-size: 9px;
         padding: 8px 14px;
-        background: rgba(0,0,0,0.3);
+        background: rgba(0, 0, 0, 0.3);
         color: #aaa;
         border: 1px solid #555;
         cursor: pointer;
       }
-      #globe-cancel:hover { color: #fff; border-color: #888; }
+      #globe-cancel:hover {
+        color: #fff;
+        border-color: #888;
+      }
 
       /* Zoom-mode: no CSS transition, no UI, pass-through pointer events */
       #globe-overlay.zoom-mode {
@@ -3815,9 +3876,12 @@
 
       /* Scanline overlay for retro feel */
       #globe-overlay::after {
-        content: '';
+        content: "";
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: repeating-linear-gradient(
           0deg,
           transparent,
@@ -3838,7 +3902,7 @@
     </div>
 
     <!-- City Hall Required Banner -->
-    <div id="city-hall-banner" style="display:none;">
+    <div id="city-hall-banner" style="display: none">
       Place your City Hall to start building your city!
     </div>
 
@@ -4094,23 +4158,39 @@
           &times;
         </button>
       </div>
-      <div class="popup-content" style="padding: 8px 12px;">
-        <div class="layer-toggle-row" data-layer="pollution" onclick="toggleLayer('pollution')">
+      <div class="popup-content" style="padding: 8px 12px">
+        <div
+          class="layer-toggle-row"
+          data-layer="pollution"
+          onclick="toggleLayer('pollution')"
+        >
           <span class="layer-icon">☢️</span>
           <span class="layer-name">Pollution</span>
           <span class="layer-indicator" id="layer-ind-pollution"></span>
         </div>
-        <div class="layer-toggle-row" data-layer="police_station" onclick="toggleLayer('police_station')">
+        <div
+          class="layer-toggle-row"
+          data-layer="police_station"
+          onclick="toggleLayer('police_station')"
+        >
           <span class="layer-icon">🚔</span>
           <span class="layer-name">Police Coverage</span>
           <span class="layer-indicator" id="layer-ind-police_station"></span>
         </div>
-        <div class="layer-toggle-row" data-layer="fire_station" onclick="toggleLayer('fire_station')">
+        <div
+          class="layer-toggle-row"
+          data-layer="fire_station"
+          onclick="toggleLayer('fire_station')"
+        >
           <span class="layer-icon">🚒</span>
           <span class="layer-name">Fire Coverage</span>
           <span class="layer-indicator" id="layer-ind-fire_station"></span>
         </div>
-        <div class="layer-toggle-row" data-layer="hospital" onclick="toggleLayer('hospital')">
+        <div
+          class="layer-toggle-row"
+          data-layer="hospital"
+          onclick="toggleLayer('hospital')"
+        >
           <span class="layer-icon">🏥</span>
           <span class="layer-name">Hospital Coverage</span>
           <span class="layer-indicator" id="layer-ind-hospital"></span>
@@ -4445,7 +4525,9 @@
         </button>
       </div>
       <div class="popup-content" id="demand-content">
-        <div style="text-align:center;padding:20px;color:#888">Loading...</div>
+        <div style="text-align: center; padding: 20px; color: #888">
+          Loading...
+        </div>
       </div>
     </div>
 
@@ -4746,7 +4828,7 @@
     </div>
 
     <!-- Globe Overlay for City Selection -->
-    <div id="globe-overlay" style="display:none">
+    <div id="globe-overlay" style="display: none">
       <div id="globe-container"></div>
       <div id="globe-ui">
         <div id="globe-header">
@@ -4756,7 +4838,13 @@
         <button id="globe-close">&#x2715;</button>
         <div id="globe-city-panel">
           <div id="globe-coords"></div>
-          <input type="text" id="globe-city-name" placeholder="Name your city..." maxlength="100" autocomplete="off" />
+          <input
+            type="text"
+            id="globe-city-name"
+            placeholder="Name your city..."
+            maxlength="100"
+            autocomplete="off"
+          />
           <div class="globe-buttons">
             <button id="globe-confirm">FOUND CITY</button>
             <button id="globe-cancel">CANCEL</button>
@@ -4770,7 +4858,7 @@
     <div id="top-bar">
       <div class="topbar-group">
         <span class="tb-title" id="city-name-display">MoltCity</span>
-        <span id="city-selector" style="display:none"></span>
+        <span id="city-selector" style="display: none"></span>
         <span class="tb-stat dim"
           ><span class="tb-icon">🕐</span
           ><span class="tb-val" id="time-display">08:00</span></span
@@ -4830,7 +4918,13 @@
         <button id="btn-start" class="success tb-btn">Start</button>
         <button id="btn-stop" class="tb-btn">Stop</button>
         <button id="btn-init" class="tb-btn" style="display: none">Init</button>
-        <button id="btn-timelapse" class="tb-btn" title="Timelapse Recorder (R)">Rec</button>
+        <button
+          id="btn-timelapse"
+          class="tb-btn"
+          title="Timelapse Recorder (R)"
+        >
+          Rec
+        </button>
       </div>
     </div>
 
@@ -4845,7 +4939,11 @@
       <div class="build-group city-hall-group">
         <span class="build-group-label">City Hall</span>
         <div class="build-group-items">
-          <div class="build-option admin-only" data-type="city_hall" id="build-city-hall">
+          <div
+            class="build-option admin-only"
+            data-type="city_hall"
+            id="build-city-hall"
+          >
             <span>🏛️</span>
             <small>City Hall</small>
           </div>
@@ -4877,7 +4975,10 @@
       <div class="build-group">
         <span class="build-group-label">Build</span>
         <div class="build-group-items">
-          <div class="build-option-wrapper admin-only" style="position:relative">
+          <div
+            class="build-option-wrapper admin-only"
+            style="position: relative"
+          >
             <div class="build-option admin-only" id="power-menu-trigger">
               <span>⚡</span>
               <small>Power</small>
@@ -4885,15 +4986,15 @@
             <div id="power-popover" class="build-popover">
               <div class="build-option admin-only" data-type="wind_turbine">
                 <span>🌀</span>
-                <small>Wind<br>5kW</small>
+                <small>Wind<br />5kW</small>
               </div>
               <div class="build-option admin-only" data-type="coal_plant">
                 <span>⚡</span>
-                <small>Coal<br>20kW</small>
+                <small>Coal<br />20kW</small>
               </div>
               <div class="build-option admin-only" data-type="nuclear_plant">
                 <span>☢️</span>
-                <small>Nuclear<br>50kW</small>
+                <small>Nuclear<br />50kW</small>
               </div>
             </div>
           </div>
@@ -4961,7 +5062,10 @@
             <span>💧</span>
             <small>Pipe</small>
           </div>
-          <div class="build-option admin-only infra-option" data-type="street_lamp">
+          <div
+            class="build-option admin-only infra-option"
+            data-type="street_lamp"
+          >
             <span>🔦</span>
             <small>Lamp</small>
           </div>
@@ -5068,14 +5172,22 @@
         <span class="stat-value" id="building-owner">-</span>
       </div>
 
-      <div id="density-upgrade-info" style="display:none">
+      <div id="density-upgrade-info" style="display: none">
         <div class="section-title">Density Upgrade</div>
         <div class="stat">
           <span class="stat-label">Density</span>
           <span class="stat-value" id="density-current">-</span>
         </div>
         <div id="density-checklist" style="margin: 4px 0"></div>
-        <div id="density-tips" style="margin-top: 4px; font-size: 11px; color: #888; line-height: 1.4"></div>
+        <div
+          id="density-tips"
+          style="
+            margin-top: 4px;
+            font-size: 11px;
+            color: #888;
+            line-height: 1.4;
+          "
+        ></div>
       </div>
 
       <div id="rental-info">
@@ -5110,7 +5222,9 @@
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="admin-tab-city">City</button>
         <button class="admin-tab" data-tab="admin-tab-camera">Camera</button>
-        <button class="admin-tab" data-tab="admin-tab-vehicles">Vehicles</button>
+        <button class="admin-tab" data-tab="admin-tab-vehicles">
+          Vehicles
+        </button>
         <button class="admin-tab" data-tab="admin-tab-sprites">Sprites</button>
       </div>
 
@@ -5119,19 +5233,44 @@
         <div class="debug-section">Editable</div>
         <div class="debug-field">
           <span>Treasury</span>
-          <input type="number" class="debug-input" id="debug-treasury" value="0" />
+          <input
+            type="number"
+            class="debug-input"
+            id="debug-treasury"
+            value="0"
+          />
         </div>
         <div class="debug-field">
           <span>Hour (0-23)</span>
-          <input type="number" class="debug-input" id="debug-hour" min="0" max="23" value="0" />
+          <input
+            type="number"
+            class="debug-input"
+            id="debug-hour"
+            min="0"
+            max="23"
+            value="0"
+          />
         </div>
         <div class="debug-field">
           <span>Day (1-365)</span>
-          <input type="number" class="debug-input" id="debug-day" min="1" max="365" value="1" />
+          <input
+            type="number"
+            class="debug-input"
+            id="debug-day"
+            min="1"
+            max="365"
+            value="1"
+          />
         </div>
         <div class="debug-field">
           <span>Year</span>
-          <input type="number" class="debug-input" id="debug-year" min="1" value="1" />
+          <input
+            type="number"
+            class="debug-input"
+            id="debug-year"
+            min="1"
+            value="1"
+          />
         </div>
 
         <div class="debug-section">Read-only</div>
@@ -5149,7 +5288,7 @@
           <span>Selected</span>
           <span class="debug-readonly" id="debug-selected-building">None</span>
         </div>
-        <div class="debug-field" style="display:flex;gap:4px">
+        <div class="debug-field" style="display: flex; gap: 4px">
           <button class="debug-density-btn" data-density="1">Low</button>
           <button class="debug-density-btn" data-density="2">Med</button>
           <button class="debug-density-btn" data-density="3">High</button>
@@ -5164,17 +5303,38 @@
         <div class="debug-section">Tilt-Shift</div>
         <div class="admin-slider-row">
           <label>Blur</label>
-          <input type="range" id="ts-blur" min="0" max="30" step="1" value="8" />
+          <input
+            type="range"
+            id="ts-blur"
+            min="0"
+            max="30"
+            step="1"
+            value="8"
+          />
           <span class="slider-val" id="ts-blur-val">8</span>
         </div>
         <div class="admin-slider-row">
           <label>Gradient</label>
-          <input type="range" id="ts-gradient" min="100" max="2000" step="50" value="600" />
+          <input
+            type="range"
+            id="ts-gradient"
+            min="100"
+            max="2000"
+            step="50"
+            value="600"
+          />
           <span class="slider-val" id="ts-gradient-val">600</span>
         </div>
         <div class="admin-slider-row">
           <label>Offset</label>
-          <input type="range" id="ts-start-y" min="-500" max="2000" step="10" value="800" />
+          <input
+            type="range"
+            id="ts-start-y"
+            min="-500"
+            max="2000"
+            step="10"
+            value="800"
+          />
           <span class="slider-val" id="ts-start-y-val">800</span>
         </div>
         <div class="admin-checkbox-row">
@@ -5193,58 +5353,138 @@
         <div class="debug-section">Window Lights</div>
         <div class="admin-slider-row">
           <label>Skew <span id="win-skew-val">0.4</span></label>
-          <input type="range" id="win-skew" min="0" max="1" step="0.05" value="0.4" />
+          <input
+            type="range"
+            id="win-skew"
+            min="0"
+            max="1"
+            step="0.05"
+            value="0.4"
+          />
         </div>
         <div class="debug-section">Traffic Light Offsets</div>
         <div class="admin-slider-row">
           <label>North X <span id="tl-north-x-val">0</span></label>
-          <input type="range" id="tl-north-x" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-north-x"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>North Y <span id="tl-north-y-val">0</span></label>
-          <input type="range" id="tl-north-y" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-north-y"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>South X <span id="tl-south-x-val">0</span></label>
-          <input type="range" id="tl-south-x" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-south-x"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>South Y <span id="tl-south-y-val">0</span></label>
-          <input type="range" id="tl-south-y" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-south-y"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>East X <span id="tl-east-x-val">0</span></label>
-          <input type="range" id="tl-east-x" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-east-x"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>East Y <span id="tl-east-y-val">0</span></label>
-          <input type="range" id="tl-east-y" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-east-y"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>West X <span id="tl-west-x-val">0</span></label>
-          <input type="range" id="tl-west-x" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-west-x"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>West Y <span id="tl-west-y-val">0</span></label>
-          <input type="range" id="tl-west-y" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="tl-west-y"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="debug-section">Street Lamp Offset</div>
         <div class="admin-slider-row">
           <label>X <span id="sl-off-x-val">0</span></label>
-          <input type="range" id="sl-off-x" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="sl-off-x"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
         <div class="admin-slider-row">
           <label>Y <span id="sl-off-y-val">0</span></label>
-          <input type="range" id="sl-off-y" min="-20" max="20" step="1" value="0" />
+          <input
+            type="range"
+            id="sl-off-y"
+            min="-20"
+            max="20"
+            step="1"
+            value="0"
+          />
         </div>
       </div>
 
       <!-- Tab: Vehicles -->
       <div class="admin-tab-content" id="admin-tab-vehicles">
-        <div id="vd-no-selection" style="color:#888;text-align:center;padding:20px 0">
+        <div
+          id="vd-no-selection"
+          style="color: #888; text-align: center; padding: 20px 0"
+        >
           Click a vehicle to inspect
         </div>
-        <div id="vd-content" style="display:none">
+        <div id="vd-content" style="display: none">
           <div class="debug-section"><span id="vd-type">Vehicle</span></div>
           <div class="debug-field">
             <span>Direction</span>
@@ -5270,44 +5510,141 @@
           <div class="debug-section">Traffic</div>
           <div class="debug-field">
             <span>Force stop</span>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                cursor: pointer;
+              "
+            >
               <input type="checkbox" id="vd-force-stop" />
-              <span id="vd-force-stop-label" style="font-size:10px;color:#888">off</span>
+              <span
+                id="vd-force-stop-label"
+                style="font-size: 10px; color: #888"
+                >off</span
+              >
             </label>
           </div>
 
           <div class="debug-section">Lane &amp; Rotation (per type)</div>
-          <div id="vd-lane-grid" style="display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:2px 4px;font-size:9px;align-items:center">
-            <span style="color:#888">Dir</span><span style="color:#888;text-align:center">Lane X</span><span style="color:#888;text-align:center">Lane Y</span><span style="color:#888;text-align:center">Rot °</span>
-            <span style="color:#4ecdc4">NE</span>
+          <div
+            id="vd-lane-grid"
+            style="
+              display: grid;
+              grid-template-columns: 28px 1fr 1fr 1fr;
+              gap: 2px 4px;
+              font-size: 9px;
+              align-items: center;
+            "
+          >
+            <span style="color: #888">Dir</span
+            ><span style="color: #888; text-align: center">Lane X</span
+            ><span style="color: #888; text-align: center">Lane Y</span
+            ><span style="color: #888; text-align: center">Rot °</span>
+            <span style="color: #4ecdc4">NE</span>
             <input type="number" id="vd-lo-NE-dx" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-NE-dy" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-NE-rot" step="1" class="vd-num" />
-            <span style="color:#4ecdc4">SE</span>
+            <span style="color: #4ecdc4">SE</span>
             <input type="number" id="vd-lo-SE-dx" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-SE-dy" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-SE-rot" step="1" class="vd-num" />
-            <span style="color:#4ecdc4">SW</span>
+            <span style="color: #4ecdc4">SW</span>
             <input type="number" id="vd-lo-SW-dx" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-SW-dy" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-SW-rot" step="1" class="vd-num" />
-            <span style="color:#4ecdc4">NW</span>
+            <span style="color: #4ecdc4">NW</span>
             <input type="number" id="vd-lo-NW-dx" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-NW-dy" step="0.01" class="vd-num" />
             <input type="number" id="vd-lo-NW-rot" step="1" class="vd-num" />
           </div>
-          <style>.vd-num{width:100%;background:#1a1a2e;color:#4ecdc4;border:1px solid #333;text-align:right;font:inherit;font-size:9px;padding:1px 3px;box-sizing:border-box}</style>
+          <style>
+            .vd-num {
+              width: 100%;
+              background: #1a1a2e;
+              color: #4ecdc4;
+              border: 1px solid #333;
+              text-align: right;
+              font: inherit;
+              font-size: 9px;
+              padding: 1px 3px;
+              box-sizing: border-box;
+            }
+          </style>
+
+          <div class="debug-section">Headlights (per type)</div>
+          <div
+            id="vd-hl-grid"
+            style="
+              display: grid;
+              grid-template-columns: 28px 1fr 1fr 1fr 1fr;
+              gap: 2px 4px;
+              font-size: 9px;
+              align-items: center;
+            "
+          >
+            <span style="color: #888">Dir</span
+            ><span style="color: #888; text-align: center">X</span
+            ><span style="color: #888; text-align: center">Y</span
+            ><span style="color: #888; text-align: center">SX</span
+            ><span style="color: #888; text-align: center">SY</span>
+            <span style="color: #4ecdc4">NE</span>
+            <input type="number" id="vd-hl-NE-dx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NE-dy" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NE-sx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NE-sy" step="1" class="vd-num" />
+            <span style="color: #4ecdc4">SE</span>
+            <input type="number" id="vd-hl-SE-dx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SE-dy" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SE-sx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SE-sy" step="1" class="vd-num" />
+            <span style="color: #4ecdc4">SW</span>
+            <input type="number" id="vd-hl-SW-dx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SW-dy" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SW-sx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-SW-sy" step="1" class="vd-num" />
+            <span style="color: #4ecdc4">NW</span>
+            <input type="number" id="vd-hl-NW-dx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NW-dy" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NW-sx" step="1" class="vd-num" />
+            <input type="number" id="vd-hl-NW-sy" step="1" class="vd-num" />
+          </div>
 
           <div class="debug-section">Z-Index</div>
           <div class="debug-field">
             <span>Z-Index</span>
-            <input type="number" id="vd-zindex" step="1" style="width:70px;background:#1a1a2e;color:#4ecdc4;border:1px solid #4ecdc4;text-align:right;font-family:inherit;font-size:10px" />
+            <input
+              type="number"
+              id="vd-zindex"
+              step="1"
+              style="
+                width: 70px;
+                background: #1a1a2e;
+                color: #4ecdc4;
+                border: 1px solid #4ecdc4;
+                text-align: right;
+                font-family: inherit;
+                font-size: 10px;
+              "
+            />
           </div>
           <div class="debug-field">
             <span>Lock</span>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                cursor: pointer;
+              "
+            >
               <input type="checkbox" id="vd-zindex-lock" />
-              <span id="vd-zindex-lock-label" style="font-size:10px;color:#888">auto</span>
+              <span
+                id="vd-zindex-lock-label"
+                style="font-size: 10px; color: #888"
+                >auto</span
+              >
             </label>
           </div>
 
@@ -5324,19 +5661,39 @@
           </div>
 
           <div class="debug-section">Save</div>
-          <div style="text-align:center;padding:4px 0">
-            <button id="vd-save" style="background:#4ecdc4;color:#111;border:none;padding:4px 12px;cursor:pointer;font:inherit;font-size:10px;border-radius:3px">Save to sprites.json</button>
-            <span id="vd-save-status" style="font-size:9px;margin-left:6px;color:#888"></span>
+          <div style="text-align: center; padding: 4px 0">
+            <button
+              id="vd-save"
+              style="
+                background: #4ecdc4;
+                color: #111;
+                border: none;
+                padding: 4px 12px;
+                cursor: pointer;
+                font: inherit;
+                font-size: 10px;
+                border-radius: 3px;
+              "
+            >
+              Save to sprites.json
+            </button>
+            <span
+              id="vd-save-status"
+              style="font-size: 9px; margin-left: 6px; color: #888"
+            ></span>
           </div>
         </div>
       </div>
 
       <!-- Tab: Sprites -->
       <div class="admin-tab-content" id="admin-tab-sprites">
-        <div id="se-no-sprite" style="color:#888;text-align:center;padding:20px 0">
+        <div
+          id="se-no-sprite"
+          style="color: #888; text-align: center; padding: 20px 0"
+        >
           Click a building to edit its sprite
         </div>
-        <div id="se-content" style="display:none">
+        <div id="se-content" style="display: none">
           <div class="se-field">
             <label>ID</label>
             <span class="se-readonly" id="se-id">-</span>
@@ -5378,15 +5735,39 @@
           <div class="se-field">
             <label>Anchor X</label>
             <div class="se-anchor-row">
-              <input type="range" id="se-anchor-x-range" min="0" max="1" step="0.01" />
-              <input type="number" id="se-anchor-x" min="0" max="1" step="0.01" />
+              <input
+                type="range"
+                id="se-anchor-x-range"
+                min="0"
+                max="1"
+                step="0.01"
+              />
+              <input
+                type="number"
+                id="se-anchor-x"
+                min="0"
+                max="1"
+                step="0.01"
+              />
             </div>
           </div>
           <div class="se-field">
             <label>Anchor Y</label>
             <div class="se-anchor-row">
-              <input type="range" id="se-anchor-y-range" min="0" max="1" step="0.01" />
-              <input type="number" id="se-anchor-y" min="0" max="1" step="0.01" />
+              <input
+                type="range"
+                id="se-anchor-y-range"
+                min="0"
+                max="1"
+                step="0.01"
+              />
+              <input
+                type="number"
+                id="se-anchor-y"
+                min="0"
+                max="1"
+                step="0.01"
+              />
             </div>
           </div>
 
@@ -5394,31 +5775,122 @@
             Windows
             <span class="se-win-count" id="se-win-count"></span>
           </div>
-          <div class="se-field" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <label style="margin:0;white-space:nowrap">Window Tint</label>
-            <input type="color" id="se-win-tint" value="#ffdd77" style="width:32px;height:24px;padding:0;border:1px solid #555;border-radius:3px;background:transparent;cursor:pointer" />
-            <label style="margin:0;font-size:10px;color:#888;cursor:pointer;user-select:none" id="se-win-tint-auto">
-              <input type="checkbox" id="se-win-tint-random" style="margin-right:3px" />
+          <div
+            class="se-field"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 6px;
+            "
+          >
+            <label style="margin: 0; white-space: nowrap">Window Tint</label>
+            <input
+              type="color"
+              id="se-win-tint"
+              value="#ffdd77"
+              style="
+                width: 32px;
+                height: 24px;
+                padding: 0;
+                border: 1px solid #555;
+                border-radius: 3px;
+                background: transparent;
+                cursor: pointer;
+              "
+            />
+            <label
+              style="
+                margin: 0;
+                font-size: 10px;
+                color: #888;
+                cursor: pointer;
+                user-select: none;
+              "
+              id="se-win-tint-auto"
+            >
+              <input
+                type="checkbox"
+                id="se-win-tint-random"
+                style="margin-right: 3px"
+              />
               Random
             </label>
           </div>
-          <div class="se-field" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <label style="margin:0;white-space:nowrap">Window Size</label>
-            <label style="margin:0;font-size:9px;color:#888">W</label>
-            <input type="number" id="se-win-w" min="2" max="30" step="1" value="8" style="width:40px;background:rgba(0,0,0,0.3);border:1px solid #555;color:#eee;padding:2px 4px;font-size:10px" />
-            <label style="margin:0;font-size:9px;color:#888">H</label>
-            <input type="number" id="se-win-h" min="2" max="30" step="1" value="5" style="width:40px;background:rgba(0,0,0,0.3);border:1px solid #555;color:#eee;padding:2px 4px;font-size:10px" />
-            <label style="margin:0;font-size:9px;color:#888">Skew</label>
-            <input type="number" id="se-win-skew" min="0" max="1" step="0.05" value="0.4" style="width:45px;background:rgba(0,0,0,0.3);border:1px solid #555;color:#eee;padding:2px 4px;font-size:10px" />
+          <div
+            class="se-field"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 6px;
+            "
+          >
+            <label style="margin: 0; white-space: nowrap">Window Size</label>
+            <label style="margin: 0; font-size: 9px; color: #888">W</label>
+            <input
+              type="number"
+              id="se-win-w"
+              min="2"
+              max="30"
+              step="1"
+              value="8"
+              style="
+                width: 40px;
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid #555;
+                color: #eee;
+                padding: 2px 4px;
+                font-size: 10px;
+              "
+            />
+            <label style="margin: 0; font-size: 9px; color: #888">H</label>
+            <input
+              type="number"
+              id="se-win-h"
+              min="2"
+              max="30"
+              step="1"
+              value="5"
+              style="
+                width: 40px;
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid #555;
+                color: #eee;
+                padding: 2px 4px;
+                font-size: 10px;
+              "
+            />
+            <label style="margin: 0; font-size: 9px; color: #888">Skew</label>
+            <input
+              type="number"
+              id="se-win-skew"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.4"
+              style="
+                width: 45px;
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid #555;
+                color: #eee;
+                padding: 2px 4px;
+                font-size: 10px;
+              "
+            />
           </div>
           <div class="se-win-preview" id="se-win-preview">
             <canvas id="se-win-canvas" width="240" height="200"></canvas>
           </div>
-          <div class="se-win-hint">Click to add &bull; Drag to move &bull; Right-click to delete</div>
+          <div class="se-win-hint">
+            Click to add &bull; Drag to move &bull; Right-click to delete
+          </div>
           <div class="se-win-list" id="se-win-list"></div>
 
           <div class="se-buttons">
-            <button class="se-btn-save" id="se-save">Save to sprites.json</button>
+            <button class="se-btn-save" id="se-save">
+              Save to sprites.json
+            </button>
             <button class="se-btn-reset" id="se-reset">Reset</button>
           </div>
           <div class="se-status" id="se-status"></div>
@@ -5433,7 +5905,9 @@
         <button class="close-btn" onclick="closeAdvisor()">&times;</button>
       </h3>
       <div id="advisor-content">
-        <div style="text-align:center;padding:20px;color:#999">Click to load advisor data</div>
+        <div style="text-align: center; padding: 20px; color: #999">
+          Click to load advisor data
+        </div>
       </div>
     </div>
 
@@ -5465,8 +5939,8 @@
       function withCityParam(url) {
         const cid = window.__currentCityId;
         if (!cid) return url;
-        const sep = url.includes('?') ? '&' : '?';
-        return url + sep + 'cityId=' + encodeURIComponent(cid);
+        const sep = url.includes("?") ? "&" : "?";
+        return url + sep + "cityId=" + encodeURIComponent(cid);
       }
       // Helper: add cityId to a request body object
       function bodyWithCityId(obj) {
@@ -5539,7 +6013,9 @@
           "toolbar-leaderboard-content",
         );
         try {
-          const res = await fetch(withCityParam("/api/leaderboard?sort=netWorth&limit=10"));
+          const res = await fetch(
+            withCityParam("/api/leaderboard?sort=netWorth&limit=10"),
+          );
           if (!res.ok) throw new Error("Failed to load");
           const data = await res.json();
 
@@ -5765,7 +6241,9 @@
         try {
           const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const res = await fetch(withCityParam("/api/city/stats"), { headers });
+          const res = await fetch(withCityParam("/api/city/stats"), {
+            headers,
+          });
           const data = await res.json();
 
           const setVal = (id, val) => {
@@ -5774,7 +6252,10 @@
           };
 
           setVal("stat-population", data.population || 0);
-          const empRate = data.population > 0 ? ((data.employed || 0) / data.population * 100).toFixed(0) : "0";
+          const empRate =
+            data.population > 0
+              ? (((data.employed || 0) / data.population) * 100).toFixed(0)
+              : "0";
           setVal("stat-employment", empRate + "%");
           setVal("stat-buildings", data.totalBuildings || 0);
           setVal("stat-jobs", data.totalJobs || 0);
@@ -5807,7 +6288,8 @@
           const data = await res.json();
           renderDemandMeter(data);
         } catch (err) {
-          container.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:20px">Failed to load demand data</div>';
+          container.innerHTML =
+            '<div style="color:#ff6b6b;text-align:center;padding:20px">Failed to load demand data</div>';
         }
       }
 
@@ -5816,9 +6298,19 @@
         if (!container || !data.zoning) return;
 
         const zones = [
-          { key: "residential", label: "R", color: "#2ecc71", name: "Residential" },
+          {
+            key: "residential",
+            label: "R",
+            color: "#2ecc71",
+            name: "Residential",
+          },
           { key: "office", label: "C", color: "#3498db", name: "Commercial" },
-          { key: "industrial", label: "I", color: "#e67e22", name: "Industrial" },
+          {
+            key: "industrial",
+            label: "I",
+            color: "#e67e22",
+            name: "Industrial",
+          },
         ];
 
         const demand = data.zoning.demand;
@@ -5855,7 +6347,10 @@
         let infoHtml = "";
         if (data.zoning.recommendation) {
           const rec = data.zoning.recommendation;
-          const recName = rec === "office" ? "Commercial" : rec.charAt(0).toUpperCase() + rec.slice(1);
+          const recName =
+            rec === "office"
+              ? "Commercial"
+              : rec.charAt(0).toUpperCase() + rec.slice(1);
           infoHtml = `<strong>${recName}</strong> demand is high — zone more to enable growth`;
         } else {
           infoHtml = "Zoning balance is good — all zones can grow";
@@ -5889,9 +6384,15 @@
           const token = localStorage.getItem("agentcity_token");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const [statsRes, buildingsRes, economyRes] = await Promise.all([
-            fetch(withCityParam("/api/city/stats"), { headers }).then((r) => r.json()),
-            fetch(withCityParam("/api/buildings"), { headers }).then((r) => r.json()),
-            fetch(withCityParam("/api/economy/budget"), { headers }).then((r) => r.json()),
+            fetch(withCityParam("/api/city/stats"), { headers }).then((r) =>
+              r.json(),
+            ),
+            fetch(withCityParam("/api/buildings"), { headers }).then((r) =>
+              r.json(),
+            ),
+            fetch(withCityParam("/api/economy/budget"), { headers }).then((r) =>
+              r.json(),
+            ),
           ]);
 
           const buildings = buildingsRes.buildings || [];
@@ -6042,7 +6543,11 @@
 
           // Tax penalty on happiness
           const econ = economyRes?.economy;
-          const avgTaxRate = ((econ?.taxRateR || 7) + (econ?.taxRateC || 7) + (econ?.taxRateI || 7)) / 3;
+          const avgTaxRate =
+            ((econ?.taxRateR || 7) +
+              (econ?.taxRateC || 7) +
+              (econ?.taxRateI || 7)) /
+            3;
           if (avgTaxRate > 7) {
             happinessScore -= (avgTaxRate - 7) * 3;
           }
@@ -6064,7 +6569,9 @@
         const token = localStorage.getItem("agentcity_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         try {
-          const res = await fetch(withCityParam("/api/economy/budget"), { headers });
+          const res = await fetch(withCityParam("/api/economy/budget"), {
+            headers,
+          });
           if (!res.ok) throw new Error("Failed to load");
           budgetData = await res.json();
           renderBudget(budgetData);
@@ -6235,11 +6742,13 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(bodyWithCityId({
-              taxRateR: parseInt(document.getElementById("tax-r").value),
-              taxRateC: parseInt(document.getElementById("tax-c").value),
-              taxRateI: parseInt(document.getElementById("tax-i").value),
-            })),
+            body: JSON.stringify(
+              bodyWithCityId({
+                taxRateR: parseInt(document.getElementById("tax-r").value),
+                taxRateC: parseInt(document.getElementById("tax-c").value),
+                taxRateI: parseInt(document.getElementById("tax-i").value),
+              }),
+            ),
           })
             .then(() => {
               setTimeout(() => {
@@ -6278,7 +6787,9 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(bodyWithCityId({ [dept]: parseInt(slider.value) })),
+            body: JSON.stringify(
+              bodyWithCityId({ [dept]: parseInt(slider.value) }),
+            ),
           })
             .then(() => {
               setTimeout(() => {
@@ -6304,7 +6815,9 @@
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(bodyWithCityId({ ordinanceId: ordId, enabled: !isOn })),
+          body: JSON.stringify(
+            bodyWithCityId({ ordinanceId: ordId, enabled: !isOn }),
+          ),
         })
           .then(() => loadToolbarBudget())
           .catch(() => el.classList.toggle("on"));

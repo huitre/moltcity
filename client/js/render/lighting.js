@@ -25,7 +25,7 @@ import { resolveSpriteData } from "../sprites.js";
 export const LIGHTING_CONFIG = {
   // Streetlight settings
   streetlight: {
-    haloRadius: 8,
+    haloRadius: 4,
     haloColor: 0xffdd88,
     haloAlpha: 0.12,
     eraseRadius: 30, // radius for scene illumination
@@ -33,7 +33,7 @@ export const LIGHTING_CONFIG = {
     poleHeight: 40,
     poleColor: 0x444444,
     bulbColor: 0xffffcc,
-    bulbRadius: 1.5,
+    bulbRadius: 1,
   },
   // Light colors for variety
   windowColors: [0xffdd77, 0xffeebb, 0xffffcc, 0xffcc66, 0xffffff],
@@ -45,7 +45,7 @@ const STREETLAMP_SCALE = 14 / 142; // target height 14px
 // Default window parallelogram size (pixels in screen space)
 const DEFAULT_WIN_W = 8;
 const DEFAULT_WIN_H = 5;
-let WIN_SKEW = 0.4; // iso 2:1 ratio
+let WIN_SKEW = 0.35; // iso 2:1 ratio
 
 // Cached radial-gradient glow texture (white center → transparent edge)
 let glowTexture = null;
@@ -54,7 +54,7 @@ let glowTexture = null;
  * Create a reusable white radial-gradient texture for streetlight halos.
  * Center is opaque white, edge is fully transparent.
  */
-function createGlowTexture(radius = 32) {
+export function createGlowTexture(radius = 32) {
   if (glowTexture) return glowTexture;
   const size = radius * 2;
   const canvas = document.createElement("canvas");
@@ -352,6 +352,12 @@ export function updateLighting(nightAlpha) {
   // Traffic light glows — fade in at night
   for (const tg of trafficLightGlowSprites) {
     tg.sprite.alpha = alpha * 0.5;
+  }
+
+  // Vehicle headlights — fade in at night
+  for (const v of state.animatedVehicles) {
+    if (v.headlightL) v.headlightL.alpha = alpha * 0.3;
+    if (v.headlightR) v.headlightR.alpha = alpha * 0.3;
   }
 
   // Render lights to the lighting texture with current ambient clear color
