@@ -48,6 +48,11 @@ import {
   rebuildLights,
   updateTrafficLightGlowPhase,
 } from "./render/lighting.js";
+import {
+  initEffects,
+  rebuildEffects,
+  animateEffects,
+} from "./render/effects.js";
 
 let renderContainer = null;
 let statusIcons = [];
@@ -67,6 +72,7 @@ PIXI.Assets.load("/sprites/ui/waste_icon.png")
  */
 export function initGame() {
   initLighting();
+  initEffects();
   initClouds();
   initBirds();
 
@@ -97,6 +103,9 @@ function gameLoop(delta) {
 
   // Animate status icons
   animateStatusIcons(delta);
+
+  // Animate smoke & fire effects
+  animateEffects(delta);
 }
 
 /**
@@ -278,6 +287,9 @@ export function render() {
       }
     }
   }
+
+  // Rebuild smoke & fire effects on buildings
+  rebuildEffects();
 
   // Place trash bins on adjacent road tiles
   for (const building of buildings) {

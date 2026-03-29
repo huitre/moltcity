@@ -287,7 +287,8 @@ export type CityEventType =
   | 'building_powered'
   | 'agent_arrived'
   | 'day_started'
-  | 'night_started';
+  | 'night_started'
+  | 'fires_update';
 
 export interface CityEvent {
   type: CityEventType;

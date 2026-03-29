@@ -148,6 +148,9 @@ export let dragDrawPreview = null;
 // Economy
 export let economyData = null;
 
+// Active fires (from server fire simulation)
+export let activeFires = [];
+
 // State setters
 export function setCurrentCityId(id) {
   currentCityId = id;
@@ -341,4 +344,7 @@ export function setTrafficLightTimer(timer) {
 }
 export function setRoadPositionSet(set) {
   roadPositionSet = set;
+}
+export function setActiveFires(fires) {
+  activeFires = fires;
 }

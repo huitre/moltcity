@@ -6,6 +6,7 @@ import { WS_URL } from './config.js';
 import * as state from './state.js';
 import * as api from './api.js';
 import { updateTrafficLimits } from './render/ambient.js';
+import { updateFireEffects } from './render/effects.js';
 
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -102,6 +103,13 @@ function handleMessage(msg, onMessage) {
 
     case "buildings_update":
       handleBuildingsUpdate(onMessage);
+      break;
+
+    case "fires_update":
+      if (msg.data?.fires !== undefined) {
+        state.setActiveFires(msg.data.fires);
+        updateFireEffects();
+      }
       break;
   }
 

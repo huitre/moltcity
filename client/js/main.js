@@ -40,6 +40,7 @@ import { initTimelapse } from "./timelapse.js";
 import { initReplay } from "./replay.js";
 import { handleVehicleClick, findClickedVehicle } from "./render/vehicles.js";
 import { openGlobe, onGlobeCityCreated } from "./ui/globe.js";
+import { initDraggablePanels } from "./ui/draggable.js";
 
 let appInitialized = false;
 
@@ -119,6 +120,7 @@ async function initializeApp() {
     setupLeaderboard();
     initDebugPanel();
     initAdvisor();
+    initDraggablePanels();
 
     // Setup build menu
     setupBuildMenu();

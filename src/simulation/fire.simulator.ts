@@ -18,15 +18,15 @@ const FIREFIGHTER_NAMES = [
 ];
 
 export class FireSimulator {
-  private firefightersSpawned = false;
+  private lastStaffCheckTick = 0;
 
   constructor(private db: SimulationDb, private log?: ActivityLogger) {}
 
   simulate(time: CityTime, currentTick: number): void {
-    // Ensure firefighters are spawned at fire stations
-    if (!this.firefightersSpawned) {
+    // Check for new fire stations and spawn firefighters periodically (every 100 ticks)
+    if (currentTick - this.lastStaffCheckTick >= 100) {
       this.spawnFirefighters();
-      this.firefightersSpawned = true;
+      this.lastStaffCheckTick = currentTick;
     }
 
     // Generate random fires (low probability)
@@ -71,17 +71,38 @@ export class FireSimulator {
       !['road', 'park', 'plaza'].includes(b.type)
     );
 
+    // Cache fire station positions for coverage check
+    const stations = completedBuildings.filter(b => b.type === 'fire_station');
+    const stationCoords: { x: number; y: number }[] = [];
+    for (const s of stations) {
+      const p = this.db.parcels.getParcelById(s.parcelId);
+      if (p) stationCoords.push({ x: p.x, y: p.y });
+    }
+
+    // Cache active fires once per check (not per building)
+    const activeFires = this.db.fires.getActiveFires();
+    const onFireBuildingIds = new Set(activeFires.map(f => f.buildingId));
+
     // Very low chance per building per 10-tick interval
     const fireChance = 0.00005; // ~0.005% per building per check
 
     for (const building of completedBuildings) {
-      // Check if building already on fire
-      const activeFires = this.db.fires.getActiveFires();
-      const alreadyOnFire = activeFires.some(f => f.buildingId === building.id);
-      if (alreadyOnFire) continue;
+      if (onFireBuildingIds.has(building.id)) continue;
+
+      const parcel = this.db.parcels.getParcelById(building.parcelId);
+      if (!parcel) continue;
+
+      // Fire station coverage reduces fire chance significantly
+      let chance = fireChance;
+      const coverageRadius = CITY_SERVICES.COVERAGE_RADIUS.fire_station;
+      const inCoverage = stationCoords.some(s =>
+        Math.abs(s.x - parcel.x) + Math.abs(s.y - parcel.y) <= coverageRadius
+      );
+      if (inCoverage) {
+        chance *= 0.1; // 90% reduction in fire chance within coverage
+      }
 
       // Electrical fires more likely in powered buildings with high power usage
-      let chance = fireChance;
       if (building.powered && building.powerRequired > 1000) {
         chance *= 1.5;
       }
@@ -91,9 +112,6 @@ export class FireSimulator {
       }
 
       if (Math.random() < chance) {
-        const parcel = this.db.parcels.getParcelById(building.parcelId);
-        if (!parcel) continue;
-
         const cause = building.powered ? 'electrical' : 'accident';
         this.db.fires.createFire(building.id, parcel.id, cause, currentTick);
         console.log(`[Fire] ${cause} fire started at ${building.name} (${parcel.x},${parcel.y})`);

@@ -2,7 +2,7 @@
 // MOLTCITY - Utility Functions
 // ============================================
 
-import { TILE_WIDTH, TILE_HEIGHT } from './config.js';
+import { TILE_WIDTH, TILE_HEIGHT } from "./config.js";
 
 /**
  * Convert cartesian (grid) coordinates to isometric screen coordinates
@@ -41,7 +41,15 @@ export function seededRandom(seed) {
 /**
  * Draw a dashed line on a PIXI.Graphics object
  */
-export function drawDashedLine(graphics, x1, y1, x2, y2, dashLen = 5, gapLen = 3) {
+export function drawDashedLine(
+  graphics,
+  x1,
+  y1,
+  x2,
+  y2,
+  dashLen = 5,
+  gapLen = 3,
+) {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
@@ -89,14 +97,21 @@ export function bresenhamLine(x0, y0, x1, y1) {
   const sx = x0 < x1 ? 1 : -1;
   const sy = y0 < y1 ? 1 : -1;
   let err = dx - dy;
-  let cx = x0, cy = y0;
+  let cx = x0,
+    cy = y0;
 
   while (true) {
     points.push({ x: cx, y: cy });
     if (cx === x1 && cy === y1) break;
     const e2 = 2 * err;
-    if (e2 > -dy) { err -= dy; cx += sx; }
-    if (e2 < dx) { err += dx; cy += sy; }
+    if (e2 > -dy) {
+      err -= dy;
+      cx += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      cy += sy;
+    }
   }
   return points;
 }

@@ -31,11 +31,12 @@ export function makeDraggable(element, handle) {
 
     const rect = element.getBoundingClientRect();
     
-    // Remove transform and use left/top positioning
+    // Remove transform/bottom/right and use left/top positioning
     element.style.transform = 'none';
     element.style.left = rect.left + 'px';
     element.style.top = rect.top + 'px';
     element.style.right = 'auto';
+    element.style.bottom = 'auto';
 
     if (e.type === 'mousedown') {
       startX = e.clientX;
@@ -99,10 +100,10 @@ export function makeDraggable(element, handle) {
 }
 
 /**
- * Get the highest z-index of all panels
+ * Get the highest z-index of all draggable panels
  */
 function getHighestZIndex() {
-  const panels = document.querySelectorAll('.toolbar-popup, #advisor-panel, #activity-panel');
+  const panels = document.querySelectorAll('.toolbar-popup, .panel, #leaderboard-panel, #election-panel');
   let highest = 9000;
   panels.forEach(p => {
     const z = parseInt(getComputedStyle(p).zIndex) || 0;
@@ -112,21 +113,37 @@ function getHighestZIndex() {
 }
 
 /**
- * Initialize draggable panels
+ * Wire up a panel by ID — use h3 as handle by default.
+ */
+function initPanel(id, handleSelector) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const handle = el.querySelector(handleSelector || 'h3');
+  if (handle) makeDraggable(el, handle);
+}
+
+/**
+ * Initialize draggable panels (call after DOM is ready)
  */
 export function initDraggablePanels() {
-  // Advisor panel
-  const advisorPanel = document.getElementById('advisor-panel');
-  if (advisorPanel) {
-    const advisorHeader = advisorPanel.querySelector('h3');
-    if (advisorHeader) makeDraggable(advisorPanel, advisorHeader);
-  }
+  // Fixed panels with h3 headers
+  initPanel('advisor-panel');
+  initPanel('building-info-panel');
+  initPanel('admin-panel');
+  initPanel('election-panel');
 
-  // Activity panel
-  const activityPanel = document.getElementById('activity-panel');
-  if (activityPanel) {
-    const activityHeader = activityPanel.querySelector('h3');
-    if (activityHeader) makeDraggable(activityPanel, activityHeader);
+  // Leaderboard (header is built dynamically — use MutationObserver)
+  const lb = document.getElementById('leaderboard-panel');
+  if (lb) {
+    const tryInit = () => {
+      const header = lb.querySelector('.leaderboard-header');
+      if (header && !header.dataset.draggable) {
+        header.dataset.draggable = '1';
+        makeDraggable(lb, header);
+      }
+    };
+    tryInit();
+    new MutationObserver(tryInit).observe(lb, { childList: true, subtree: true });
   }
 
   // Toolbar popups

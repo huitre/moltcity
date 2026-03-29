@@ -111,6 +111,9 @@ const simulationPluginImpl: FastifyPluginAsync<SimulationPluginOptions> = async 
       if (event.type === 'buildings_updated') {
         fastify.broadcastToCity(data.cityId, 'buildings_update', event.data);
       }
+      if (event.type === 'fires_update') {
+        fastify.broadcastToCity(data.cityId, 'fires_update', event.data);
+      }
     }
   });
 

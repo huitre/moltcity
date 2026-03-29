@@ -1498,6 +1498,7 @@ export class SimulationEngine extends EventEmitter {
 
   // Per-city simulator bundles, keyed by cityId
   private cityBundles = new Map<string, CitySimulatorBundle>();
+  private _hadFiresLastTick = new Map<string, boolean>();
 
   constructor(db: LegacyDatabaseManagerAdapter) {
     super();
@@ -1688,6 +1689,24 @@ export class SimulationEngine extends EventEmitter {
     // Simulate fire (every 10 ticks)
     if (this.currentTick % 10 === 0) {
       bundle.fireSimulator.simulate(time, this.currentTick);
+
+      // Broadcast active fires to client (city-scoped)
+      const scopedFires = this.db.forCity(city.id);
+      const activeFires = scopedFires.fires.getActiveFires();
+      const hadFires = this._hadFiresLastTick.get(city.id) ?? false;
+      if (activeFires.length > 0 || hadFires) {
+        events.push({
+          type: 'fires_update' as CityEventType,
+          timestamp: Date.now(),
+          data: {
+            fires: activeFires.map(f => {
+              const parcel = scopedFires.parcels.getParcelById(f.parcelId);
+              return { buildingId: f.buildingId, intensity: f.intensity, x: parcel?.x ?? 0, y: parcel?.y ?? 0 };
+            }),
+          },
+        });
+      }
+      this._hadFiresLastTick.set(city.id, activeFires.length > 0);
     }
 
     // Simulate agents
