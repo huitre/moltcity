@@ -22,7 +22,11 @@ export class FireSimulator {
 
   constructor(private db: SimulationDb, private log?: ActivityLogger) {}
 
+  // TODO: re-enable when fire sprites are ready
+  private static ENABLED = false;
+
   simulate(time: CityTime, currentTick: number): void {
+    if (!FireSimulator.ENABLED) return;
     // Check for new fire stations and spawn firefighters periodically (every 100 ticks)
     if (currentTick - this.lastStaffCheckTick >= 100) {
       this.spawnFirefighters();

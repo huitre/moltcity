@@ -294,7 +294,7 @@ export function render() {
   // Place trash bins on adjacent road tiles
   for (const building of buildings) {
     const gl = building.garbageLevel || 0;
-    if (gl < 20) continue;
+    if (gl < 5) continue;
     const parcel = parcels.find((p) => p.id === building.parcelId);
     if (!parcel) continue;
     const bx = parcel.x,

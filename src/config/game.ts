@@ -578,6 +578,10 @@ export const CITY_SERVICES = {
   },
   MAX_GARBAGE_LEVEL: 100,
   GARBAGE_HAPPINESS_PENALTY: 0.5, // -0.5 happiness per garbage level
+
+  // Garbage truck collection
+  TRUCK_BUILDINGS_PER_ROUND: 8, // buildings collected per truck per round
+  COLLECTION_HOURS: [0, 6, 12, 18] as readonly number[], // hours when trucks run
 };
 
 // ============================================

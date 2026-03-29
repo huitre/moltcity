@@ -767,16 +767,9 @@ export class WasteGridSimulator {
       if (building.constructionProgress < 100) continue;
 
       const current = building.garbageLevel ?? 0;
-      let newLevel: number;
-
       const rate = garbagePerDay[building.type] || 1;
-      if (building.hasWaste) {
-        // Collection active: decrease at same rate as accumulation
-        newLevel = Math.max(0, current - rate);
-      } else {
-        // No collection: accumulate based on building type
-        newLevel = Math.min(maxLevel, current + rate);
-      }
+      // All buildings accumulate garbage; collection happens via truck rounds
+      const newLevel = Math.min(maxLevel, current + rate);
 
       if (newLevel !== current) {
         updates.push({ id: building.id, level: newLevel });
@@ -786,6 +779,129 @@ export class WasteGridSimulator {
     if (updates.length > 0) {
       (this.db.buildings as any).updateGarbageLevelsBatch(updates);
     }
+  }
+
+  /**
+   * Get building IDs served by a specific depot via BFS through road network.
+   * Returns array of building IDs in BFS distance order (nearest first).
+   */
+  private getServedBuildingIds(depot: Building): string[] {
+    const buildings = this.db.buildings.getAllBuildings();
+    const roads = this.db.roads.getAllRoads();
+
+    // Build road tile set and coord cache
+    const roadTileSet = new Set<string>();
+    for (const road of roads) {
+      const parcel = this.db.parcels.getParcelById(road.parcelId);
+      if (parcel) roadTileSet.add(`${parcel.x},${parcel.y}`);
+    }
+
+    // Get depot footprint tiles
+    const depotParcel = this.db.parcels.getParcelById(depot.parcelId);
+    if (!depotParcel) return [];
+
+    const depotTiles = new Set<string>();
+    for (let dy = 0; dy < (depot.height || 1); dy++) {
+      for (let dx = 0; dx < (depot.width || 1); dx++) {
+        depotTiles.add(`${depotParcel.x + dx},${depotParcel.y + dy}`);
+      }
+    }
+
+    // BFS from road tiles adjacent to depot
+    const servedRoadTiles = new Set<string>();
+    const queue: string[] = [];
+
+    for (const depotTile of depotTiles) {
+      const [dx, dy] = depotTile.split(',').map(Number);
+      for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const key = `${dx + ox},${dy + oy}`;
+        if (roadTileSet.has(key) && !servedRoadTiles.has(key)) {
+          servedRoadTiles.add(key);
+          queue.push(key);
+        }
+      }
+    }
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const [cx, cy] = current.split(',').map(Number);
+      for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const key = `${cx + ox},${cy + oy}`;
+        if (roadTileSet.has(key) && !servedRoadTiles.has(key)) {
+          servedRoadTiles.add(key);
+          queue.push(key);
+        }
+      }
+    }
+
+    // Find buildings adjacent to served road tiles
+    const servedIds: string[] = [];
+    for (const building of buildings) {
+      if (WASTE_EXEMPT_TYPES.has(building.type)) continue;
+      if (building.type === 'garbage_depot') continue;
+      if (building.constructionProgress < 100) continue;
+
+      const parcel = this.db.parcels.getParcelById(building.parcelId);
+      if (!parcel) continue;
+
+      let connected = false;
+      for (let dy = 0; dy < (building.height || 1) && !connected; dy++) {
+        for (let dx = 0; dx < (building.width || 1) && !connected; dx++) {
+          const bx = parcel.x + dx;
+          const by = parcel.y + dy;
+          for (const [ox, oy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+            if (servedRoadTiles.has(`${bx + ox},${by + oy}`)) {
+              connected = true;
+              break;
+            }
+          }
+        }
+      }
+      if (connected) servedIds.push(building.id);
+    }
+
+    return servedIds;
+  }
+
+  /**
+   * Simulate garbage truck collection rounds.
+   * Each depot dispatches trucks that collect from the dirtiest served buildings.
+   * Called every 6 in-game hours.
+   */
+  collectGarbage(): { id: string; level: number }[] {
+    const buildings = this.db.buildings.getAllBuildings();
+    const depots = buildings.filter(b => b.type === 'garbage_depot' && b.constructionProgress >= 100);
+    if (depots.length === 0) return [];
+
+    const trucksPerDepot = CITY_SERVICES.STAFF.garbage_depot;
+    const buildingsPerTruck = CITY_SERVICES.TRUCK_BUILDINGS_PER_ROUND;
+    const collectionsPerDepot = trucksPerDepot * buildingsPerTruck;
+
+    const buildingMap = new Map(buildings.map(b => [b.id, b]));
+    const collected: { id: string; level: number }[] = [];
+    const alreadyCollected = new Set<string>();
+
+    for (const depot of depots) {
+      const servedIds = this.getServedBuildingIds(depot);
+
+      // Filter to buildings with garbage, sort by level descending
+      const dirtyBuildings = servedIds
+        .map(id => buildingMap.get(id))
+        .filter((b): b is Building => !!b && (b.garbageLevel ?? 0) > 0 && !alreadyCollected.has(b.id))
+        .sort((a, b) => (b.garbageLevel ?? 0) - (a.garbageLevel ?? 0));
+
+      const count = Math.min(collectionsPerDepot, dirtyBuildings.length);
+      for (let i = 0; i < count; i++) {
+        const building = dirtyBuildings[i];
+        collected.push({ id: building.id, level: 0 });
+        alreadyCollected.add(building.id);
+      }
+    }
+
+    if (collected.length > 0) {
+      (this.db.buildings as any).updateGarbageLevelsBatch(collected);
+    }
+    return collected;
   }
 }
 
@@ -1647,6 +1763,15 @@ export class SimulationEngine extends EventEmitter {
     if (time.hour === 0 && this.currentTick % TICKS_PER_HOUR < 10) {
       bundle.wasteGrid.accumulateGarbage();
       events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { action: 'garbage_accumulated' } });
+    }
+
+    // Collect garbage via truck rounds (every 6 in-game hours)
+    const collectionHours = CITY_SERVICES.COLLECTION_HOURS;
+    if (collectionHours.includes(time.hour) && this.currentTick % TICKS_PER_HOUR < 10) {
+      const collected = bundle.wasteGrid.collectGarbage();
+      if (collected.length > 0) {
+        events.push({ type: 'buildings_updated', timestamp: Date.now(), data: { action: 'garbage_collected', count: collected.length } });
+      }
     }
 
     // Simulate employment (job matching and payroll)

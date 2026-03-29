@@ -297,6 +297,66 @@ export function initVehicles() {
 }
 
 /**
+ * Find the building with the highest garbageLevel that has an adjacent road tile.
+ */
+function findGarbageTarget() {
+  const { buildings, parcels } = state;
+  let best = null;
+  let bestLevel = 0;
+  for (const b of buildings) {
+    const gl = b.garbageLevel || 0;
+    if (gl <= 0 || gl <= bestLevel) continue;
+    const p = parcels.find((pp) => pp.id === b.parcelId);
+    if (!p) continue;
+    const fw = b.width || 1,
+      fh = b.height || 1;
+    let hasRoad = false;
+    for (let dx = 0; dx < fw && !hasRoad; dx++) {
+      if (hasRoadAtFast(p.x + dx, p.y - 1)) hasRoad = true;
+      if (hasRoadAtFast(p.x + dx, p.y + fh)) hasRoad = true;
+    }
+    for (let dy = 0; dy < fh && !hasRoad; dy++) {
+      if (hasRoadAtFast(p.x - 1, p.y + dy)) hasRoad = true;
+      if (hasRoadAtFast(p.x + fw, p.y + dy)) hasRoad = true;
+    }
+    if (hasRoad) {
+      best = { id: b.id, name: b.name, x: p.x, y: p.y, garbageLevel: gl };
+      bestLevel = gl;
+    }
+  }
+  return best;
+}
+
+/**
+ * Find a road tile adjacent to a garbage_depot building for spawning.
+ */
+function findDepotSpawnRoad() {
+  const { buildings, parcels } = state;
+  const depots = buildings.filter((b) => b.type === "garbage_depot");
+  if (depots.length === 0) return null;
+  const depot = depots[Math.floor(Math.random() * depots.length)];
+  const p = parcels.find((pp) => pp.id === depot.parcelId);
+  if (!p) return null;
+  const fw = depot.width || 1,
+    fh = depot.height || 1;
+  const adjRoads = [];
+  for (let dx = 0; dx < fw; dx++) {
+    if (hasRoadAtFast(p.x + dx, p.y - 1))
+      adjRoads.push({ x: p.x + dx, y: p.y - 1 });
+    if (hasRoadAtFast(p.x + dx, p.y + fh))
+      adjRoads.push({ x: p.x + dx, y: p.y + fh });
+  }
+  for (let dy = 0; dy < fh; dy++) {
+    if (hasRoadAtFast(p.x - 1, p.y + dy))
+      adjRoads.push({ x: p.x - 1, y: p.y + dy });
+    if (hasRoadAtFast(p.x + fw, p.y + dy))
+      adjRoads.push({ x: p.x + fw, y: p.y + dy });
+  }
+  if (adjRoads.length === 0) return null;
+  return adjRoads[Math.floor(Math.random() * adjRoads.length)];
+}
+
+/**
  * Spawn a new vehicle on a random road
  */
 export function spawnVehicle(vehicleTypes) {
@@ -324,9 +384,11 @@ export function spawnVehicle(vehicleTypes) {
   const { buildings } = state;
   const hasPolice = buildings.some((b) => b.type === "police_station");
   const hasHospital = buildings.some((b) => b.type === "hospital");
+  const hasGarbageDepot = buildings.some((b) => b.type === "garbage_depot");
   const allowed = vehicleTypes.filter((t) => {
     if (t === "police" && !hasPolice) return false;
     if (t === "ambulance" && !hasHospital) return false;
+    if (t === "garbage_truck" && !hasGarbageDepot) return false;
     return true;
   });
   if (allowed.length === 0) return;
@@ -336,8 +398,19 @@ export function spawnVehicle(vehicleTypes) {
   const vehicleData = vehicleSprites.get(vehicleType);
   if (!vehicleData) return;
 
+  // For garbage trucks, override spawn location to depot road and assign target
+  let spawnParcel = parcel;
+  let targetBuilding = null;
+  if (vehicleType === "garbage_truck") {
+    const depotRoad = findDepotSpawnRoad();
+    if (depotRoad) {
+      spawnParcel = depotRoad; // { x, y } of road tile adjacent to depot
+    }
+    targetBuilding = findGarbageTarget();
+  }
+
   // Pick initial direction
-  const validDirs = getValidDirections(parcel.x, parcel.y);
+  const validDirs = getValidDirections(spawnParcel.x, spawnParcel.y);
   if (validDirs.length === 0) return;
 
   const dir = validDirs[Math.floor(Math.random() * validDirs.length)];
@@ -347,8 +420,8 @@ export function spawnVehicle(vehicleTypes) {
   // Lane offset for initial direction (per-type from config)
   const isoDir = CARDINAL_TO_ISO[dir];
   const laneOff = vehicleData.config.laneOffsets?.[isoDir] || LANE_OFFSETS[dir];
-  const spawnX = parcel.x + 0.5 + laneOff.dx;
-  const spawnY = parcel.y + 0.5 + laneOff.dy;
+  const spawnX = spawnParcel.x + 0.5 + laneOff.dx;
+  const spawnY = spawnParcel.y + 0.5 + laneOff.dy;
 
   // Skip spawn if another vehicle is too close
   if (isSpawnBlocked(spawnX, spawnY)) return;
@@ -364,10 +437,10 @@ export function spawnVehicle(vehicleTypes) {
   sprite.rotation = (rotDeg * Math.PI) / 180;
 
   const vehicle = {
-    x: parcel.x + 0.5,
-    y: parcel.y + 0.5,
-    targetX: parcel.x + DIR_VECTORS[dir].dx,
-    targetY: parcel.y + DIR_VECTORS[dir].dy,
+    x: spawnParcel.x + 0.5,
+    y: spawnParcel.y + 0.5,
+    targetX: spawnParcel.x + DIR_VECTORS[dir].dx,
+    targetY: spawnParcel.y + DIR_VECTORS[dir].dy,
     speed: VEHICLE_SPEED + Math.random() * 0.2,
     dir: dir,
     sprite: sprite,
@@ -381,6 +454,8 @@ export function spawnVehicle(vehicleTypes) {
     // Queuing state
     stopped: false,
     effectiveSpeed: VEHICLE_SPEED,
+    // Garbage truck targeting
+    targetBuilding: targetBuilding,
   };
 
   const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
@@ -506,6 +581,17 @@ export function animateVehicles(delta) {
         continue;
       }
 
+      // Garbage truck arrival: despawn when adjacent to target building
+      if (vehicle.vehicleType === "garbage_truck" && vehicle.targetBuilding) {
+        const tb = vehicle.targetBuilding;
+        if (Math.abs(currentX - tb.x) <= 1 && Math.abs(currentY - tb.y) <= 1) {
+          removeHeadlights(vehicle);
+          state.sceneLayer.removeChild(vehicle.sprite);
+          animatedVehicles.splice(i, 1);
+          continue;
+        }
+      }
+
       const validDirs = (
         hasCachedRoads
           ? getValidDirectionsFast(currentX, currentY)
@@ -519,10 +605,28 @@ export function animateVehicles(delta) {
         continue;
       }
 
-      // Always continue straight if possible
-      let nextDir = validDirs.includes(vehicle.dir)
-        ? vehicle.dir
-        : validDirs[Math.floor(Math.random() * validDirs.length)];
+      // For garbage trucks with a target, pick direction closest to target
+      let nextDir;
+      if (vehicle.vehicleType === "garbage_truck" && vehicle.targetBuilding) {
+        const tb = vehicle.targetBuilding;
+        let bestDir = null;
+        let bestDist = Infinity;
+        for (const d of validDirs) {
+          const nx = currentX + DIR_VECTORS[d].dx;
+          const ny = currentY + DIR_VECTORS[d].dy;
+          const dist = Math.abs(nx - tb.x) + Math.abs(ny - tb.y);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestDir = d;
+          }
+        }
+        nextDir = bestDir || validDirs[0];
+      } else {
+        // Default: continue straight if possible, else random
+        nextDir = validDirs.includes(vehicle.dir)
+          ? vehicle.dir
+          : validDirs[Math.floor(Math.random() * validDirs.length)];
+      }
 
       // Check traffic light: is the next tile a red intersection?
       const nextTileX = currentX + DIR_VECTORS[nextDir].dx;
@@ -793,6 +897,12 @@ function showVehicleDebug(vehicle) {
 
   document.getElementById("vd-type").textContent = vehicle.vehicleType;
 
+  // Show/hide garbage target row
+  const targetRow = document.getElementById("vd-garbage-target-row");
+  if (targetRow) {
+    targetRow.style.display = vehicle.vehicleType === "garbage_truck" ? "" : "none";
+  }
+
   // --- Clone all interactive inputs to remove old listeners ---
   const cloneIds = [
     "vd-zindex",
@@ -1009,6 +1119,16 @@ function showVehicleDebug(vehicle) {
     // Texture size (can change with direction)
     document.getElementById("vd-texture-size").textContent =
       vehicle.sprite.texture.width + "x" + vehicle.sprite.texture.height;
+    // Garbage target
+    const targetEl = document.getElementById("vd-garbage-target");
+    if (targetEl && vehicle.targetBuilding) {
+      const tb = vehicle.targetBuilding;
+      targetEl.textContent = `${tb.name} (${tb.x},${tb.y}) GL:${tb.garbageLevel}`;
+      targetEl.style.color = tb.garbageLevel > 50 ? "#ff6b6b" : "#ffa500";
+    } else if (targetEl) {
+      targetEl.textContent = "none";
+      targetEl.style.color = "#888";
+    }
 
     debugTickerId = requestAnimationFrame(tick);
   }
