@@ -237,6 +237,34 @@ function populateTiltShiftTab() {
   if (cb) cb.checked = f.enabled;
 }
 
+function initSmokeControls() {
+  initOffsetSlider('smoke-off-x', () => state.smokeOffsetX, state.setSmokeOffsetX);
+  initOffsetSlider('smoke-off-y', () => state.smokeOffsetY, state.setSmokeOffsetY);
+
+  const cb = document.getElementById('smoke-markers');
+  if (cb) {
+    cb.checked = state.showSmokeMarkers;
+    cb.addEventListener('change', () => {
+      state.setShowSmokeMarkers(cb.checked);
+      render();
+    });
+  }
+}
+
+function populateSmokeControls() {
+  const set = (id, val) => {
+    const input = document.getElementById(id);
+    const valSpan = document.getElementById(id + '-val');
+    if (input) input.value = val;
+    if (valSpan) valSpan.textContent = val;
+  };
+  set('smoke-off-x', state.smokeOffsetX);
+  set('smoke-off-y', state.smokeOffsetY);
+
+  const cb = document.getElementById('smoke-markers');
+  if (cb) cb.checked = state.showSmokeMarkers;
+}
+
 function populateWindowLightTab() {
   const slider = document.getElementById('win-skew');
   const valSpan = document.getElementById('win-skew-val');
@@ -254,6 +282,7 @@ export function openAdminPanel(tab) {
   populateTiltShiftTab();
   populateWindowLightTab();
   populateOffsetControls();
+  populateSmokeControls();
 
   panel.style.display = 'block';
 
@@ -281,6 +310,7 @@ export function initDebugPanel() {
   initMaskControls();
   initWindowLightControls();
   initOffsetControls();
+  initSmokeControls();
 
   const applyBtn = document.getElementById('debug-apply-btn');
   if (applyBtn) {

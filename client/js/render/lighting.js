@@ -142,6 +142,7 @@ let lightsContainer = null;
 let streetlightSprites = [];
 let buildingLightSprites = [];
 let trafficLightGlowSprites = [];
+let buildingSilhouetteSprites = [];
 
 // Current clear color for the lighting texture [r, g, b, a]
 let currentClearColor = [1, 1, 1, 1];
@@ -153,9 +154,11 @@ export function initLighting() {
   if (lightsContainer) lightsContainer.destroy({ children: true });
 
   lightsContainer = new PIXI.Container();
+  lightsContainer.sortableChildren = true;
   streetlightSprites = [];
   buildingLightSprites = [];
   trafficLightGlowSprites = [];
+  buildingSilhouetteSprites = [];
 }
 
 /**
@@ -229,6 +232,7 @@ function createStreetlightHalo(screenX, screenY, tileX, tileY) {
   halo.tint = cfg.haloColor;
   halo.alpha = cfg.eraseAlpha;
   halo.blendMode = PIXI.BLEND_MODES.ADD;
+  halo.zIndex = 50000;
 
   return { halo, tileX, tileY };
 }
@@ -308,6 +312,9 @@ export function createBuildingLights() {
 
     if (bldgLightContainer.children.length > 0) {
       bldgLightContainer.alpha = 0;
+      // Z-index: lights render above their building's silhouette
+      const D_mid = parcel.x + parcel.y + Math.floor((fw + fh - 2) / 2);
+      bldgLightContainer.zIndex = D_mid * NUM_LAYERS + LAYER_LIGHT;
       lightsContainer.addChild(bldgLightContainer);
       buildingLightSprites.push({
         container: bldgLightContainer,
@@ -315,6 +322,62 @@ export function createBuildingLights() {
         parcel,
       });
     }
+  }
+}
+
+/**
+ * Create building silhouette sprites in the lightsContainer.
+ * These paint the ambient color over back-building lights, providing
+ * z-ordered occlusion within the lighting texture.
+ */
+export function createBuildingSilhouettes() {
+  if (!lightsContainer) initLighting();
+
+  for (const s of buildingSilhouetteSprites) {
+    s.sprite.parent?.removeChild(s.sprite);
+  }
+  buildingSilhouetteSprites = [];
+
+  const { buildings, parcels } = state;
+
+  for (const building of buildings) {
+    const parcel = parcels.find((p) => p.id === building.parcelId);
+    if (!parcel) continue;
+
+    const resolved = resolveSpriteData(building, parcel.x, parcel.y);
+    if (!resolved) continue;
+
+    const sd = resolved.spriteData;
+    if (!sd.width || !sd.anchor) continue;
+
+    // Get texture: array sprites store it on spriteData, default sprites in the map entry
+    let texture = sd.texture;
+    if (!texture && resolved.source === "buildings" && state.defaultSprites.has(building.type)) {
+      texture = state.defaultSprites.get(building.type).texture;
+    }
+    if (!texture) continue;
+
+    const fw = building.width || 1;
+    const fh = building.height || 1;
+    const tileSpan = sd.tiles || 1;
+    const scale = (TILE_WIDTH * tileSpan) / sd.width;
+
+    const spriteIsoX = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2).x;
+    const spriteIsoY = cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
+
+    const D_mid = parcel.x + parcel.y + Math.floor((fw + fh - 2) / 2);
+
+    const sprite = new PIXI.Sprite(texture);
+    sprite.scale.set(scale);
+    sprite.anchor.set(sd.anchor.x, sd.anchor.y);
+    sprite.x = spriteIsoX;
+    sprite.y = spriteIsoY;
+    sprite.blendMode = PIXI.BLEND_MODES.NORMAL;
+    sprite.alpha = 0; // invisible during day
+    sprite.zIndex = D_mid * NUM_LAYERS + LAYER_BUILDING;
+
+    lightsContainer.addChild(sprite);
+    buildingSilhouetteSprites.push({ sprite, building });
   }
 }
 
@@ -336,6 +399,20 @@ export function updateLighting(nightAlpha) {
   // Lights visible when it's dark (nightAlpha > 0.1)
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
   const alpha = Math.min(1, lightIntensity);
+
+  // Building silhouettes — tint with ambient color.
+  // Snap to fully opaque once lights are meaningfully visible (alpha > 0.5),
+  // otherwise keep invisible. Partial alpha causes visible artifacts because
+  // NORMAL-blend compositing doesn't perfectly match the clear color.
+  const ambientTint =
+    ((Math.round(currentClearColor[0] * 255) & 0xff) << 16) |
+    ((Math.round(currentClearColor[1] * 255) & 0xff) << 8) |
+    (Math.round(currentClearColor[2] * 255) & 0xff);
+  const silhouetteAlpha = alpha > 0.5 ? 1 : 0;
+  for (const s of buildingSilhouetteSprites) {
+    s.sprite.tint = ambientTint;
+    s.sprite.alpha = silhouetteAlpha;
+  }
 
   // Building window lights — fade in as night falls
   for (const bl of buildingLightSprites) {
@@ -400,6 +477,7 @@ export function createTrafficLightGlows() {
       halo.height = 16;
       halo.alpha = 0.4;
       halo.blendMode = PIXI.BLEND_MODES.ADD;
+      halo.zIndex = 50000;
 
       const isGreen = s.axis === "ns" ? phase === 0 : phase === 1;
       halo.tint = isGreen ? 0x00ff44 : 0xff2200;
@@ -432,6 +510,7 @@ export function updateTrafficLightGlowPhase() {
  * Rebuild all lights (call after roads/buildings change)
  */
 export function rebuildLights() {
+  createBuildingSilhouettes();
   createStreetlights();
   createBuildingLights();
   createTrafficLightGlows();

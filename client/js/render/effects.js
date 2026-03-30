@@ -22,17 +22,18 @@ const SHEET_ROWS = 4;
 const FRAME_SIZE = 80;
 
 let smokeFrames = []; // 8 smoke puff textures (rows 0-1)
-let fireFrames = [];  // 8 fire sprite textures (rows 2-3)
+let fireFrames = []; // 8 fire sprite textures (rows 2-3)
 let effectsReady = false;
 
 // --- Smoke state ---
 const SMOKE_TYPES = ["industrial", "coal_plant", "nuclear_plant"];
 const SMOKE_PARTICLES_PER_BUILDING = 4;
 let smokeEmitters = []; // { particles: [{ sprite, life, startX, startY, driftX }], zIndex }
+let smokeMarkers = []; // debug marker sprites
 
 // --- Fire state ---
-let fireEffects = [];   // { sprites: [], glow, buildingId }
-let fireGlows = [];     // glow sprites in lightsContainer
+let fireEffects = []; // { sprites: [], glow, buildingId }
+let fireGlows = []; // glow sprites in lightsContainer
 
 /**
  * Initialize effects — load sprite sheet and slice into frame textures.
@@ -49,7 +50,12 @@ export async function initEffects() {
       for (let col = 0; col < SHEET_COLS; col++) {
         const frame = new PIXI.Texture(
           base,
-          new PIXI.Rectangle(col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE),
+          new PIXI.Rectangle(
+            col * FRAME_SIZE,
+            row * FRAME_SIZE,
+            FRAME_SIZE,
+            FRAME_SIZE,
+          ),
         );
         if (row < 2) {
           smokeFrames.push(frame);
@@ -60,7 +66,9 @@ export async function initEffects() {
     }
 
     effectsReady = true;
-    console.log(`[Effects] Loaded ${smokeFrames.length} smoke + ${fireFrames.length} fire frames`);
+    console.log(
+      `[Effects] Loaded ${smokeFrames.length} smoke + ${fireFrames.length} fire frames`,
+    );
   } catch (e) {
     console.warn("[Effects] Failed to load smoke_01.png:", e);
   }
@@ -77,6 +85,12 @@ function clearEffects() {
     }
   }
   smokeEmitters = [];
+
+  // Remove debug markers
+  for (const m of smokeMarkers) {
+    m.parent?.removeChild(m);
+  }
+  smokeMarkers = [];
 
   clearFireEffects();
 }
@@ -130,6 +144,22 @@ function addSmokeEmitter(container, emitX, emitY, zIdx) {
   smokeEmitters.push({ particles });
 }
 
+/** Draw a small debug marker at a smoke emission point */
+function addSmokeMarker(container, x, y, zIdx) {
+  const g = new PIXI.Graphics();
+  g.beginFill(0xff00ff, 0.8);
+  g.drawCircle(0, 0, 3);
+  g.endFill();
+  g.beginFill(0xff00ff, 0.3);
+  g.drawCircle(0, 0, 6);
+  g.endFill();
+  g.x = x;
+  g.y = y;
+  g.zIndex = zIdx;
+  container.addChild(g);
+  smokeMarkers.push(g);
+}
+
 function rebuildSmoke() {
   const { buildings, parcels, sceneLayer } = state;
 
@@ -164,19 +194,33 @@ function rebuildSmoke() {
       // Sprite anchor screen position (same formula as createBuildingSprites in game.js)
       const tileSpan = spriteData.tiles || 1;
       const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
-      const anchorX = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2).x;
-      const anchorY = cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
+      const anchorX = cartToIso(
+        parcel.x + (fw - 1) / 2,
+        parcel.y + (fh - 1) / 2,
+      ).x;
+      const anchorY =
+        cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
 
       for (const chimney of chimneys) {
         // chimneys offsets are in source-sprite pixels relative to the anchor point
-        const emitX = anchorX + chimney.x * scale;
-        const emitY = anchorY + chimney.y * scale;
+        const emitX = anchorX + chimney.x * scale + state.smokeOffsetX;
+        const emitY = anchorY + chimney.y * scale + state.smokeOffsetY;
         addSmokeEmitter(sceneLayer, emitX, emitY, zIdx);
+
+        if (state.showSmokeMarkers) {
+          addSmokeMarker(sceneLayer, emitX, emitY, zIdx + 1);
+        }
       }
     } else {
       // Fallback: center of building footprint
       const iso = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2);
-      addSmokeEmitter(sceneLayer, iso.x, iso.y - 10, zIdx);
+      const emitX = iso.x + state.smokeOffsetX;
+      const emitY = iso.y - 10 + state.smokeOffsetY;
+      addSmokeEmitter(sceneLayer, emitX, emitY, zIdx);
+
+      if (state.showSmokeMarkers) {
+        addSmokeMarker(sceneLayer, emitX, emitY, zIdx + 1);
+      }
     }
   }
 }
@@ -220,7 +264,11 @@ function rebuildFire() {
       sprites.push(sprite);
     }
 
-    fireEffects.push({ sprites, buildingId: fire.buildingId, intensity: fire.intensity });
+    fireEffects.push({
+      sprites,
+      buildingId: fire.buildingId,
+      intensity: fire.intensity,
+    });
 
     // Fire glow in lighting container
     if (lc) {
@@ -289,13 +337,14 @@ function animateSmoke(delta) {
         p.life = 0;
         p.driftX = (Math.random() - 0.5) * 6;
         // Pick new frame
-        p.sprite.texture = smokeFrames[Math.floor(Math.random() * smokeFrames.length)];
+        p.sprite.texture =
+          smokeFrames[Math.floor(Math.random() * smokeFrames.length)];
       }
 
       const t = p.life;
       p.sprite.x = p.startX + Math.sin(t * Math.PI) * p.driftX;
       p.sprite.y = p.startY - t * 40;
-      p.sprite.alpha = 0.45 * (1 - t);
+      p.sprite.alpha = 0.8 * (1 - t);
       p.sprite.scale.set(0.12 + t * 0.14);
     }
   }
@@ -311,20 +360,23 @@ function animateFire(delta) {
       // Cycle frame every ~8 frames
       if (sprite._fireFrameTimer >= 8) {
         sprite._fireFrameTimer = 0;
-        sprite.texture = fireFrames[Math.floor(Math.random() * fireFrames.length)];
+        sprite.texture =
+          fireFrames[Math.floor(Math.random() * fireFrames.length)];
       }
 
       // Flicker alpha
       sprite.alpha = 0.7 + Math.sin(sprite._fireAnimTime * 5) * 0.2;
       // Slight scale pulse
       const baseScale = 0.2 + (fx.intensity / 5) * 0.15;
-      sprite.scale.set(baseScale * (1 + Math.sin(sprite._fireAnimTime * 3) * 0.08));
+      sprite.scale.set(
+        baseScale * (1 + Math.sin(sprite._fireAnimTime * 3) * 0.08),
+      );
     }
   }
 
   // Animate fire glows
   for (const glow of fireGlows) {
     glow._fireAnimTime += delta * 0.08;
-    glow.alpha = (0.2 + Math.sin(glow._fireAnimTime * 4) * 0.1);
+    glow.alpha = 0.2 + Math.sin(glow._fireAnimTime * 4) * 0.1;
   }
 }
