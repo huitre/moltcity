@@ -1028,8 +1028,9 @@ function handleTileHover(x, y, globalPos) {
       const building = findBuildingAtTile(x, y);
       if (building) {
         const p = state.parcels.find((p) => p.id === building.parcelId);
-        const bw = building.width || 1;
-        const bh = building.height || 1;
+        const fp = BUILDING_FOOTPRINTS[building.type];
+        const bw = fp ? fp.w : (building.width || 1);
+        const bh = fp ? fp.h : (building.height || 1);
         const container = new PIXI.Container();
         container.sortableChildren = true;
         container.zIndex = 1000;

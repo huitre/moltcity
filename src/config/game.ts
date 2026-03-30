@@ -86,6 +86,7 @@ export const BUILDING_FOOTPRINTS: Partial<
   wind_turbine: { w: 1, h: 1 },
   coal_plant: { w: 2, h: 2 },
   nuclear_plant: { w: 3, h: 3 },
+  park: { w: 1, h: 1 },
   water_tower: { w: 1, h: 1 },
   street_lamp: { w: 1, h: 1 },
   university: { w: 2, h: 2 },

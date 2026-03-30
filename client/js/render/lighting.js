@@ -15,6 +15,7 @@ import {
   GRID_SIZE,
   NUM_LAYERS,
   LAYER_BUILDING,
+  LAYER_LIGHT,
   LAYER_POLE,
 } from "../config.js";
 import { cartToIso } from "../utils.js";

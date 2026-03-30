@@ -299,11 +299,12 @@ export function initVehicles() {
 /**
  * Find the building with the highest garbageLevel that has an adjacent road tile.
  */
-function findGarbageTarget() {
+function findGarbageTarget(excludeIds) {
   const { buildings, parcels } = state;
   let best = null;
   let bestLevel = 0;
   for (const b of buildings) {
+    if (excludeIds && excludeIds.has(b.id)) continue;
     const gl = b.garbageLevel || 0;
     if (gl <= 0 || gl <= bestLevel) continue;
     const p = parcels.find((pp) => pp.id === b.parcelId);
@@ -353,7 +354,10 @@ function findDepotSpawnRoad() {
       adjRoads.push({ x: p.x + fw, y: p.y + dy });
   }
   if (adjRoads.length === 0) return null;
-  return adjRoads[Math.floor(Math.random() * adjRoads.length)];
+  return {
+    road: adjRoads[Math.floor(Math.random() * adjRoads.length)],
+    depot: { x: p.x, y: p.y },
+  };
 }
 
 /**
@@ -401,10 +405,12 @@ export function spawnVehicle(vehicleTypes) {
   // For garbage trucks, override spawn location to depot road and assign target
   let spawnParcel = parcel;
   let targetBuilding = null;
+  let depotLocation = null;
   if (vehicleType === "garbage_truck") {
-    const depotRoad = findDepotSpawnRoad();
-    if (depotRoad) {
-      spawnParcel = depotRoad; // { x, y } of road tile adjacent to depot
+    const depotResult = findDepotSpawnRoad();
+    if (depotResult) {
+      spawnParcel = depotResult.road;
+      depotLocation = depotResult.depot;
     }
     targetBuilding = findGarbageTarget();
   }
@@ -456,6 +462,13 @@ export function spawnVehicle(vehicleTypes) {
     effectiveSpeed: VEHICLE_SPEED,
     // Garbage truck targeting
     targetBuilding: targetBuilding,
+    // Garbage truck capacity / multi-stop
+    garbageLoad: 0,
+    garbageCapacity: 100,
+    collectHistory: [],
+    depotLocation: depotLocation,
+    returning: false,
+    collectedIds: new Set(),
   };
 
   const iso = cartToIso(vehicle.x + vehicle.laneX, vehicle.y + vehicle.laneY);
@@ -581,14 +594,52 @@ export function animateVehicles(delta) {
         continue;
       }
 
-      // Garbage truck arrival: despawn when adjacent to target building
+      // Garbage truck arrival logic
       if (vehicle.vehicleType === "garbage_truck" && vehicle.targetBuilding) {
         const tb = vehicle.targetBuilding;
         if (Math.abs(currentX - tb.x) <= 1 && Math.abs(currentY - tb.y) <= 1) {
-          removeHeadlights(vehicle);
-          state.sceneLayer.removeChild(vehicle.sprite);
-          animatedVehicles.splice(i, 1);
-          continue;
+          if (vehicle.returning) {
+            // Arrived back at depot — despawn
+            removeHeadlights(vehicle);
+            state.sceneLayer.removeChild(vehicle.sprite);
+            animatedVehicles.splice(i, 1);
+            continue;
+          }
+          // Arrived at a garbage building — collect
+          const collected = Math.min(
+            tb.garbageLevel || 0,
+            vehicle.garbageCapacity - vehicle.garbageLoad,
+          );
+          vehicle.garbageLoad += collected;
+          vehicle.collectedIds.add(tb.id);
+          vehicle.collectHistory.push(tb.name);
+
+          if (vehicle.garbageLoad >= vehicle.garbageCapacity) {
+            // Full — return to depot
+            vehicle.returning = true;
+            vehicle.targetBuilding = vehicle.depotLocation
+              ? { ...vehicle.depotLocation, name: "Depot" }
+              : null;
+          } else {
+            // Find next dirty building (skip already collected)
+            const next = findGarbageTarget(vehicle.collectedIds);
+            if (next) {
+              vehicle.targetBuilding = next;
+            } else {
+              // No more dirty buildings — return to depot
+              vehicle.returning = true;
+              vehicle.targetBuilding = vehicle.depotLocation
+                ? { ...vehicle.depotLocation, name: "Depot" }
+                : null;
+            }
+          }
+          // If no depot to return to, just despawn
+          if (!vehicle.targetBuilding) {
+            removeHeadlights(vehicle);
+            state.sceneLayer.removeChild(vehicle.sprite);
+            animatedVehicles.splice(i, 1);
+            continue;
+          }
         }
       }
 
@@ -897,10 +948,14 @@ function showVehicleDebug(vehicle) {
 
   document.getElementById("vd-type").textContent = vehicle.vehicleType;
 
-  // Show/hide garbage target row
+  // Show/hide garbage truck rows
   const targetRow = document.getElementById("vd-garbage-target-row");
   if (targetRow) {
     targetRow.style.display = vehicle.vehicleType === "garbage_truck" ? "" : "none";
+  }
+  const loadRow = document.getElementById("vd-garbage-load-row");
+  if (loadRow) {
+    loadRow.style.display = vehicle.vehicleType === "garbage_truck" ? "" : "none";
   }
 
   // --- Clone all interactive inputs to remove old listeners ---
@@ -1122,12 +1177,23 @@ function showVehicleDebug(vehicle) {
     // Garbage target
     const targetEl = document.getElementById("vd-garbage-target");
     if (targetEl && vehicle.targetBuilding) {
-      const tb = vehicle.targetBuilding;
-      targetEl.textContent = `${tb.name} (${tb.x},${tb.y}) GL:${tb.garbageLevel}`;
-      targetEl.style.color = tb.garbageLevel > 50 ? "#ff6b6b" : "#ffa500";
+      if (vehicle.returning) {
+        targetEl.textContent = `Returning to depot (${vehicle.targetBuilding.x},${vehicle.targetBuilding.y})`;
+        targetEl.style.color = "#4ecdc4";
+      } else {
+        const tb = vehicle.targetBuilding;
+        targetEl.textContent = `${tb.name} (${tb.x},${tb.y}) GL:${tb.garbageLevel}`;
+        targetEl.style.color = tb.garbageLevel > 50 ? "#ff6b6b" : "#ffa500";
+      }
     } else if (targetEl) {
       targetEl.textContent = "none";
       targetEl.style.color = "#888";
+    }
+    // Garbage load
+    const loadEl = document.getElementById("vd-garbage-load");
+    if (loadEl && vehicle.vehicleType === "garbage_truck") {
+      loadEl.textContent = `${vehicle.garbageLoad} / ${vehicle.garbageCapacity}`;
+      loadEl.style.color = vehicle.garbageLoad >= vehicle.garbageCapacity ? "#ff6b6b" : "#2ecc71";
     }
 
     debugTickerId = requestAnimationFrame(tick);

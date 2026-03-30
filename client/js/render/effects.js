@@ -6,12 +6,14 @@
 // Fire overlays + glows for burning buildings (from server fire simulation).
 
 import {
+  TILE_WIDTH,
   TILE_HEIGHT,
   NUM_LAYERS,
   LAYER_STATUS,
 } from "../config.js";
 import { cartToIso } from "../utils.js";
 import * as state from "../state.js";
+import { seededRandom } from "../sprites.js";
 import { createGlowTexture, getLightingContainer } from "./lighting.js";
 
 // --- Sprite sheet frames ---
@@ -95,6 +97,39 @@ export function rebuildEffects() {
 // SMOKE
 // =============================================
 
+/** Map building type → sprite array (mirrors serviceSpriteMap in game.js) */
+function getSmokeSprites(type) {
+  const map = {
+    industrial: state.industrialSprites,
+    coal_plant: state.powerPlantSprites,
+    nuclear_plant: state.powerPlantSprites,
+  };
+  return map[type] || [];
+}
+
+/** Create one smoke emitter (4 particles) at the given screen position */
+function addSmokeEmitter(container, emitX, emitY, zIdx) {
+  const particles = [];
+  for (let i = 0; i < SMOKE_PARTICLES_PER_BUILDING; i++) {
+    const frameIdx = Math.floor(Math.random() * smokeFrames.length);
+    const sprite = new PIXI.Sprite(smokeFrames[frameIdx]);
+    sprite.anchor.set(0.5);
+    sprite.blendMode = PIXI.BLEND_MODES.NORMAL;
+    sprite.zIndex = zIdx;
+    sprite.alpha = 0;
+    container.addChild(sprite);
+
+    particles.push({
+      sprite,
+      life: i / SMOKE_PARTICLES_PER_BUILDING,
+      startX: emitX,
+      startY: emitY,
+      driftX: (Math.random() - 0.5) * 6,
+    });
+  }
+  smokeEmitters.push({ particles });
+}
+
 function rebuildSmoke() {
   const { buildings, parcels, sceneLayer } = state;
 
@@ -108,35 +143,41 @@ function rebuildSmoke() {
     const fw = building.width || 1;
     const fh = building.height || 1;
 
-    // Emission point: center of building footprint, in iso coords
-    const iso = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2);
-    const emitX = iso.x;
-    const emitY = iso.y - 10; // offset above building center
-
     // Z-index: above building
     const D_mid = parcel.x + parcel.y + Math.floor((fw + fh - 2) / 2);
     const zIdx = D_mid * NUM_LAYERS + LAYER_STATUS;
 
-    const particles = [];
-    for (let i = 0; i < SMOKE_PARTICLES_PER_BUILDING; i++) {
-      const frameIdx = Math.floor(Math.random() * smokeFrames.length);
-      const sprite = new PIXI.Sprite(smokeFrames[frameIdx]);
-      sprite.anchor.set(0.5);
-      sprite.blendMode = PIXI.BLEND_MODES.NORMAL;
-      sprite.zIndex = zIdx;
-      sprite.alpha = 0;
-      sceneLayer.addChild(sprite);
-
-      particles.push({
-        sprite,
-        life: i / SMOKE_PARTICLES_PER_BUILDING, // stagger start
-        startX: emitX,
-        startY: emitY,
-        driftX: (Math.random() - 0.5) * 6,
-      });
+    // Look up which sprite variant this building uses (same deterministic pick as drawBuilding)
+    const spriteArr = getSmokeSprites(building.type);
+    let chimneys = null;
+    let spriteData = null;
+    if (spriteArr.length > 0) {
+      const rng = seededRandom(parcel.x * 1000 + parcel.y);
+      const idx = Math.floor(rng() * spriteArr.length);
+      spriteData = spriteArr[idx];
+      if (spriteData.chimneys && spriteData.chimneys.length > 0) {
+        chimneys = spriteData.chimneys;
+      }
     }
 
-    smokeEmitters.push({ particles });
+    if (chimneys && spriteData) {
+      // Sprite anchor screen position (same formula as createBuildingSprites in game.js)
+      const tileSpan = spriteData.tiles || 1;
+      const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
+      const anchorX = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2).x;
+      const anchorY = cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
+
+      for (const chimney of chimneys) {
+        // chimneys offsets are in source-sprite pixels relative to the anchor point
+        const emitX = anchorX + chimney.x * scale;
+        const emitY = anchorY + chimney.y * scale;
+        addSmokeEmitter(sceneLayer, emitX, emitY, zIdx);
+      }
+    } else {
+      // Fallback: center of building footprint
+      const iso = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2);
+      addSmokeEmitter(sceneLayer, iso.x, iso.y - 10, zIdx);
+    }
   }
 }
 

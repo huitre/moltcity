@@ -42,6 +42,7 @@ export const BIRD_COUNT = 12;
 export const NUM_LAYERS = 5;
 export const LAYER_ROAD = 0;
 export const LAYER_BUILDING = 1;
+export const LAYER_LIGHT = 2; // building window lights (above building, below poles)
 export const LAYER_POLE = 3; // power poles, traffic light dots
 export const LAYER_VEHICLE = 3; // vehicles, pedestrians, bins
 export const LAYER_STATUS = 4; // status icons (power/water/waste)
