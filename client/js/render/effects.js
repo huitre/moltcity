@@ -191,20 +191,28 @@ function rebuildSmoke() {
     }
 
     if (chimneys && spriteData) {
-      // Sprite anchor screen position (same formula as createBuildingSprites in game.js)
+      // Chimney coords are normalized 0-1 on the sprite texture (same as windows).
+      // Use actual texture dimensions so coords from the sprite editor canvas match.
       const tileSpan = spriteData.tiles || 1;
       const scale = (TILE_WIDTH * tileSpan) / spriteData.width;
-      const anchorX = cartToIso(
+      const tex = spriteData.texture;
+      const texW = tex ? tex.orig.width : spriteData.width;
+      const texH = tex ? tex.orig.height : spriteData.height;
+      const renderedW = texW * scale;
+      const renderedH = texH * scale;
+      const anchor = spriteData.anchor || { x: 0.5, y: 1 };
+
+      // Sprite screen position (same as createBuildingSprites in game.js)
+      const spriteX = cartToIso(
         parcel.x + (fw - 1) / 2,
         parcel.y + (fh - 1) / 2,
       ).x;
-      const anchorY =
+      const spriteY =
         cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
 
       for (const chimney of chimneys) {
-        // chimneys offsets are in source-sprite pixels relative to the anchor point
-        const emitX = anchorX + chimney.x * scale + state.smokeOffsetX;
-        const emitY = anchorY + chimney.y * scale + state.smokeOffsetY;
+        const emitX = spriteX + (chimney.x - anchor.x) * renderedW;
+        const emitY = spriteY + (chimney.y - anchor.y) * renderedH;
         addSmokeEmitter(sceneLayer, emitX, emitY, zIdx);
 
         if (state.showSmokeMarkers) {
@@ -214,12 +222,10 @@ function rebuildSmoke() {
     } else {
       // Fallback: center of building footprint
       const iso = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2);
-      const emitX = iso.x + state.smokeOffsetX;
-      const emitY = iso.y - 10 + state.smokeOffsetY;
-      addSmokeEmitter(sceneLayer, emitX, emitY, zIdx);
+      addSmokeEmitter(sceneLayer, iso.x, iso.y - 10, zIdx);
 
       if (state.showSmokeMarkers) {
-        addSmokeMarker(sceneLayer, emitX, emitY, zIdx + 1);
+        addSmokeMarker(sceneLayer, iso.x, iso.y - 10, zIdx + 1);
       }
     }
   }

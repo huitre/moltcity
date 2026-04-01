@@ -5474,29 +5474,7 @@
             value="0"
           />
         </div>
-        <div class="debug-section">Smoke Offset</div>
-        <div class="admin-slider-row">
-          <label>X <span id="smoke-off-x-val">0</span></label>
-          <input
-            type="range"
-            id="smoke-off-x"
-            min="-30"
-            max="30"
-            step="1"
-            value="0"
-          />
-        </div>
-        <div class="admin-slider-row">
-          <label>Y <span id="smoke-off-y-val">0</span></label>
-          <input
-            type="range"
-            id="smoke-off-y"
-            min="-30"
-            max="30"
-            step="1"
-            value="0"
-          />
-        </div>
+        <div class="debug-section">Smoke</div>
         <div class="admin-checkbox-row">
           <label>
             <input type="checkbox" id="smoke-markers" />
@@ -5922,7 +5900,55 @@
           <div class="se-win-hint">
             Click to add &bull; Drag to move &bull; Right-click to delete
           </div>
+          <div
+            style="
+              display: flex;
+              gap: 4px;
+              margin: 6px 0 4px;
+            "
+          >
+            <button
+              class="se-mode-btn active"
+              id="se-mode-windows"
+              style="
+                flex: 1;
+                padding: 3px 0;
+                font-size: 9px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                cursor: pointer;
+                background: #4ecdc4;
+                color: #000;
+              "
+            >
+              Windows
+            </button>
+            <button
+              class="se-mode-btn"
+              id="se-mode-chimneys"
+              style="
+                flex: 1;
+                padding: 3px 0;
+                font-size: 9px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                cursor: pointer;
+                background: rgba(0, 0, 0, 0.3);
+                color: #aaa;
+              "
+            >
+              Chimneys
+            </button>
+          </div>
           <div class="se-win-list" id="se-win-list"></div>
+          <div
+            class="se-section"
+            style="margin-top: 8px"
+          >
+            Chimneys
+            <span class="se-win-count" id="se-chimney-count"></span>
+          </div>
+          <div class="se-win-list" id="se-chimney-list"></div>
 
           <div class="se-buttons">
             <button class="se-btn-save" id="se-save">

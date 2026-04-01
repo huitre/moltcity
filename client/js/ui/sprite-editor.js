@@ -18,6 +18,10 @@ let winImage = null;        // HTMLImageElement for the sprite preview
 let winDragIdx = -1;        // index of window being dragged (-1 = none)
 let winImageLayout = null;  // { offsetX, offsetY, imgW, imgH } cached layout
 
+// Chimney editor state
+let chimneyDragIdx = -1;    // index of chimney being dragged (-1 = none)
+let editMode = 'windows';   // 'windows' or 'chimneys'
+
 function scheduleRender() {
   if (rafPending) return;
   rafPending = true;
@@ -153,9 +157,40 @@ function drawWindowPreview() {
     ctx.fillText(i.toString(), p.cx, p.cy + (face === 'left' ? skew / 2 : skew / 2));
   }
 
-  // Update count badge
+  // Draw chimney markers (red circles)
+  const chimneys = spriteData.chimneys || [];
+  for (let i = 0; i < chimneys.length; i++) {
+    const p = normToCanvas(chimneys[i].x, chimneys[i].y);
+    const isActive = i === chimneyDragIdx;
+
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, 7, 0, Math.PI * 2);
+    ctx.fillStyle = isActive ? 'rgba(78, 205, 196, 0.3)' : 'rgba(255, 80, 40, 0.3)';
+    ctx.fill();
+
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = isActive ? '#4ecdc4' : '#ff5028';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Index label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(i.toString(), p.cx, p.cy);
+  }
+
+  // Update count badges
   const countEl = document.getElementById('se-win-count');
   if (countEl) countEl.textContent = `(${windows.length})`;
+  const chimneyCountEl = document.getElementById('se-chimney-count');
+  if (chimneyCountEl) chimneyCountEl.textContent = `(${chimneys.length})`;
 }
 
 /** Rebuild the window list below the canvas */
@@ -222,6 +257,56 @@ function rebuildWindowList() {
   });
 }
 
+/** Rebuild the chimney list below the window list */
+function rebuildChimneyList() {
+  const list = document.getElementById('se-chimney-list');
+  if (!list || !currentResolved) return;
+  const spriteData = currentResolved.spriteData;
+  const chimneys = spriteData.chimneys || [];
+
+  list.innerHTML = '';
+
+  for (let i = 0; i < chimneys.length; i++) {
+    const ch = chimneys[i];
+    const row = document.createElement('div');
+    row.className = 'se-win-entry';
+
+    row.innerHTML = `
+      <span class="se-win-idx">#${i}</span>
+      <label>X</label>
+      <input type="number" min="0" max="1" step="0.01" value="${ch.x}" data-idx="${i}" data-axis="x" />
+      <label>Y</label>
+      <input type="number" min="0" max="1" step="0.01" value="${ch.y}" data-idx="${i}" data-axis="y" />
+      <button class="se-win-delete" data-idx="${i}">&times;</button>
+    `;
+    list.appendChild(row);
+  }
+
+  // Attach listeners
+  list.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', () => {
+      const idx = parseInt(input.dataset.idx);
+      const axis = input.dataset.axis;
+      const v = parseFloat(input.value);
+      if (!isNaN(v) && v >= 0 && v <= 1 && chimneys[idx]) {
+        chimneys[idx][axis] = Math.round(v * 100) / 100;
+        drawWindowPreview();
+        scheduleRender();
+      }
+    });
+  });
+
+  list.querySelectorAll('.se-win-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      chimneys.splice(idx, 1);
+      drawWindowPreview();
+      rebuildChimneyList();
+      scheduleRender();
+    });
+  });
+}
+
 /** Set up canvas mouse/touch interaction */
 function initWindowCanvas() {
   const canvas = document.getElementById('se-win-canvas');
@@ -245,13 +330,22 @@ function initWindowCanvas() {
     if (!currentResolved) return;
     const spriteData = currentResolved.spriteData;
     if (!spriteData.windows) spriteData.windows = [];
+    if (!spriteData.chimneys) spriteData.chimneys = [];
     const pos = getMousePos(e);
 
     if (e.button === 2) {
-      // Right-click: delete nearest marker
-      const idx = hitTestMarker(pos.x, pos.y, spriteData.windows);
-      if (idx >= 0) {
-        spriteData.windows.splice(idx, 1);
+      // Right-click: delete nearest marker (try chimneys first, then windows)
+      const chIdx = hitTestMarker(pos.x, pos.y, spriteData.chimneys);
+      if (chIdx >= 0) {
+        spriteData.chimneys.splice(chIdx, 1);
+        drawWindowPreview();
+        rebuildChimneyList();
+        scheduleRender();
+        return;
+      }
+      const wIdx = hitTestMarker(pos.x, pos.y, spriteData.windows);
+      if (wIdx >= 0) {
+        spriteData.windows.splice(wIdx, 1);
         drawWindowPreview();
         rebuildWindowList();
         scheduleRender();
@@ -259,37 +353,69 @@ function initWindowCanvas() {
       return;
     }
 
-    // Left-click: drag existing or add new
-    const idx = hitTestMarker(pos.x, pos.y, spriteData.windows);
-    if (idx >= 0) {
-      winDragIdx = idx;
+    // Left-click: try dragging existing marker of either type
+    const wIdx = hitTestMarker(pos.x, pos.y, spriteData.windows);
+    const chIdx = hitTestMarker(pos.x, pos.y, spriteData.chimneys);
+
+    if (wIdx >= 0 && chIdx < 0) {
+      winDragIdx = wIdx;
+      chimneyDragIdx = -1;
       drawWindowPreview();
-    } else {
-      const norm = canvasToNorm(pos.x, pos.y);
-      if (norm) {
-        norm.face = 'left';
-        spriteData.windows.push(norm);
-        winDragIdx = spriteData.windows.length - 1;
-        drawWindowPreview();
-        rebuildWindowList();
-        scheduleRender();
+      return;
+    }
+    if (chIdx >= 0 && wIdx < 0) {
+      chimneyDragIdx = chIdx;
+      winDragIdx = -1;
+      drawWindowPreview();
+      return;
+    }
+    if (wIdx >= 0 && chIdx >= 0) {
+      // Both hit — prefer whichever mode is active
+      if (editMode === 'chimneys') {
+        chimneyDragIdx = chIdx;
+        winDragIdx = -1;
+      } else {
+        winDragIdx = wIdx;
+        chimneyDragIdx = -1;
       }
+      drawWindowPreview();
+      return;
+    }
+
+    // No existing marker hit — add new based on edit mode
+    const norm = canvasToNorm(pos.x, pos.y);
+    if (!norm) return;
+    if (editMode === 'chimneys') {
+      spriteData.chimneys.push({ x: norm.x, y: norm.y });
+      chimneyDragIdx = spriteData.chimneys.length - 1;
+      winDragIdx = -1;
+      drawWindowPreview();
+      rebuildChimneyList();
+      scheduleRender();
+    } else {
+      norm.face = 'left';
+      spriteData.windows.push(norm);
+      winDragIdx = spriteData.windows.length - 1;
+      chimneyDragIdx = -1;
+      drawWindowPreview();
+      rebuildWindowList();
+      scheduleRender();
     }
   });
 
   newCanvas.addEventListener('mousemove', (e) => {
-    if (winDragIdx < 0 || !currentResolved) return;
+    if (!currentResolved) return;
     const spriteData = currentResolved.spriteData;
-    const windows = spriteData.windows || [];
-    if (!windows[winDragIdx]) return;
-
     const pos = getMousePos(e);
     const norm = canvasToNorm(pos.x, pos.y);
-    if (norm) {
+    if (!norm) return;
+
+    if (winDragIdx >= 0) {
+      const windows = spriteData.windows || [];
+      if (!windows[winDragIdx]) return;
       windows[winDragIdx].x = norm.x;
       windows[winDragIdx].y = norm.y;
       drawWindowPreview();
-      // Update the corresponding list inputs
       const list = document.getElementById('se-win-list');
       if (list) {
         const xInput = list.querySelector(`input[data-idx="${winDragIdx}"][data-axis="x"]`);
@@ -297,20 +423,35 @@ function initWindowCanvas() {
         if (xInput) xInput.value = norm.x;
         if (yInput) yInput.value = norm.y;
       }
+    } else if (chimneyDragIdx >= 0) {
+      const chimneys = spriteData.chimneys || [];
+      if (!chimneys[chimneyDragIdx]) return;
+      chimneys[chimneyDragIdx].x = norm.x;
+      chimneys[chimneyDragIdx].y = norm.y;
+      drawWindowPreview();
+      const list = document.getElementById('se-chimney-list');
+      if (list) {
+        const xInput = list.querySelector(`input[data-idx="${chimneyDragIdx}"][data-axis="x"]`);
+        const yInput = list.querySelector(`input[data-idx="${chimneyDragIdx}"][data-axis="y"]`);
+        if (xInput) xInput.value = norm.x;
+        if (yInput) yInput.value = norm.y;
+      }
     }
   });
 
   newCanvas.addEventListener('mouseup', () => {
-    if (winDragIdx >= 0) {
+    if (winDragIdx >= 0 || chimneyDragIdx >= 0) {
       winDragIdx = -1;
+      chimneyDragIdx = -1;
       drawWindowPreview();
       scheduleRender();
     }
   });
 
   newCanvas.addEventListener('mouseleave', () => {
-    if (winDragIdx >= 0) {
+    if (winDragIdx >= 0 || chimneyDragIdx >= 0) {
       winDragIdx = -1;
+      chimneyDragIdx = -1;
       drawWindowPreview();
       scheduleRender();
     }
@@ -348,6 +489,7 @@ function setupWindowEditor(spriteData) {
     winImage = img;
     drawWindowPreview();
     rebuildWindowList();
+    rebuildChimneyList();
   };
   img.onerror = () => {
     const ctx = canvas.getContext('2d');
@@ -357,6 +499,7 @@ function setupWindowEditor(spriteData) {
     ctx.textAlign = 'center';
     ctx.fillText('Failed to load image', CANVAS_W / 2, CANVAS_H / 2);
     rebuildWindowList();
+    rebuildChimneyList();
   };
   img.src = `/sprites/${file}`;
 }
@@ -405,6 +548,7 @@ function populateEditor(resolved) {
     windowTint: spriteData.windowTint || null,
     windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
     windowSkew: spriteData.windowSkew ?? null,
+    chimneys: spriteData.chimneys ? JSON.parse(JSON.stringify(spriteData.chimneys)) : null,
   };
 
   // Populate read-only fields
@@ -542,6 +686,11 @@ function populateEditor(resolved) {
       } else {
         updates.windowSkew = null;
       }
+      if (spriteData.chimneys && spriteData.chimneys.length > 0) {
+        updates.chimneys = spriteData.chimneys.map(c => ({ x: c.x, y: c.y }));
+      } else {
+        updates.chimneys = null;
+      }
       await updateSpriteConfig({ source, category, index, updates });
       statusEl.textContent = 'Saved!';
       statusEl.style.color = '#2ecc71';
@@ -554,6 +703,7 @@ function populateEditor(resolved) {
         windowTint: spriteData.windowTint || null,
         windowSize: spriteData.windowSize ? { ...spriteData.windowSize } : null,
         windowSkew: spriteData.windowSkew ?? null,
+        chimneys: spriteData.chimneys ? JSON.parse(JSON.stringify(spriteData.chimneys)) : null,
       };
     } catch (err) {
       statusEl.textContent = `Error: ${err.message}`;
@@ -593,6 +743,12 @@ function populateEditor(resolved) {
       delete spriteData.windowSkew;
     }
 
+    if (originalValues.chimneys) {
+      spriteData.chimneys = JSON.parse(JSON.stringify(originalValues.chimneys));
+    } else {
+      delete spriteData.chimneys;
+    }
+
     // Reset window size / skew UI
     const winWReset = document.getElementById('se-win-w');
     const winHReset = document.getElementById('se-win-h');
@@ -629,6 +785,7 @@ function populateEditor(resolved) {
     document.getElementById('se-status').style.color = '#888';
     drawWindowPreview();
     rebuildWindowList();
+    rebuildChimneyList();
     scheduleRender();
   });
 
@@ -700,6 +857,29 @@ function populateEditor(resolved) {
         spriteData.windowSkew = v;
       }
     });
+  }
+
+  // Mode toggle buttons (windows vs chimneys)
+  const modeWinBtn = document.getElementById('se-mode-windows');
+  const modeChBtn = document.getElementById('se-mode-chimneys');
+  if (modeWinBtn && modeChBtn) {
+    function setEditMode(mode) {
+      editMode = mode;
+      if (mode === 'windows') {
+        modeWinBtn.style.background = '#4ecdc4';
+        modeWinBtn.style.color = '#000';
+        modeChBtn.style.background = 'rgba(0,0,0,0.3)';
+        modeChBtn.style.color = '#aaa';
+      } else {
+        modeChBtn.style.background = '#ff5028';
+        modeChBtn.style.color = '#fff';
+        modeWinBtn.style.background = 'rgba(0,0,0,0.3)';
+        modeWinBtn.style.color = '#aaa';
+      }
+    }
+    modeWinBtn.onclick = () => setEditMode('windows');
+    modeChBtn.onclick = () => setEditMode('chimneys');
+    setEditMode('windows');
   }
 
   // Open admin panel on Sprites tab

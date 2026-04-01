@@ -71,9 +71,7 @@ export let trafficLightOffsets = {
 export let streetLampOffsetX = 0;
 export let streetLampOffsetY = 0;
 
-// Smoke debug offsets
-export let smokeOffsetX = 0;
-export let smokeOffsetY = 0;
+// Smoke debug
 export let showSmokeMarkers = false;
 
 // Ambient elements
@@ -292,12 +290,6 @@ export function setStreetLampOffsetX(v) {
 }
 export function setStreetLampOffsetY(v) {
   streetLampOffsetY = v;
-}
-export function setSmokeOffsetX(v) {
-  smokeOffsetX = v;
-}
-export function setSmokeOffsetY(v) {
-  smokeOffsetY = v;
 }
 export function setShowSmokeMarkers(v) {
   showSmokeMarkers = v;

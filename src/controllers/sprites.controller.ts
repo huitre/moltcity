@@ -95,7 +95,7 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
       source: string;
       category: string | null;
       index: number | null;
-      updates: { width?: number; height?: number; anchor?: { x: number; y: number }; windows?: { x: number; y: number; face?: string }[]; windowTint?: string | null; windowSize?: { w: number; h: number }; windowSkew?: number | null; size?: { width: number; height: number }; laneOffsets?: Record<string, { dx: number; dy: number }>; rotation?: Record<string, number> };
+      updates: { width?: number; height?: number; anchor?: { x: number; y: number }; windows?: { x: number; y: number; face?: string }[]; windowTint?: string | null; windowSize?: { w: number; h: number }; windowSkew?: number | null; chimneys?: { x: number; y: number }[] | null; size?: { width: number; height: number }; laneOffsets?: Record<string, { dx: number; dy: number }>; rotation?: Record<string, number> };
     };
 
     if (!source || !updates) {
@@ -149,6 +149,13 @@ export const spritesController: FastifyPluginAsync = async (fastify) => {
         delete entry.windowSkew;
       } else {
         entry.windowSkew = updates.windowSkew;
+      }
+    }
+    if (updates.chimneys !== undefined) {
+      if (updates.chimneys === null) {
+        delete entry.chimneys;
+      } else {
+        entry.chimneys = updates.chimneys;
       }
     }
     if (updates.size !== undefined) entry.size = updates.size;

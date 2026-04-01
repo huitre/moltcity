@@ -269,8 +269,9 @@ export function createBuildingLights() {
     const sd = resolved.spriteData;
     const tileSpan = sd.tiles || 1;
     const scale = (TILE_WIDTH * tileSpan) / sd.width;
-    const scaledW = sd.width * scale;
-    const scaledH = sd.height * scale;
+    const tex = sd.texture;
+    const scaledW = (tex ? tex.orig.width : sd.width) * scale;
+    const scaledH = (tex ? tex.orig.height : sd.height) * scale;
 
     const bldgLightContainer = new PIXI.Container();
 
@@ -352,7 +353,11 @@ export function createBuildingSilhouettes() {
 
     // Get texture: array sprites store it on spriteData, default sprites in the map entry
     let texture = sd.texture;
-    if (!texture && resolved.source === "buildings" && state.defaultSprites.has(building.type)) {
+    if (
+      !texture &&
+      resolved.source === "buildings" &&
+      state.defaultSprites.has(building.type)
+    ) {
       texture = state.defaultSprites.get(building.type).texture;
     }
     if (!texture) continue;
@@ -362,8 +367,12 @@ export function createBuildingSilhouettes() {
     const tileSpan = sd.tiles || 1;
     const scale = (TILE_WIDTH * tileSpan) / sd.width;
 
-    const spriteIsoX = cartToIso(parcel.x + (fw - 1) / 2, parcel.y + (fh - 1) / 2).x;
-    const spriteIsoY = cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
+    const spriteIsoX = cartToIso(
+      parcel.x + (fw - 1) / 2,
+      parcel.y + (fh - 1) / 2,
+    ).x;
+    const spriteIsoY =
+      cartToIso(parcel.x + fw - 1, parcel.y + fh - 1).y + TILE_HEIGHT;
 
     const D_mid = parcel.x + parcel.y + Math.floor((fw + fh - 2) / 2);
 
@@ -400,23 +409,26 @@ export function updateLighting(nightAlpha) {
   const lightIntensity = Math.max(0, (nightAlpha - 0.1) / 0.3);
   const alpha = Math.min(1, lightIntensity);
 
-  // Building silhouettes — tint with ambient color.
-  // Snap to fully opaque once lights are meaningfully visible (alpha > 0.5),
-  // otherwise keep invisible. Partial alpha causes visible artifacts because
-  // NORMAL-blend compositing doesn't perfectly match the clear color.
+  // Building silhouettes — tinted with the ambient clear color so they
+  // match the lighting texture background exactly (no extra darkening).
+  // Only show once it's dark enough (22:00+) to avoid visible artifacts.
+  const hour = state.currentHour;
+  const silhouetteAlpha = hour >= 22 || hour < 5 ? 1 : 0;
   const ambientTint =
     ((Math.round(currentClearColor[0] * 255) & 0xff) << 16) |
     ((Math.round(currentClearColor[1] * 255) & 0xff) << 8) |
     (Math.round(currentClearColor[2] * 255) & 0xff);
-  const silhouetteAlpha = alpha > 0.5 ? 1 : 0;
   for (const s of buildingSilhouetteSprites) {
     s.sprite.tint = ambientTint;
     s.sprite.alpha = silhouetteAlpha;
   }
 
-  // Building window lights — fade in as night falls
+  // Building window lights — fade in as night falls.
+  // Before silhouettes kick in (< 22:00), reduce brightness to prevent
+  // light bleeding through front buildings.
+  const lightAlpha = silhouetteAlpha ? alpha : alpha * 0.35;
   for (const bl of buildingLightSprites) {
-    bl.container.alpha = alpha;
+    bl.container.alpha = lightAlpha;
   }
 
   // Streetlight halos — fade in + flicker
@@ -434,8 +446,8 @@ export function updateLighting(nightAlpha) {
 
   // Vehicle headlights — fade in at night
   for (const v of state.animatedVehicles) {
-    if (v.headlightL) v.headlightL.alpha = alpha * 0.3;
-    if (v.headlightR) v.headlightR.alpha = alpha * 0.3;
+    if (v.headlightL) v.headlightL.alpha = alpha * 0.5;
+    if (v.headlightR) v.headlightR.alpha = alpha * 0.5;
   }
 
   // Render lights to the lighting texture with current ambient clear color

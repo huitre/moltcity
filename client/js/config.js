@@ -54,7 +54,7 @@ export const MAX_FLOORS = { house: 3, office: 5 };
 export const BUILDING_FOOTPRINTS = {
   hospital: { w: 2, h: 2 },
   police_station: { w: 1, h: 1 },
-  fire_station: { w: 2, h: 2 },
+  fire_station: { w: 2, h: 1 },
   power_plant: { w: 2, h: 2 },
   wind_turbine: { w: 1, h: 1 },
   coal_plant: { w: 2, h: 2 },
