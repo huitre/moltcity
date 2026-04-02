@@ -574,7 +574,7 @@ function drawBuilding(x, y, building) {
     );
     result.x += state.streetLampOffsetX;
     result.y += state.streetLampOffsetY;
-    result.zIndex = Math.round((result.y / (TILE_HEIGHT / 2)) * NUM_LAYERS);
+    result.zIndex = (x + y) * NUM_LAYERS + LAYER_POLE;
     return result;
   }
 

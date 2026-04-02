@@ -95,12 +95,11 @@ function getVehicleRotation(vehicle, cardinalDir) {
 }
 
 /**
- * Compute vehicle z-index from screen Y position.
- * Scale screen Y to match tile-based z-index range
- * (NUM_LAYERS per TILE_HEIGHT/2 pixels of depth).
+ * Compute vehicle z-index from tile coordinates.
+ * Uses the same (x+y)*NUM_LAYERS + LAYER formula as buildings/roads.
  */
 function vehicleZIndex(vehicle) {
-  return Math.round((vehicle.sprite.y / (TILE_HEIGHT / 2)) * NUM_LAYERS);
+  return (Math.floor(vehicle.x) + Math.floor(vehicle.y)) * NUM_LAYERS + LAYER_VEHICLE;
 }
 
 function applyVehicleScale(sprite, config) {
@@ -862,7 +861,7 @@ export function createTrafficLightSprites(
     sprite.x = pos.px;
     sprite.y = pos.py;
     sprite.scale.set(TRAFFIC_LIGHT_SCALE);
-    sprite.zIndex = Math.round((pos.py / (TILE_HEIGHT / 2)) * NUM_LAYERS);
+    sprite.zIndex = (tileX + tileY) * NUM_LAYERS + LAYER_POLE;
     container.addChild(sprite);
 
     // Create glow sprite (tint + Y position set by animateTrafficGlowLights)
@@ -875,7 +874,7 @@ export function createTrafficLightSprites(
     glow.width = 8;
     glow.height = 8;
     glow.alpha = 0.8;
-    glow.zIndex = Math.round((glow.y / (TILE_HEIGHT / 2)) * NUM_LAYERS) - (FRONT_FACING[texName] ? 1 : 0);
+    glow.zIndex = (tileX + tileY) * NUM_LAYERS + LAYER_POLE - (FRONT_FACING[texName] ? 1 : 0);
     container.addChild(glow);
 
     sprites.push({
@@ -1222,8 +1221,6 @@ export function drawVehicle(x, y) {
   g.drawEllipse(iso.x, iso.y + 4, 8, 4);
   g.endFill();
 
-  g.zIndex = Math.round(
-    ((iso.y / 10 + TILE_HEIGHT / 2) / (TILE_HEIGHT / 2)) * NUM_LAYERS,
-  );
+  g.zIndex = (Math.floor(x) + Math.floor(y)) * NUM_LAYERS + LAYER_VEHICLE;
   return g;
 }
