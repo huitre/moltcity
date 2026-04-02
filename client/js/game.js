@@ -330,22 +330,21 @@ export function render() {
       sprite.scale.set(binScale);
       sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
 
-      // Place bin on the sidewalk edge closest to the building.
-      // Use extreme offsets (0.95/0.05) so bins sit on the curb,
-      // not in the middle of multi-tile-wide roads.
+      // Place bin on the building tile edge (sidewalk), not on the road.
+      // Offsets > 1.0 or < 0.0 push into the neighboring building tile.
       const jitter = (rng() - 0.5) * 0.2;
       let offX, offY;
       if (road.dir === "S") {
         offX = 0.5 + jitter;
-        offY = 0.95;
+        offY = 1.05;
       } else if (road.dir === "N") {
         offX = 0.5 + jitter;
-        offY = 0.05;
+        offY = -0.05;
       } else if (road.dir === "E") {
-        offX = 0.95;
+        offX = 1.05;
         offY = 0.5 + jitter;
       } else {
-        offX = 0.05;
+        offX = -0.05;
         offY = 0.5 + jitter;
       }
       const iso = cartToIso(road.rx + offX, road.ry + offY);

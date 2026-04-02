@@ -682,6 +682,22 @@ export function animateVehicles(delta) {
       // Check traffic light: is the next tile a red intersection?
       const nextTileX = currentX + DIR_VECTORS[nextDir].dx;
       const nextTileY = currentY + DIR_VECTORS[nextDir].dy;
+      // Update direction, lane offset, and sprite for the chosen direction
+      vehicle.dir = nextDir;
+      const laneOff = getVehicleLaneOffset(vehicle, nextDir);
+      vehicle.targetLaneX = laneOff.dx;
+      vehicle.targetLaneY = laneOff.dy;
+      const newTexture = vehicle.vehicleData.directions.get(
+        CARDINAL_TO_ISO[nextDir],
+      );
+      if (newTexture) {
+        vehicle.sprite.texture = newTexture;
+        vehicle.sprite.texture.baseTexture.scaleMode =
+          PIXI.SCALE_MODES.NEAREST;
+        applyVehicleScale(vehicle.sprite, vehicle.vehicleData.config);
+        vehicle.sprite.rotation = getVehicleRotation(vehicle, nextDir);
+      }
+
       if (isRedLight(nextDir, nextTileX, nextTileY)) {
         // Stay at tile center - keep target at current tile so we re-check next frame
         vehicle.stopped = true;
@@ -689,28 +705,10 @@ export function animateVehicles(delta) {
         vehicle.targetX = currentX;
         vehicle.targetY = currentY;
       } else {
-        vehicle.dir = nextDir;
         vehicle.targetX = currentX + DIR_VECTORS[nextDir].dx;
         vehicle.targetY = currentY + DIR_VECTORS[nextDir].dy;
         vehicle.stopped = false;
         vehicle.stoppedAtLight = false;
-
-        // Update lane offset for new direction (per-type)
-        const laneOff = getVehicleLaneOffset(vehicle, nextDir);
-        vehicle.targetLaneX = laneOff.dx;
-        vehicle.targetLaneY = laneOff.dy;
-
-        // Update sprite texture for new direction
-        const newTexture = vehicle.vehicleData.directions.get(
-          CARDINAL_TO_ISO[nextDir],
-        );
-        if (newTexture) {
-          vehicle.sprite.texture = newTexture;
-          vehicle.sprite.texture.baseTexture.scaleMode =
-            PIXI.SCALE_MODES.NEAREST;
-          applyVehicleScale(vehicle.sprite, vehicle.vehicleData.config);
-          vehicle.sprite.rotation = getVehicleRotation(vehicle, nextDir);
-        }
       }
     } else if (!vehicle.stopped) {
       // Check if approaching a red intersection - stop before entering
