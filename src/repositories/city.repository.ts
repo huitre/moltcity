@@ -98,7 +98,7 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
   async resetBudgetYtd(cityId: string): Promise<void> {
     const empty: BudgetYtd = {
       revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0, infrastructureFees: 0 },
-      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 },
+      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0, ordinances: 0 },
     };
     await this.updateBudgetYtd(cityId, empty);
   }
@@ -141,7 +141,7 @@ export class CityRepository extends BaseRepository<typeof city, CityRow, CityIns
         ordinances: this.parseJson<string[]>(row.ordinances, []),
         bonds: this.parseJson<Bond[]>(row.bonds, []),
         departmentFunding: this.parseJson<DepartmentFunding>(row.departmentFunding, { police: 100, fire: 100, health: 100, education: 100, transit: 100 }),
-        budgetYtd: this.parseJson<BudgetYtd>(row.budgetYtd, { revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0, infrastructureFees: 0 }, expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 } }),
+        budgetYtd: this.parseJson<BudgetYtd>(row.budgetYtd, { revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0, infrastructureFees: 0 }, expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0, ordinances: 0 } }),
         creditRating: row.creditRating,
       },
       latitude: row.latitude ?? null,

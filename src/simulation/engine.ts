@@ -1426,9 +1426,8 @@ export class TaxationSimulator {
       const owner = this.db.agents.findAgent(building.ownerId);
       if (owner && owner.wallet.balance >= totalFee) {
         this.db.agents.updateWalletBalance(owner.id, owner.wallet.balance - totalFee);
+        infraFeesCollected += totalFee;
       }
-      // Fee is always collected by the city (building is operating)
-      infraFeesCollected += totalFee;
     }
 
     // ── 2. SC2k property tax revenue (population-based) ──
@@ -1536,6 +1535,7 @@ export class TaxationSimulator {
     ytd.expenses.education += eduExp;
     ytd.expenses.transit += transitExp;
     ytd.expenses.bondInterest += bondInterest;
+    ytd.expenses.ordinances += ordinanceCost;
     this.db.city.updateBudgetYtd(this.cityId, ytd);
 
     // ── 10. Update credit rating ──

@@ -251,6 +251,7 @@ export interface BudgetYtd {
     education: number;
     transit: number;
     bondInterest: number;
+    ordinances: number;
   };
 }
 

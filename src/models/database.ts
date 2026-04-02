@@ -35,7 +35,7 @@ export function createDatabase(): Database.Database {
       ordinances TEXT NOT NULL DEFAULT '[]',
       bonds TEXT NOT NULL DEFAULT '[]',
       department_funding TEXT NOT NULL DEFAULT '{"police":100,"fire":100,"health":100,"education":100,"transit":100}',
-      budget_ytd TEXT NOT NULL DEFAULT '{"revenues":{"propertyTaxR":0,"propertyTaxC":0,"propertyTaxI":0,"ordinances":0},"expenses":{"police":0,"fire":0,"health":0,"education":0,"transit":0,"bondInterest":0}}',
+      budget_ytd TEXT NOT NULL DEFAULT '{"revenues":{"propertyTaxR":0,"propertyTaxC":0,"propertyTaxI":0,"ordinances":0},"expenses":{"police":0,"fire":0,"health":0,"education":0,"transit":0,"bondInterest":0,"ordinances":0}}',
       credit_rating TEXT NOT NULL DEFAULT 'A'
     );
 
@@ -482,7 +482,7 @@ export class CityRepository {
   private defaultBudgetYtd(): BudgetYtd {
     return {
       revenues: { propertyTaxR: 0, propertyTaxC: 0, propertyTaxI: 0, ordinances: 0, infrastructureFees: 0 },
-      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0 },
+      expenses: { police: 0, fire: 0, health: 0, education: 0, transit: 0, bondInterest: 0, ordinances: 0 },
     };
   }
 
